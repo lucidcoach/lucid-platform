@@ -1144,17 +1144,27 @@ function scheduleDraftValue(key) {
 
 function applyScheduleCellClick(key, shiftKey, firstHour = 0, lastHour = 24) {
   if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
-  const keys = [];
-  for (let hour = firstHour; hour < lastHour; hour += 1) {
-    for (let weekday = 1; weekday <= 7; weekday += 1) keys.push(`${weekday}:${hour * 60}`);
-  }
+  const [weekdayText, minuteText] = String(key || "").split(":");
+  const weekday = Number(weekdayText);
+  const minute = Number(minuteText);
   const anchorKey = state.coachScheduleShiftAnchor || "";
-  if (shiftKey && anchorKey && keys.includes(anchorKey) && keys.includes(key)) {
-    const from = keys.indexOf(anchorKey);
-    const to = keys.indexOf(key);
+  const [anchorWeekdayText, anchorMinuteText] = String(anchorKey || "").split(":");
+  const anchorWeekday = Number(anchorWeekdayText);
+  const anchorMinute = Number(anchorMinuteText);
+
+  if (
+    shiftKey &&
+    anchorKey &&
+    Number.isFinite(weekday) &&
+    Number.isFinite(minute) &&
+    weekday === anchorWeekday &&
+    Number.isFinite(anchorMinute)
+  ) {
+    const from = Math.max(firstHour * 60, Math.min(anchorMinute, minute));
+    const to = Math.min((lastHour - 1) * 60, Math.max(anchorMinute, minute));
     const value = Boolean(state.coachScheduleDraft[anchorKey]);
-    for (const rangeKey of keys.slice(Math.min(from, to), Math.max(from, to) + 1)) {
-      state.coachScheduleDraft[rangeKey] = value;
+    for (let rangeMinute = from; rangeMinute <= to; rangeMinute += 60) {
+      state.coachScheduleDraft[`${weekday}:${rangeMinute}`] = value;
     }
   } else {
     state.coachScheduleDraft[key] = !scheduleDraftValue(key);
@@ -1186,7 +1196,7 @@ function renderAccountScheduleCalendarMarkup() {
   }
   return `<section class="account-section account-schedule-compact">
     <div class="student-panel-head"><span>코치 전용 · 모든 강의 공통</span><strong>코칭 가능한 시간</strong></div>
-    <p class="account-section-note">클릭으로 한 칸, 첫 칸 선택 후 <b>Shift+클릭</b>으로 구간을 한 번에 설정할 수 있습니다. 예약된 칸은 잠깁니다.</p>
+    <div class="mini-schedule-hint">클릭 · 같은 요일에서 Shift+클릭으로 위↕아래 시간 구간 선택</div>
     <div class="mini-schedule-head"><span></span>${labels.map((label, i) => `<b>${label}<small>${escapeHtml(isoDateOnly(addLocalDays(weekStart, i)).slice(5).replace("-", "/"))}</small></b>`).join("")}</div>
     <div class="mini-schedule-grid">${cells.join("")}</div>
     <div class="account-schedule-actions"><button type="button" class="secondary" id="accountSchedulePrevBtn">이전 주</button><button type="button" class="secondary" id="accountScheduleTodayBtn">이번 주</button><button type="button" class="secondary" id="accountScheduleNextBtn">다음 주</button><button type="button" class="primary" id="accountScheduleSaveBtn">매주 반복으로 저장</button></div>
@@ -1211,10 +1221,8 @@ function renderLoginConnections(overview) {
         ${providers.map(([provider, label, icon]) => {
           const method = getLoginMethod(overview, provider);
           return `<div class="account-connection-card ${method.connected ? "connected" : ""}">
-            <div class="account-connection-brand">
-              <span class="account-connection-logo"><img src="${icon}" alt="${label}"></span>
-              <strong>${label}</strong>
-            </div>
+            <span class="account-connection-logo"><img src="${icon}" alt="${label}"></span>
+            <strong>${label}</strong>
             ${method.connected
               ? `<span class="account-connection-status connected">연결됨</span>`
               : `<button type="button" class="account-connection-status link" data-link-provider="${provider}">연동</button>`}
@@ -1286,8 +1294,8 @@ function renderAccountPanelMarkup() {
       <section class="account-section">
         <h3>기본 정보</h3>
         <form class="account-profile-grid" id="accountProfileForm">
-          <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" value="${escapeHtml(nickname)}"><small>다음 변경 가능: ${escapeHtml(availableText)}</small></label>
-          <label>Riot ID#태그<input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"><small>예약/코칭 때 확인할 게임 계정입니다.</small></label>
+          <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" value="${escapeHtml(nickname)}"></label>
+          <label>Riot ID#태그<input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"></label>
           <button class="primary" type="submit" id="accountProfileSaveBtn">기본 정보 저장</button>
           <span class="save-status" id="accountProfileStatus" aria-live="polite"></span>
         </form>
@@ -1298,8 +1306,19 @@ function renderAccountPanelMarkup() {
         ${isCoachUser() ? `<div class="account-stat"><span>이번 달 수익</span><strong>${won(income.monthNet || 0)}</strong><small>플랫폼 수수료 ${Number(income.commissionRate || 0)}% 반영 · 결제 완료 기준</small></div>` : ""}
       </section>
       <section class="account-section"><div class="student-panel-head"><span>혜택</span><strong>보유 중인 할인쿠폰</strong></div>${state.accountOverviewLoadState === "loading" ? `<div class="account-empty">불러오는 중...</div>` : renderCouponList(overview.coupons || [])}</section>
-      ${isCoachUser() ? `<section class="account-section coach-finance-compact"><div class="student-panel-head"><div><span>코치 전용</span><strong>정산</strong></div><button type="button" class="secondary mini" id="settlementDetailOpenBtn">정산 내역 보기</button></div><p class="account-section-note">정산 계좌는 코치 신청 때 제출한 정보를 사용합니다. 변경이 필요하면 관리자에게 요청해주세요.</p></section>
-      ${renderAccountScheduleCalendarMarkup()}
+      ${isCoachUser() ? `<div class="coach-account-tools-row">
+        <div class="coach-account-tool coach-account-tool-schedule">${renderAccountScheduleCalendarMarkup()}</div>
+        <div class="coach-account-tool coach-account-tool-settlement">
+          <section class="account-section coach-finance-compact">
+            <div class="student-panel-head"><span>코치 전용</span><strong>정산 내역</strong></div>
+            <div class="coach-settlement-mini">
+              <span>이번 달 정산 예정</span>
+              <strong>${won(income.monthNet || 0)}</strong>
+              <button type="button" class="secondary mini" id="settlementDetailOpenBtn">상세 내역 보기</button>
+            </div>
+          </section>
+        </div>
+      </div>
       ${renderSettlementDetailMarkup(income.entries || [])}` : ""}
       ${state.accountOverviewLoadState === "error" ? `<p class="save-status error">${escapeHtml(state.accountOverviewLoadError)}</p>` : ""}
       <div class="account-danger account-danger-bottom"><div><strong>회원탈퇴</strong><small>탈퇴하면 계정과 로그인 세션을 사용할 수 없습니다. 결제/정산 기록은 법적·회계상 필요한 범위에서 보존될 수 있습니다.</small></div><button class="danger" type="button" id="accountDeleteBtn">회원탈퇴</button></div>
