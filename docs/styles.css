@@ -267,6 +267,16 @@ button {
 .main {
   padding: 28px;
   min-width: 0;
+
+  /*
+   * Desktop zoom guard:
+   * 브라우저 축소 시 CSS viewport가 지나치게 넓어져 카드/그리드가 재배치되거나
+   * 가로로 늘어나는 것을 막고, 원래 데스크톱 레이아웃 폭을 유지한 채
+   * 브라우저 배율대로 전체 화면이 함께 축소되도록 합니다.
+   */
+  width: 100%;
+  max-width: 1540px;
+  justify-self: start;
 }
 .topbar {
   display: flex;
@@ -2809,6 +2819,10 @@ body[data-theme="dark"] .explorer-coach-body small {
 
 @media (max-width: 980px) {
   .app-shell { grid-template-columns: 1fr; }
+  .main {
+    width: 100%;
+    max-width: none;
+  }
   .sidebar {
     position: static;
     padding: 16px;
