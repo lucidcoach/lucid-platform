@@ -3108,3 +3108,172 @@ body[data-theme="dark"] .explorer-coach-body small {
     text-align: center;
   }
 }
+
+
+/* Account connection summary: compact in both light and dark themes. */
+.account-connections-section {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.account-simple-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  color: var(--text);
+}
+.account-simple-heading strong {
+  font-size: 17px;
+}
+.account-connection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.account-connection-card {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 11px;
+  min-height: 118px;
+  padding: 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-2);
+  color: var(--text);
+  text-align: center;
+}
+.account-connection-card.connected {
+  border-color: color-mix(in srgb, #16a34a 38%, var(--line));
+}
+.account-connection-brand {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.account-connection-logo {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  overflow: hidden;
+}
+.account-connection-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+body[data-theme="dark"] .account-connection-logo img {
+  filter: none;
+  opacity: 1;
+}
+.account-connection-status {
+  min-width: 72px;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  display: inline-grid;
+  place-items: center;
+}
+.account-connection-status.connected {
+  background: color-mix(in srgb, #16a34a 14%, var(--panel));
+  color: #168447;
+  border: 1px solid color-mix(in srgb, #16a34a 35%, var(--line));
+}
+body[data-theme="dark"] .account-connection-status.connected {
+  color: #86efac;
+}
+.account-connection-status.link {
+  appearance: none;
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.account-connection-status.link:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+@media (max-width: 720px) {
+  .account-connection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .account-connection-card {
+    min-height: 104px;
+    padding: 12px 8px;
+  }
+  .account-connection-logo {
+    width: 36px;
+    height: 36px;
+  }
+  .account-connection-logo img {
+    width: 25px;
+    height: 25px;
+  }
+}
+@media (max-width: 430px) {
+  .account-connection-grid {
+    grid-template-columns: 1fr;
+  }
+  .account-connection-card {
+    grid-template-columns: auto 1fr auto;
+    justify-items: start;
+    min-height: 0;
+    text-align: left;
+  }
+  .account-connection-brand {
+    display: contents;
+  }
+  .account-connection-status {
+    justify-self: end;
+  }
+}
+
+
+/* 2026-08-24 coach account refinement: theme-safe compact finance/schedule */
+.coach-finance-compact { padding-block: 14px; }
+.coach-finance-compact .student-panel-head { margin-bottom: 0; }
+.account-schedule-compact {
+  width: min(100%, 980px);
+  margin-inline: auto;
+}
+.account-schedule-compact .mini-schedule-head,
+.account-schedule-compact .mini-schedule-grid { grid-template-columns: 52px repeat(7, minmax(62px, 1fr)); }
+.account-schedule-compact .mini-schedule-cell { min-height: 27px; }
+.coach-payout-note { color: var(--muted); font-size: 12px; }
+.settlement-detail-modal {
+  position: fixed; inset: 0; z-index: 1400; display: grid; place-items: center;
+  padding: 24px; background: rgba(5, 10, 20, .68); backdrop-filter: blur(5px);
+}
+.settlement-detail-modal[hidden] { display: none !important; }
+.settlement-detail-dialog {
+  width: min(960px, 96vw); max-height: min(760px, 88vh); overflow: auto;
+  border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+  background: var(--panel); color: var(--text); box-shadow: 0 24px 80px rgba(0,0,0,.28);
+}
+.settlement-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.settlement-detail-head > div { display: grid; gap: 3px; }
+.settlement-detail-head span { color: var(--muted); font-size: 12px; }
+.settlement-detail-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.settlement-detail-summary span { color: var(--muted); }
+.settlement-detail-table-wrap { overflow-x: auto; }
+.settlement-detail-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.settlement-detail-table th, .settlement-detail-table td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: left; color: var(--text); }
+.settlement-detail-table th { color: var(--muted); font-size: 11px; }
+.settlement-detail-table td { font-size: 12px; }
+.settlement-detail-table tr:last-child td { border-bottom: 0; }
+@media (max-width: 760px) {
+  .account-schedule-compact { width: 100%; overflow-x: auto; }
+  .account-schedule-compact .mini-schedule-head,
+  .account-schedule-compact .mini-schedule-grid { min-width: 650px; }
+  .settlement-detail-modal { padding: 10px; }
+  .settlement-detail-dialog { padding: 14px; border-radius: 12px; }
+}
