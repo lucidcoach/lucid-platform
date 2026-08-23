@@ -2975,3 +2975,136 @@ body[data-theme="dark"] .explorer-coach-body small {
     min-width: 560px;
   }
 }
+
+
+/* My Info service dashboard */
+.account-section { display: grid; gap: 10px; padding: 14px 0; border-top: 1px solid var(--line); }
+.account-section:first-of-type { border-top: 0; }
+.account-section h3 { margin: 0; font-size: 15px; }
+.account-section-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.account-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
+.account-profile-grid label, .payout-form label { display: grid; gap: 5px; font-weight: 800; font-size: 12px; }
+.account-profile-grid small, .payout-form small { color: var(--muted); font-weight: 500; }
+.account-assets { grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 0; padding-top: 0; }
+.account-stat { display: grid; gap: 5px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.account-stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
+.account-stat strong { font-size: 23px; }
+.account-stat small { color: var(--muted); font-size: 11px; }
+.account-empty { padding: 12px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-size: 13px; }
+.coupon-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.coupon-card { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); }
+.coupon-card span, .coupon-card small { color: var(--muted); font-size: 12px; }
+.payout-form { display: grid; grid-template-columns: 140px minmax(180px, 1fr) 150px auto; gap: 8px; align-items: end; }
+.payout-form .save-status { grid-column: 1 / -1; }
+.settlement-calendar-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; text-align: center; }
+.settlement-weekdays, .settlement-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.settlement-weekdays span { text-align: center; color: var(--muted); font-size: 11px; font-weight: 800; }
+.settlement-day { min-height: 72px; display: grid; align-content: start; gap: 3px; padding: 7px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-2); }
+.settlement-day.muted { opacity: .35; }
+.settlement-day.has-income { border-color: rgba(16, 185, 129, .45); }
+.settlement-day b { font-size: 12px; }
+.settlement-day span { font-size: 11px; font-weight: 900; color: var(--brand-dark); }
+.settlement-day small { font-size: 9px; color: var(--muted); }
+.mini-schedule-head, .mini-schedule-grid { display: grid; grid-template-columns: 58px repeat(7, minmax(54px, 1fr)); gap: 3px; }
+.mini-schedule-head b { display: grid; text-align: center; font-size: 11px; }
+.mini-schedule-head small { color: var(--muted); font-size: 9px; font-weight: 500; }
+.mini-schedule-time { display: flex; align-items: center; color: var(--muted); font-size: 10px; }
+.mini-schedule-cell { min-height: 30px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); color: var(--muted); font-size: 10px; }
+.mini-schedule-cell.open { background: rgba(16, 185, 129, .12); border-color: rgba(16, 185, 129, .45); color: var(--brand-dark); font-weight: 900; }
+.mini-schedule-cell.booked { background: rgba(59, 130, 246, .12); color: var(--text); font-weight: 900; }
+.account-schedule-actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+.account-danger-bottom { margin-top: 12px; padding-top: 18px; }
+@media (max-width: 760px) {
+  .account-profile-grid, .account-assets, .payout-form, .coupon-list { grid-template-columns: 1fr; }
+  .mini-schedule-head, .mini-schedule-grid { min-width: 650px; }
+  .account-section:has(.mini-schedule-grid) { overflow-x: auto; }
+  .settlement-day { min-height: 58px; padding: 5px; }
+  .settlement-day span { font-size: 9px; }
+}
+
+
+.login-method-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.login-method-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #dfe4ec);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.login-method-info {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.login-method-info img,
+.login-method-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex: 0 0 30px;
+}
+.password-icon {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: #eef2f7;
+  color: #303846;
+}
+.login-method-info div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.login-method-info small {
+  color: var(--muted, #7b8494);
+  overflow-wrap: anywhere;
+}
+.linked-badge {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e9f8ef;
+  color: #168447;
+  font-weight: 700;
+  font-size: 12px;
+}
+.inline-password-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(120, 135, 160, 0.08);
+}
+.inline-password-panel form {
+  display: grid;
+  gap: 10px;
+}
+.inline-password-panel label {
+  display: grid;
+  gap: 6px;
+}
+.inline-password-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .login-method-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .login-method-row > button,
+  .linked-badge {
+    align-self: stretch;
+    text-align: center;
+  }
+}

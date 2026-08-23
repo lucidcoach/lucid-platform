@@ -296,6 +296,10 @@ const state = {
   refundAdminLoadError: "",
   reviewsByCoach: {},
   submittedReviewIds: [],
+  accountOverview: null,
+  accountOverviewLoadState: "idle",
+  accountOverviewLoadError: "",
+  settlementCalendarMonth: "",
 };
 
 function migrateCoachImages(coaches) {
@@ -936,6 +940,8 @@ function bindAuthForm(mode) {
             password: data.get("password"),
           });
       state.currentUser = user;
+      state.accountOverview = null;
+      state.accountOverviewLoadState = "idle";
       if (state.currentUser?.coachKey) state.coachSelfKey = state.currentUser.coachKey;
       state.coachDashboardLoadState = "idle";
       state.coachDashboardLoadError = "";
@@ -1074,36 +1080,335 @@ function bindGuestConsultForm() {
   });
 }
 
+function won(value) {
+  return `${Number(value || 0).toLocaleString("ko-KR")}원`;
+}
+
+function maskAccountNumber(value) {
+  const text = String(value || "").trim();
+  if (text.length <= 4) return text;
+  return `${text.slice(0, Math.min(4, text.length - 4))}${"•".repeat(Math.max(2, text.length - 8))}${text.slice(-4)}`;
+}
+
+async function loadAccountOverview() {
+  if (!state.currentUser || state.accountOverviewLoadState === "loading") return;
+  state.accountOverviewLoadState = "loading";
+  try {
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/overview`, { credentials: "include" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    state.accountOverview = result;
+    state.accountOverviewLoadState = "loaded";
+    state.accountOverviewLoadError = "";
+  } catch (error) {
+    state.accountOverviewLoadState = "error";
+    state.accountOverviewLoadError = getAuthErrorMessage(error.message);
+  }
+  if (state.activeView === "student") renderStudentHome();
+}
+
+function renderCouponList(coupons) {
+  if (!Array.isArray(coupons) || !coupons.length) return `<div class="account-empty">보유 중인 할인쿠폰이 없습니다.</div>`;
+  return `<div class="coupon-list">${coupons.map((coupon) => {
+    const discount = coupon.discountType === "percent" ? `${coupon.discountValue}%` : won(coupon.discountValue);
+    return `<div class="coupon-card"><strong>${escapeHtml(coupon.title || coupon.code)}</strong><span>${escapeHtml(coupon.code || "")} · ${escapeHtml(discount)}</span>${coupon.expiresAt ? `<small>${escapeHtml(formatDateTime(coupon.expiresAt))}까지</small>` : ""}</div>`;
+  }).join("")}</div>`;
+}
+
+function getSettlementMonthDate() {
+  if (state.settlementCalendarMonth) return new Date(`${state.settlementCalendarMonth}-01T00:00:00`);
+  const now = new Date();
+  state.settlementCalendarMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function renderSettlementCalendar(entries) {
+  const monthDate = getSettlementMonthDate();
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const byDay = {};
+  (entries || []).forEach((entry) => {
+    if (!entry.date || !entry.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}-`)) return;
+    const day = Number(entry.date.slice(-2));
+    (byDay[day] ||= []).push(entry);
+  });
+  const cells = [];
+  for (let i = 0; i < mondayOffset; i += 1) cells.push(`<div class="settlement-day muted"></div>`);
+  for (let day = 1; day <= last.getDate(); day += 1) {
+    const dayEntries = byDay[day] || [];
+    const total = dayEntries.reduce((sum, item) => sum + Number(item.net || 0), 0);
+    cells.push(`<div class="settlement-day ${dayEntries.length ? "has-income" : ""}"><b>${day}</b>${dayEntries.length ? `<span>+${Number(total).toLocaleString("ko-KR")}원</span><small>${dayEntries.length}건 · 정산 예정</small>` : ""}</div>`);
+  }
+  return `
+    <div class="settlement-calendar-head">
+      <button type="button" class="secondary mini" data-settlement-month="prev">‹</button>
+      <strong>${year}년 ${month + 1}월 정산 내역</strong>
+      <button type="button" class="secondary mini" data-settlement-month="next">›</button>
+    </div>
+    <div class="settlement-weekdays">${["월","화","수","목","금","토","일"].map((d) => `<span>${d}</span>`).join("")}</div>
+    <div class="settlement-calendar">${cells.join("")}</div>`;
+}
+
+function renderAccountScheduleCalendarMarkup() {
+  if (!isCoachUser()) return "";
+  if (state.coachScheduleLoadState === "loading" || state.coachScheduleLoadState === "idle") {
+    return `<section class="account-section"><div class="student-panel-head"><span>코치 전용</span><strong>코칭 가능한 시간</strong></div><div class="account-empty">시간표를 불러오는 중...</div></section>`;
+  }
+  const weekStart = getCoachScheduleWeekStart();
+  const weekdays = [1,2,3,4,5,6,7];
+  const labels = ["월","화","수","목","금","토","일"];
+  const firstHour = 8;
+  const lastHour = 24;
+  const cells = [];
+  for (let hour = firstHour; hour < lastHour; hour += 1) {
+    cells.push(`<div class="mini-schedule-time">${String(hour).padStart(2,"0")}:00</div>`);
+    weekdays.forEach((weekday) => {
+      const date = addLocalDays(weekStart, weekday - 1);
+      const minute = hour * 60;
+      const cell = getScheduleCell(state.coachSchedule, date, minute);
+      const key = `${weekday}:${minute}`;
+      const open = state.coachScheduleDraft?.[key] ?? cell.open;
+      cells.push(`<button type="button" class="mini-schedule-cell ${open ? "open" : ""} ${cell.booked ? "booked" : ""}" data-account-schedule-cell="${key}" ${cell.booked ? "disabled" : ""}>${cell.booked ? "예약" : (open ? "가능" : "")}</button>`);
+    });
+  }
+  return `<section class="account-section">
+    <div class="student-panel-head"><span>코치 전용 · 모든 강의 공통</span><strong>코칭 가능한 시간 설정</strong></div>
+    <p class="account-section-note">여기서 연 시간은 내 모든 강의 상품에 일괄 적용됩니다. 예약된 시간은 잠겨서 실수로 닫히지 않습니다.</p>
+    <div class="mini-schedule-head"><span></span>${labels.map((label, i) => `<b>${label}<small>${escapeHtml(isoDateOnly(addLocalDays(weekStart, i)).slice(5).replace("-", "/"))}</small></b>`).join("")}</div>
+    <div class="mini-schedule-grid">${cells.join("")}</div>
+    <div class="account-schedule-actions"><button type="button" class="secondary" id="accountSchedulePrevBtn">이전 주</button><button type="button" class="secondary" id="accountScheduleTodayBtn">이번 주</button><button type="button" class="secondary" id="accountScheduleNextBtn">다음 주</button><button type="button" class="primary" id="accountScheduleSaveBtn">매주 반복으로 저장</button></div>
+  </section>`;
+}
+
+
+function getLoginMethod(overview, provider) {
+  return overview?.loginMethods?.[provider] || { connected: false };
+}
+
+function renderLoginConnections(overview) {
+  const password = getLoginMethod(overview, "password");
+  const providers = [
+    ["google", "Google", "assets/google-logo.jpg"],
+    ["naver", "네이버", "assets/naver.jpg"],
+    ["discord", "Discord", "assets/discord-login.png"],
+  ];
+  const passwordDetail = password.connected
+    ? `${escapeHtml(password.email || state.currentUser?.email || "")} · 비밀번호 로그인 사용 중`
+    : `${escapeHtml(password.email || state.currentUser?.email || "")} · 비밀번호 로그인 미설정`;
+  return `
+    <section class="account-section">
+      <div class="student-panel-head"><span>계정</span><strong>로그인 및 연동 관리</strong></div>
+      <p class="account-section-note">하나의 Lucid 계정에 여러 로그인 수단을 연결할 수 있습니다. 어떤 방식으로 로그인해도 같은 예약·포인트·쿠폰·정산 정보로 들어옵니다.</p>
+      <div class="login-method-list">
+        <div class="login-method-row">
+          <div class="login-method-info"><span class="login-method-icon password-icon">••</span><div><strong>이메일 + 비밀번호</strong><small>${passwordDetail}</small></div></div>
+          <button type="button" class="${password.connected ? "secondary" : "primary"} mini" id="accountPasswordBtn">${password.connected ? "비밀번호 변경" : "비밀번호 설정"}</button>
+        </div>
+        ${providers.map(([provider, label, icon]) => {
+          const method = getLoginMethod(overview, provider);
+          const detail = method.connected
+            ? `${escapeHtml(method.displayName || method.email || "연결됨")}`
+            : "현재 Lucid 계정에 연결되지 않음";
+          return `<div class="login-method-row">
+            <div class="login-method-info"><img src="${icon}" alt=""><div><strong>${label}</strong><small>${detail}</small></div></div>
+            ${method.connected
+              ? `<span class="linked-badge">연결됨</span>`
+              : `<button type="button" class="secondary mini" data-link-provider="${provider}">${label} 연동</button>`}
+          </div>`;
+        }).join("")}
+      </div>
+      <div class="inline-password-panel" id="accountPasswordPanel" hidden>
+        <form id="accountPasswordForm">
+          ${password.connected ? `<label>현재 비밀번호<input name="currentPassword" type="password" autocomplete="current-password" required maxlength="${PASSWORD_MAX_LENGTH}"></label>` : ""}
+          <label>새 비밀번호<input name="password" type="password" autocomplete="new-password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" placeholder="8~32자"></label>
+          <label>새 비밀번호 확인<input name="passwordConfirm" type="password" autocomplete="new-password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" placeholder="한 번 더 입력"></label>
+          <div class="inline-password-actions"><button class="primary" type="submit">${password.connected ? "비밀번호 변경" : "비밀번호 로그인 추가"}</button><button class="secondary" type="button" id="accountPasswordCancelBtn">취소</button></div>
+          <span class="save-status" id="accountPasswordStatus" aria-live="polite"></span>
+        </form>
+      </div>
+    </section>`;
+}
+
+function startAccountProviderLink(provider) {
+  if (!state.currentUser) {
+    openAuthModal("login");
+    return;
+  }
+  window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${encodeURIComponent(provider)}/start`);
+}
+
+async function saveAccountPassword(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = $("accountPasswordStatus");
+  const button = form.querySelector("button[type='submit']");
+  const data = new FormData(form);
+  const password = String(data.get("password") || "");
+  const passwordConfirm = String(data.get("passwordConfirm") || "");
+  if (password !== passwordConfirm) {
+    if (status) status.textContent = "새 비밀번호가 서로 일치하지 않습니다.";
+    return;
+  }
+  if (button) button.disabled = true;
+  if (status) { status.textContent = ""; status.className = "save-status"; }
+  try {
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/password`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword: data.get("currentPassword") || "",
+        password,
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    state.accountOverviewLoadState = "idle";
+    await loadAccountOverview();
+    if (status) { status.textContent = "비밀번호 로그인 설정이 저장되었습니다."; status.className = "save-status success"; }
+    alert("이제 이메일과 비밀번호로도 같은 Lucid 계정에 로그인할 수 있습니다.");
+  } catch (error) {
+    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
 function renderAccountPanelMarkup() {
   if (!state.currentUser) return "";
   const user = state.currentUser;
+  const overview = state.accountOverview || {};
   const nickname = user.displayName || user.nickname || "";
+  const riotId = user.riotId || user.riot_id || "";
   const availableAt = user.nicknameChangeAvailableAt || user.nickname_change_available_at || "";
   const availableText = availableAt ? formatDateTime(availableAt) : "변경 가능";
   const needsNickname = Boolean(user.needsNickname || user.nicknameSetupRequired || user.nickname_setup_required);
+  const payout = overview.payout || {};
+  const income = overview.income || {};
   return `
     <section class="student-panel account-panel" id="accountPanel">
-      <div class="student-panel-head"><span>내 정보</span><strong>계정 설정</strong></div>
+      <div class="student-panel-head"><span>내 정보</span><strong>계정 및 서비스 정보</strong></div>
       ${needsNickname ? `<p class="account-required">서비스 이용을 위해 닉네임을 먼저 설정해주세요.</p>` : ""}
-      <form class="account-form" id="accountNicknameForm">
-        <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" pattern=".{1,12}" value="${escapeHtml(nickname)}"></label>
-        <button class="secondary" type="submit" id="accountNicknameSaveBtn">닉네임 저장</button>
-        <span class="save-status" id="accountNicknameStatus" aria-live="polite">다음 변경 가능: ${escapeHtml(availableText)}</span>
-      </form>
-      <div class="account-danger">
-        <div><strong>회원탈퇴</strong><small>탈퇴하면 계정과 로그인 세션을 사용할 수 없습니다.</small></div>
-        <button class="danger" type="button" id="accountDeleteBtn">회원탈퇴</button>
-      </div>
-    </section>
-    ${isCoachUser() ? renderScheduleSummaryMarkup() : ""}
-  `;
+      <section class="account-section">
+        <h3>기본 정보</h3>
+        <form class="account-profile-grid" id="accountProfileForm">
+          <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" value="${escapeHtml(nickname)}"><small>다음 변경 가능: ${escapeHtml(availableText)}</small></label>
+          <label>Riot ID#태그<input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"><small>예약/코칭 때 확인할 게임 계정입니다.</small></label>
+          <button class="primary" type="submit" id="accountProfileSaveBtn">기본 정보 저장</button>
+          <span class="save-status" id="accountProfileStatus" aria-live="polite"></span>
+        </form>
+      </section>
+      ${renderLoginConnections(overview)}
+      <section class="account-section account-assets">
+        <div class="account-stat"><span>현재 잔여 포인트</span><strong>${Number(overview.points || 0).toLocaleString("ko-KR")}P</strong></div>
+        ${isCoachUser() ? `<div class="account-stat"><span>이번 달 수익</span><strong>${won(income.monthNet || 0)}</strong><small>플랫폼 수수료 ${Number(income.commissionRate || 0)}% 반영 · 결제 완료 기준</small></div>` : ""}
+      </section>
+      <section class="account-section"><div class="student-panel-head"><span>혜택</span><strong>보유 중인 할인쿠폰</strong></div>${state.accountOverviewLoadState === "loading" ? `<div class="account-empty">불러오는 중...</div>` : renderCouponList(overview.coupons || [])}</section>
+      ${isCoachUser() ? `<section class="account-section"><div class="student-panel-head"><span>코치 전용</span><strong>정산 계좌</strong></div>
+        <form class="payout-form" id="payoutForm"><label>은행<input name="bankName" maxlength="40" placeholder="은행명" value="${escapeHtml(payout.bankName || "")}"></label><label>계좌번호<input name="accountNumber" maxlength="80" placeholder="계좌번호" value="${escapeHtml(payout.accountNumber || "")}"></label><label>예금주<input name="accountHolder" maxlength="40" placeholder="예금주" value="${escapeHtml(payout.accountHolder || "")}"></label><button type="submit" class="secondary">계좌 저장</button><span class="save-status" id="payoutStatus">${payout.accountNumber ? `등록 계좌 · ${escapeHtml(payout.bankName || "")} ${escapeHtml(maskAccountNumber(payout.accountNumber))}` : ""}</span></form>
+      </section>
+      <section class="account-section"><div class="student-panel-head"><span>코치 전용</span><strong>월별 정산 내역</strong></div>${renderSettlementCalendar(income.entries || [])}</section>
+      ${renderAccountScheduleCalendarMarkup()}` : ""}
+      ${state.accountOverviewLoadState === "error" ? `<p class="save-status error">${escapeHtml(state.accountOverviewLoadError)}</p>` : ""}
+      <div class="account-danger account-danger-bottom"><div><strong>회원탈퇴</strong><small>탈퇴하면 계정과 로그인 세션을 사용할 수 없습니다. 결제/정산 기록은 법적·회계상 필요한 범위에서 보존될 수 있습니다.</small></div><button class="danger" type="button" id="accountDeleteBtn">회원탈퇴</button></div>
+    </section>`;
 }
 
 function mountAccountPanel(container) {
   if (!container || !state.currentUser) return;
   container.insertAdjacentHTML("afterbegin", renderAccountPanelMarkup());
-  $("accountNicknameForm")?.addEventListener("submit", saveAccountNickname);
+  $("accountProfileForm")?.addEventListener("submit", saveAccountProfile);
+  document.querySelectorAll("[data-link-provider]").forEach((button) => button.addEventListener("click", () => startAccountProviderLink(button.dataset.linkProvider)));
+  $("accountPasswordBtn")?.addEventListener("click", () => {
+    const panel = $("accountPasswordPanel");
+    if (panel) panel.hidden = !panel.hidden;
+  });
+  $("accountPasswordCancelBtn")?.addEventListener("click", () => {
+    const panel = $("accountPasswordPanel");
+    if (panel) panel.hidden = true;
+  });
+  $("accountPasswordForm")?.addEventListener("submit", saveAccountPassword);
+  $("payoutForm")?.addEventListener("submit", savePayoutProfile);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
+  document.querySelectorAll("[data-settlement-month]").forEach((button) => button.addEventListener("click", () => changeSettlementMonth(button.dataset.settlementMonth)));
+  document.querySelectorAll("[data-account-schedule-cell]").forEach((button) => button.addEventListener("click", () => toggleAccountScheduleCell(button.dataset.accountScheduleCell)));
+  $("accountSchedulePrevBtn")?.addEventListener("click", () => moveAccountScheduleWeek(-7));
+  $("accountScheduleTodayBtn")?.addEventListener("click", () => { state.coachScheduleWeekStart = isoDateOnly(startOfLocalWeek(new Date())); loadCoachSchedule(); });
+  $("accountScheduleNextBtn")?.addEventListener("click", () => moveAccountScheduleWeek(7));
+  $("accountScheduleSaveBtn")?.addEventListener("click", saveAccountSchedule);
+}
+
+async function saveAccountProfile(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = $("accountProfileStatus");
+  const button = $("accountProfileSaveBtn");
+  const data = new FormData(form);
+  const nickname = String(data.get("nickname") || "").trim();
+  const riotId = String(data.get("riotId") || "").trim();
+  if (!nickname || [...nickname].length > 12) { if (status) status.textContent = "닉네임은 1~12자로 입력해주세요."; return; }
+  if (riotId && (!riotId.includes("#") || riotId.startsWith("#") || riotId.endsWith("#"))) { if (status) status.textContent = "Riot ID는 닉네임#태그 형식으로 입력해주세요."; return; }
+  if (button) button.disabled = true;
+  if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
+  try {
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ displayName: nickname, riotId }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok || !result.user) throw new Error(result.error || `HTTP ${response.status}`);
+    state.currentUser = result.user;
+    if (status) { status.textContent = "기본 정보를 저장했습니다."; status.className = "save-status success"; }
+  } catch (error) {
+    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
+  } finally { if (button) button.disabled = false; }
+}
+
+async function savePayoutProfile(event) {
+  event.preventDefault();
+  const status = $("payoutStatus");
+  const data = new FormData(event.currentTarget);
+  try {
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/payout`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(data.entries())) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    state.accountOverview = { ...(state.accountOverview || {}), payout: result.payout };
+    if (status) { status.textContent = "정산 계좌를 저장했습니다."; status.className = "save-status success"; }
+  } catch (error) { if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; } }
+}
+
+function changeSettlementMonth(direction) {
+  const current = getSettlementMonthDate();
+  current.setMonth(current.getMonth() + (direction === "next" ? 1 : -1));
+  state.settlementCalendarMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+  renderStudentHome();
+}
+
+function toggleAccountScheduleCell(key) {
+  if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
+  state.coachScheduleDraft[key] = !state.coachScheduleDraft[key];
+  renderStudentHome();
+}
+
+function moveAccountScheduleWeek(days) {
+  const start = getCoachScheduleWeekStart();
+  state.coachScheduleWeekStart = isoDateOnly(addLocalDays(start, days));
+  loadCoachSchedule();
+}
+
+async function saveAccountSchedule() {
+  const button = $("accountScheduleSaveBtn");
+  if (button) button.disabled = true;
+  try {
+    const weekly = buildWeeklyEntriesFromDraft();
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/schedule`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekly, mode: "weekly" }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    state.coachScheduleLoadState = "idle";
+    await loadCoachSchedule();
+    alert("모든 내 강의에 적용되는 반복 코칭 시간을 저장했습니다.");
+  } catch (error) { alert(`코칭 시간을 저장하지 못했습니다.\n${error.message || error}`); }
+  finally { if (button) button.disabled = false; }
 }
 
 async function saveAccountNickname(event) {
@@ -1173,6 +1478,7 @@ function renderStudentHome() {
   if (isCoachUser()) {
     renderCoachDashboard(container);
     mountAccountPanel(container);
+    if (state.accountOverviewLoadState === "idle") loadAccountOverview();
     if (state.coachScheduleLoadState === "idle") loadCoachSchedule();
     return;
   }
@@ -1182,6 +1488,7 @@ function renderStudentHome() {
     $("studentLoginBtn")?.addEventListener("click", () => openAuthModal("login"));
     return;
   }
+  if (state.accountOverviewLoadState === "idle") loadAccountOverview();
   if (state.studentReservationLoadState === "loading" || state.studentReservationLoadState === "idle") {
     container.innerHTML = `<div class="student-empty"><strong>예약 내역을 불러오는 중입니다.</strong></div>`;
     mountAccountPanel(container);
@@ -2360,8 +2667,13 @@ function getAuthErrorMessage(error) {
     cannot_delete_account: "현재 계정은 회원탈퇴를 처리할 수 없습니다.",
     missing_credentials: "이메일과 비밀번호를 입력해주세요.",
     invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
+    invalid_riot_id: "Riot ID는 닉네임#태그 형식으로 입력해주세요.",
+    invalid_reset_token: "비밀번호 재설정 링크가 만료되었거나 올바르지 않습니다.",
+    invalid_payout_profile: "은행명, 계좌번호, 예금주를 모두 입력해주세요.",
     email_already_exists: "이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.",
-    discord_already_linked: "이 Discord 계정은 이미 다른 사이트 계정에 연결되어 있습니다.",
+    discord_already_linked: "이 Discord 계정은 이미 다른 Lucid 계정에 연결되어 있습니다.",
+    provider_already_linked: "이 소셜 계정은 이미 다른 Lucid 계정에 연결되어 있습니다.",
+    current_password_invalid: "현재 비밀번호가 맞지 않습니다.",
     account_link_required: "같은 이메일의 기존 계정이 있습니다. 기존 계정으로 로그인한 뒤 소셜 계정을 연결해주세요.",
     invalid_reset_token: "비밀번호 재설정 링크가 올바르지 않거나 만료되었습니다.",
     reset_token_expired: "비밀번호 재설정 링크가 만료되었습니다. 다시 요청해주세요.",
