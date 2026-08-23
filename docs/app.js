@@ -1,4 +1,4 @@
-﻿const categories = [
+const categories = [
   { id: "league", label: "리그오브레전드" },
   { id: "valorant", label: "발로란트" },
   { id: "academy", label: "테스트" },
@@ -765,8 +765,20 @@ function openAuthModal(mode = "login") {
   });
   body.innerHTML = renderAuthMarkup(nextMode);
   bindAuthForm(nextMode);
+  enforcePasswordInputLimit(body);
   bindPasswordToggles(body);
   modal.hidden = false;
+}
+
+function enforcePasswordInputLimit(root = document) {
+  root.querySelectorAll('input[name="password"]').forEach((input) => {
+    input.maxLength = PASSWORD_MAX_LENGTH;
+    input.addEventListener("input", () => {
+      if (input.value.length > PASSWORD_MAX_LENGTH) {
+        input.value = input.value.slice(0, PASSWORD_MAX_LENGTH);
+      }
+    });
+  });
 }
 
 function bindPasswordToggles(root = document) {
@@ -828,7 +840,7 @@ function renderAuthMarkup(mode) {
       <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
       <label>비밀번호
         <span class="password-field">
-          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="current-password" placeholder="비밀번호">
+          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="current-password" placeholder="8자 이상, 128자 이하">
           <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
         </span>
       </label>

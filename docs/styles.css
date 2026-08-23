@@ -48,7 +48,9 @@ button {
 }
 .app-shell {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
+  /* 브라우저 확대/축소 시 사이드바가 지나치게 작아지거나 커지지 않도록
+     데스크톱에서는 화면 폭 기준 비율을 유지합니다. */
+  grid-template-columns: 22.5% minmax(0, 1fr);
   min-height: 100vh;
 }
 .sidebar {
@@ -411,7 +413,8 @@ button {
 }
 .featured-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  /* 추천 상품은 데스크톱에서 항상 2열을 유지해 축소 시 카드가 가로로 증식하지 않게 합니다. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 .featured-card {
@@ -633,13 +636,15 @@ button {
 }
 .layout {
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(380px, 520px);
+  /* 목록과 상세 패널의 가로 비율을 유지합니다. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
 .coach-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* 데스크톱에서는 3열 고정. 브라우저 축소 시 5~6열로 늘어나는 현상을 방지합니다. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 .coach-card {
