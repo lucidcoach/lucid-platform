@@ -772,10 +772,10 @@ function openAuthModal(mode = "login") {
 
 function enforcePasswordInputLimit(root = document) {
   root.querySelectorAll('.password-field input[type="password"], .password-field input[data-password-input]').forEach((input) => {
-    input.maxLength = 128;
+    input.maxLength = PASSWORD_MAX_LENGTH;
     input.dataset.passwordInput = "true";
     input.addEventListener("input", () => {
-      if (input.value.length > 128) input.value = input.value.slice(0, 128);
+      if (input.value.length > PASSWORD_MAX_LENGTH) input.value = input.value.slice(0, PASSWORD_MAX_LENGTH);
     });
   });
 }
@@ -806,7 +806,7 @@ function renderAuthMarkup(mode) {
         <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
         <label>비밀번호
           <span class="password-field">
-            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="128" autocomplete="new-password" placeholder="8자 이상, 128자 이하">
+            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 32자 이하">
             <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
           </span>
         </label>
@@ -840,7 +840,7 @@ function renderAuthMarkup(mode) {
       <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
       <label>비밀번호
         <span class="password-field">
-          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="128" autocomplete="current-password" placeholder="8자 이상, 128자 이하">
+          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="current-password" placeholder="8자 이상, 32자 이하">
           <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
         </span>
       </label>
@@ -2155,7 +2155,7 @@ function getAuthErrorMessage(error) {
   const messages = {
     invalid_email: "이메일 형식을 확인해주세요.",
     weak_password: "비밀번호는 8자 이상이어야 합니다.",
-    password_too_long: "비밀번호는 128자 이하로 입력해주세요.",
+    password_too_long: "비밀번호는 32자 이하로 입력해주세요.",
     missing_display_name: "닉네임을 입력해주세요.",
     invalid_display_name: "닉네임은 1~12자로 입력해주세요.",
     display_name_too_short: "닉네임은 1~12자로 입력해주세요.",
