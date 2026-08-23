@@ -1,0 +1,396 @@
+﻿<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lucid Coach</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <button class="brand" id="homeLogo" type="button" aria-label="홈으로 이동">
+        <img src="assets/logo.jpg" alt="">
+        <div>
+          <strong>Lucid Coach</strong>
+        </div>
+      </button>
+      <nav class="nav" aria-label="main">
+        <button class="nav-item active" data-view="market" id="navMarket"></button>
+        <button class="nav-item" data-action="coachSearch" id="navCoachSearch" type="button">맞춤 강의 검색</button>
+        <button class="nav-item" data-view="student" id="navStudent"></button>
+      </nav>
+      <section class="side-role-menu" id="sideRoleMenu" hidden></section>
+      <section class="side-coaches" aria-label="코치 목록">
+        <span class="label">코치 목록</span>
+        <div id="sideCoachList"></div>
+      </section>
+      <div class="side-panel">
+        <span class="label" id="sideLabel"></span>
+        <p id="sideCopy"></p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow" id="heroEyebrow"></p>
+          <h1 id="heroTitle"></h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-actions">
+            <button class="secondary user-action" id="loginOpenBtn" type="button">로그인</button>
+            <button class="secondary user-action" id="guestBuyOpenBtn" type="button">비회원 강의 구매</button>
+            <button class="secondary user-action" id="discordConnectBtn" type="button" hidden>Discord 연결</button>
+            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-pressed="false">다크모드</button>
+          </div>
+          <details class="admin-menu" hidden>
+            <summary>관리</summary>
+            <div>
+              <button type="button" data-admin-view="bookings" id="navBookings"></button>
+              <button type="button" data-admin-view="admin" id="navAdmin"></button>
+              <button type="button" data-admin-view="users" id="navUsers">회원 관리</button>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="view active" id="marketView">
+        <div class="toolbar">
+          <div class="tabs" id="categoryTabs"></div>
+        </div>
+        <div class="filter-block">
+          <label class="search">
+            <span id="searchLabel"></span>
+            <input id="searchInput" type="search">
+          </label>
+          <div class="filter-row" id="typeTabs"></div>
+          <div class="filter-row" id="segmentTabs"></div>
+        </div>
+        <section class="featured-section" id="featuredSection">
+          <div class="market-head">
+            <h2 id="featuredTitle"></h2>
+            <span id="featuredHint"></span>
+          </div>
+          <div class="featured-grid" id="featuredList"></div>
+        </section>
+        <div class="market-head list-head">
+          <h2 id="expertTitle"></h2>
+          <span id="expertHint"></span>
+        </div>
+        <div class="layout">
+          <section class="coach-list" id="coachList"></section>
+          <section class="detail-panel" id="coachDetail"></section>
+        </div>
+      </section>
+
+      <section class="view" id="studentView">
+        <div class="section-head student-head">
+          <div>
+            <p class="eyebrow">수강생 화면</p>
+            <h2>내 강의 홈</h2>
+          </div>
+          <div class="student-balance">
+            <span>사용 가능 포인트</span>
+            <strong>0원</strong>
+          </div>
+        </div>
+        <div class="student-dashboard" id="studentViewContent"></div>
+      </section>
+
+      <section class="view" id="bookingsView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" id="bookingEyebrow"></p>
+            <h2 id="bookingTitle"></h2>
+          </div>
+          <button class="secondary" id="clearBookingsBtn"></button>
+        </div>
+        <div class="booking-tools">
+          <select id="bookingStatusFilter"></select>
+          <input id="bookingSearchInput" type="search" placeholder="수강생 또는 코치명 검색">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th id="thStatus"></th>
+                <th id="thStudent"></th>
+                <th id="thLesson"></th>
+                <th id="thTime"></th>
+                <th id="thContact"></th>
+                <th id="thMemo"></th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody id="bookingRows"></tbody>
+          </table>
+        </div>
+        <section class="booking-detail-panel" id="bookingDetail" hidden></section>
+        <section class="refund-admin-panel" id="refundAdminPanel"></section>
+      </section>
+
+      <section class="view" id="adminView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" id="adminEyebrow"></p>
+            <h2 id="adminTitle"></h2>
+          </div>
+        </div>
+        <div class="booking-tools admin-coach-tools">
+          <input id="adminCoachSearchInput" type="search" placeholder="코치명 또는 코치 키 검색" aria-label="코치 검색">
+          <button class="secondary" id="reloadAdminCoachSettingsBtn" type="button">새로고침</button>
+        </div>
+        <form class="admin-form" id="coachForm">
+          <input type="hidden" id="coachId">
+          <label hidden><span id="labelCategory"></span>
+            <select id="coachCategory">
+              <option value="league" id="optLeague"></option>
+              <option value="valorant" id="optValorant"></option>
+              <option value="academy" id="optAcademy"></option>
+            </select>
+          </label>
+          <label hidden><span id="labelName"></span><input id="coachName"></label>
+          <label hidden><span id="labelTagline"></span><input id="coachTagline"></label>
+          <div class="price-builder" hidden>
+            <label><span>가격</span><input id="coachPriceAmount" inputmode="numeric" placeholder="예: 70000"></label>
+            <label><span>기준</span>
+              <select id="coachPriceUnitType">
+                <option value="time">시간</option>
+                <option value="game">게임</option>
+              </select>
+            </label>
+            <label><span>단위</span>
+              <select id="coachPriceUnit"></select>
+            </label>
+            <input id="coachPrice" type="hidden">
+          </div>
+          <fieldset class="choice-field" hidden>
+            <legend id="labelPurpose"></legend>
+            <div class="choice-grid" id="coachPurposeChoices"></div>
+          </fieldset>
+          <fieldset class="choice-field" hidden>
+            <legend id="labelRoles"></legend>
+            <div class="choice-stack" id="coachRoleChoices"></div>
+          </fieldset>
+          <input id="coachImage" type="hidden">
+          <input id="coachFeaturedImage" type="hidden">
+          <input id="coachDetailImage" type="hidden">
+          <label class="image-position-raw" hidden><span id="labelImagePosition"></span><input id="coachImagePosition" readonly></label>
+          <div class="image-upload-grid wide" hidden>
+            <div class="image-upload-card">
+              <label><span>상단 추천 이미지 <small>엠버서더/최우수 노출용 · 권장 1200x675</small></span><input id="coachFeaturedImageFile" type="file" accept="image/*"></label>
+              <div class="image-preview banner-preview">
+                <div class="image-preview-frame banner" id="coachFeaturedImagePreview"></div>
+                <span>추천 상단 카드에 표시</span>
+              </div>
+              <button type="button" class="secondary image-crop-button" id="openFeaturedCropBtn">상단 추천 이미지 범위 지정</button>
+            </div>
+            <div class="image-upload-card">
+              <label><span>일반 목록 이미지 <small>목록 카드용 · 권장 520x520</small></span><input id="coachImageFile" type="file" accept="image/*"></label>
+              <div class="image-preview thumbnail-preview">
+                <div class="image-preview-frame" id="coachImagePreview"></div>
+                <span>상품 목록 카드에 표시</span>
+              </div>
+              <button type="button" class="secondary image-crop-button" id="openCropBtn">일반 목록 이미지 범위 지정</button>
+            </div>
+            <div class="image-upload-card">
+              <label><span>상세 설명 이미지 <small>상세 패널용 · 권장 1200x675</small></span><input id="coachDetailImageFile" type="file" accept="image/*"></label>
+              <div class="image-preview banner-preview">
+                <div class="image-preview-frame banner" id="coachDetailImagePreview"></div>
+                <span>오른쪽 상세 화면에 표시</span>
+              </div>
+              <button type="button" class="secondary image-crop-button" id="openDetailCropBtn">상세 설명 이미지 범위 지정</button>
+            </div>
+          </div>
+          <div class="admin-selected-coach" id="adminSelectedCoach">코치 목록에서 관리할 코치를 선택하세요.</div>
+          <fieldset class="choice-field">
+            <legend id="labelBadges"></legend>
+            <div class="badge-picker">
+              <select id="coachBadgeSelect"></select>
+              <button type="button" class="secondary" id="addCoachBadgeBtn">추가</button>
+            </div>
+            <div class="choice-grid" id="coachBadgeChoices"></div>
+          </fieldset>
+          <label><span>강의 수수료율 (%)</span><input id="coachCommissionRate" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="예: 10"></label>
+          <label class="wide"><span>특이사항</span><textarea id="coachAdminNote" rows="4" maxlength="2000" placeholder="관리자만 보는 메모"></textarea></label>
+          <label class="wide" hidden><span id="labelBio"></span><textarea id="coachBio" rows="4"></textarea></label>
+          <div class="form-actions">
+            <button type="submit" class="primary" id="saveCoachBtn"></button>
+            <span class="save-status" id="coachSaveStatus" aria-live="polite"></span>
+          </div>
+        </form>
+        <div class="admin-list" id="adminCoachList"></div>
+      </section>
+
+      <section class="view" id="usersView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">관리자 화면</p>
+            <h2>회원 관리</h2>
+          </div>
+          <button class="secondary" id="reloadUsersBtn" type="button">새로고침</button>
+        </div>
+        <div class="booking-tools user-tools">
+          <input id="userSearchInput" type="search" placeholder="닉네임, 이메일, 코치명 검색" aria-label="회원 검색">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>닉네임</th>
+                <th>이메일</th>
+                <th>권한</th>
+                <th>Discord</th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+        <div class="section-head compact-head">
+          <div>
+            <p class="eyebrow">신청 확인</p>
+            <h2>코치 등록 요청</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>신청자</th>
+                <th>코치명</th>
+                <th>소개</th>
+                <th>상태</th>
+                <th>처리</th>
+              </tr>
+            </thead>
+            <tbody id="coachRequestRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="view" id="coachApplyView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">코치 등록</p>
+            <h2>코치 등록 요청</h2>
+          </div>
+        </div>
+        <form class="admin-form coach-apply-form" id="coachApplyForm">
+          <label>코치 이름<input name="coachName" required placeholder="예: 루시드 코치"></label>
+          <label>게임<input name="game" value="리그오브레전드"></label>
+          <label>주 포지션 / 전문 분야<input name="mainRole" placeholder="예: 미드, 정글, 라인전, 팀게임"></label>
+          <label>현재 티어 / 경력<input name="tier" placeholder="예: 마스터, 팀 코치 경험 1년"></label>
+          <label>희망 가격<input name="price" placeholder="예: 30,000원 / 1게임"></label>
+          <label>연락처<input name="contact" required placeholder="디스코드 또는 이메일"></label>
+          <label class="wide">한 줄 소개<textarea name="intro" required rows="3" placeholder="예: 미드 라인전과 로밍 타이밍을 빠르게 잡아드립니다."></textarea></label>
+          <label class="wide">관리자에게 남길 내용<textarea name="sample" rows="5" placeholder="코칭 방식, 가능 시간, 대표 챔피언, 경력 등을 적어주세요."></textarea></label>
+          <div class="form-actions">
+            <button class="primary" type="submit" id="coachApplySubmitBtn">요청 보내기</button>
+            <span class="save-status" id="coachApplyStatus" aria-live="polite"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="view" id="coachSelfView">
+        <div class="section-head coach-self-head">
+          <div>
+            <p class="eyebrow">코치 개인 화면</p>
+            <h2>내 강의 관리</h2>
+          </div>
+          <div class="coach-self-tabs" id="coachSelfTabs"></div>
+        </div>
+        <div class="coach-self-layout">
+          <section class="coach-self-preview">
+            <div class="market-head">
+              <h2 id="coachSelfName">코치 선택</h2>
+              <span id="coachSelfHint">강의를 선택하면 오른쪽에서 수정합니다.</span>
+            </div>
+            <div id="coachSelfProfile"></div>
+            <div id="coachAvailabilityPanel"></div>
+          </section>
+          <section class="coach-self-editor" id="coachSelfEditor">
+            <div class="detail-empty">
+              <strong>강의를 선택해주세요.</strong>
+              <span>선택한 코치의 강의만 여기에서 개별 수정할 수 있습니다.</span>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="bookingFormTemplate">
+    <form class="booking-form" id="bookingForm">
+      <input name="student" type="hidden">
+      <div class="booking-student-auto" id="bookingStudentAuto" hidden></div>
+      <label><span id="bookingContactLabel"></span><input name="contact" required></label>
+      <label id="bookingTimeField"><span id="bookingTimeLabel"></span><input name="time" required></label>
+      <div class="availability-picker" id="bookingAvailabilityPicker" hidden>
+        <label><span>예약 가능한 시간 선택</span><select id="bookingAvailabilitySlot" name="availabilitySlotId"></select></label>
+         <small>코치가 등록한 빈 시간만 선택할 수 있습니다.</small>
+         <small class="booking-validation-error" id="bookingAvailabilityError" role="alert" hidden>예약 가능한 시간을 선택해주세요.</small>
+      </div>
+      <label><span id="bookingMemoLabel"></span><textarea name="memo" rows="3"></textarea></label>
+      <button type="submit" class="primary" id="bookingSubmitBtn"></button>
+    </form>
+  </template>
+  <div class="coach-explorer-modal" id="coachExplorerModal" hidden>
+    <div class="coach-explorer-dialog" role="dialog" aria-modal="true" aria-labelledby="coachExplorerTitle">
+      <button class="crop-close" id="coachExplorerCloseBtn" type="button" aria-label="닫기">×</button>
+      <div class="coach-explorer-head">
+        <div>
+          <span id="coachExplorerMeta"></span>
+          <h3 id="coachExplorerTitle">코치 목록</h3>
+        </div>
+        <label class="coach-explorer-search">
+          <span>검색</span>
+          <input id="coachExplorerSearch" type="search" placeholder="코치명, 라인, 강의명">
+        </label>
+      </div>
+      <div class="coach-explorer-filters">
+        <div id="coachExplorerRoleFilters"></div>
+        <div id="coachExplorerTierFilters"></div>
+      </div>
+      <div class="coach-explorer-grid" id="coachExplorerGrid"></div>
+    </div>
+  </div>
+  <div class="lesson-detail-modal" id="lessonDetailModal" hidden>
+    <div class="lesson-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="lessonDetailTitle">
+      <button class="crop-close" id="lessonDetailCloseBtn" type="button" aria-label="닫기">×</button>
+      <div id="lessonDetailBody"></div>
+    </div>
+  </div>
+  <div class="auth-modal" id="authModal" hidden>
+    <div class="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="crop-close" id="authCloseBtn" type="button" aria-label="닫기">×</button>
+      <div class="auth-tabs">
+        <button type="button" class="active" data-auth-mode="login">로그인</button>
+        <button type="button" data-auth-mode="signup">회원가입</button>
+        <button type="button" data-auth-mode="guest">비회원 구매</button>
+      </div>
+      <div id="authBody"></div>
+    </div>
+  </div>
+  <div class="crop-modal" id="cropModal" hidden>
+    <div class="crop-dialog">
+      <button class="crop-close" id="cropCloseBtn" type="button" aria-label="닫기">×</button>
+      <h3 id="cropTitle">이미지 범위 지정</h3>
+      <div class="crop-stage">
+        <img id="cropImage" alt="">
+        <div class="crop-box" id="cropBox"></div>
+      </div>
+      <div class="crop-controls">
+        <label><span>가로</span><input id="cropX" type="range" min="0" max="100" value="50"></label>
+        <label><span>세로</span><input id="cropY" type="range" min="0" max="100" value="50"></label>
+        <label><span>줌</span><input id="cropSize" type="range" min="18" max="100" value="70"></label>
+      </div>
+      <button type="button" class="primary" id="applyCropBtn">적용하기</button>
+    </div>
+  </div>
+
+  <script src="https://js.tosspayments.com/v2/standard"></script>
+  <script type="module" src="app.js?v=20260824-account1"></script>
+</body>
+</html>
