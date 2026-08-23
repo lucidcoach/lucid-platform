@@ -373,6 +373,10 @@ function boot() {
   bindEvents();
   showOAuthResult();
   loadCurrentUser();
+  startAuthSessionWatcher();
+  if (new URLSearchParams(window.location.search).get("reset_token")) {
+    openAuthModal("reset");
+  }
   loadCoachesFromApi();
 }
 
@@ -759,9 +763,9 @@ function openAuthModal(mode = "login") {
   const modal = $("authModal");
   const body = $("authBody");
   if (!modal || !body) return;
-  const nextMode = ["login", "signup", "guest"].includes(mode) ? mode : "login";
+  const nextMode = ["login", "signup", "guest", "forgot", "reset"].includes(mode) ? mode : "login";
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.authMode === nextMode);
+    button.classList.toggle("active", button.dataset.authMode === nextMode || (nextMode === "forgot" && button.dataset.authMode === "login") || (nextMode === "reset" && button.dataset.authMode === "login"));
   });
   body.innerHTML = renderAuthMarkup(nextMode);
   bindAuthForm(nextMode);
@@ -796,6 +800,40 @@ function bindPasswordToggles(root = document) {
 }
 
 function renderAuthMarkup(mode) {
+  if (mode === "forgot") {
+    return `
+      <form class="auth-content" id="passwordRecoveryForm">
+        <h2 id="authTitle">비밀번호 찾기</h2>
+        <p>가입한 이메일을 입력하면 비밀번호 재설정 안내를 요청합니다.</p>
+        <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
+        <button class="primary" type="submit">재설정 안내 받기</button>
+        <button class="auth-text-button" type="button" data-back-to-login>로그인으로 돌아가기</button>
+        <span class="auth-status" id="authStatus" aria-live="polite"></span>
+      </form>
+    `;
+  }
+  if (mode === "reset") {
+    return `
+      <form class="auth-content" id="passwordResetForm">
+        <h2 id="authTitle">새 비밀번호 설정</h2>
+        <p>새 비밀번호를 8자 이상 32자 이하로 입력해주세요.</p>
+        <label>새 비밀번호
+          <span class="password-field">
+            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 32자 이하">
+            <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
+          </span>
+        </label>
+        <label>새 비밀번호 확인
+          <span class="password-field">
+            <input name="passwordConfirm" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="한 번 더 입력">
+            <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
+          </span>
+        </label>
+        <button class="primary" type="submit">비밀번호 변경</button>
+        <span class="auth-status" id="authStatus" aria-live="polite"></span>
+      </form>
+    `;
+  }
   if (mode === "signup") {
     return `
       <form class="auth-content" id="authForm">
@@ -819,15 +857,14 @@ function renderAuthMarkup(mode) {
     const selected = state.coaches.find((coach) => coach.id === state.selectedCoachId);
     return `
       <form class="auth-content" id="guestConsultForm">
-        <span class="eyebrow">비회원 강의 구매</span>
-        <h2 id="authTitle">비회원으로 강의 구매</h2>
+        <h2 id="authTitle">로그인 없이 구매 상담</h2>
         <p>로그인 없이 Riot ID와 연락처를 남기면 운영진이 확인 후 구매 일정을 안내합니다.</p>
         ${selected ? `<div class="guest-selected"><span>선택 강의</span><strong>${escapeHtml(selected.name)}</strong><em>${escapeHtml(selected.price)}</em></div>` : ""}
         <label>Riot 닉네임#태그<input name="riotId" required placeholder="Riot 닉네임#태그"></label>
         <label>연락처<input name="contact" required placeholder="디스코드 또는 이메일"></label>
         <label>받고싶은 피드백 라인 및 포인트<textarea name="feedbackPoint" required rows="4" placeholder="예: 탑 라인, 가렌 1/5/10 게임 라인전이 잘 안풀려서 피드백 받고 싶습니다."></textarea></label>
         <label>강의 방식<textarea name="lessonStyle" required rows="3" placeholder="예: 주2회 한달 강의 희망합니다."></textarea></label>
-        <button class="primary" type="submit">비회원 강의 구매</button>
+        <button class="primary" type="submit">구매 상담 신청</button>
         <span class="auth-status" id="guestConsultStatus" aria-live="polite"></span>
       </form>
     `;
@@ -845,6 +882,7 @@ function renderAuthMarkup(mode) {
         </span>
       </label>
       <button class="primary" type="submit">로그인</button>
+      <button class="auth-text-button" type="button" data-forgot-password>비밀번호를 잊으셨나요?</button>
       <div class="auth-divider"><span>또는 소셜 계정으로</span></div>
       <div class="social-auth" aria-label="소셜 로그인">
         <button class="google" type="button" data-oauth-provider="google"><img src="assets/google-logo.jpg" alt=""><span>Google로 계속하기</span></button>
@@ -861,6 +899,14 @@ function bindAuthForm(mode) {
     bindGuestConsultForm();
     return;
   }
+  if (mode === "forgot") {
+    bindPasswordRecoveryForm();
+    return;
+  }
+  if (mode === "reset") {
+    bindPasswordResetForm();
+    return;
+  }
   const form = $("authForm");
   if (!form) return;
   form.querySelectorAll("[data-oauth-provider]").forEach((button) => {
@@ -868,6 +914,7 @@ function bindAuthForm(mode) {
       window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${button.dataset.oauthProvider}/start`);
     });
   });
+  form.querySelector("[data-forgot-password]")?.addEventListener("click", () => openAuthModal("forgot"));
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const button = form.querySelector("button[type='submit']");
@@ -907,6 +954,89 @@ function bindAuthForm(mode) {
     } finally {
       button.disabled = false;
       button.textContent = originalText;
+    }
+  });
+}
+
+async function requestPasswordRecovery(email) {
+  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/password/forgot`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  return result;
+}
+
+async function resetPasswordWithToken(token, password) {
+  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/password/reset`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  return result;
+}
+
+function bindPasswordRecoveryForm() {
+  const form = $("passwordRecoveryForm");
+  if (!form) return;
+  form.querySelector("[data-back-to-login]")?.addEventListener("click", () => openAuthModal("login"));
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = $("authStatus");
+    const button = form.querySelector("button[type='submit']");
+    const email = String(new FormData(form).get("email") || "").trim();
+    button.disabled = true;
+    if (status) status.textContent = "";
+    try {
+      await requestPasswordRecovery(email);
+      if (status) status.textContent = "입력한 이메일이 가입되어 있다면 재설정 안내가 전송됩니다.";
+    } catch (error) {
+      if (status) status.textContent = getAuthErrorMessage(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+function bindPasswordResetForm() {
+  const form = $("passwordResetForm");
+  if (!form) return;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = $("authStatus");
+    const button = form.querySelector("button[type='submit']");
+    const data = new FormData(form);
+    const password = String(data.get("password") || "");
+    const passwordConfirm = String(data.get("passwordConfirm") || "");
+    const token = new URLSearchParams(window.location.search).get("reset_token") || "";
+    if (password !== passwordConfirm) {
+      if (status) status.textContent = "새 비밀번호가 서로 일치하지 않습니다.";
+      return;
+    }
+    if (!token) {
+      if (status) status.textContent = "재설정 링크가 없거나 만료되었습니다. 비밀번호 찾기를 다시 진행해주세요.";
+      return;
+    }
+    button.disabled = true;
+    if (status) status.textContent = "";
+    try {
+      await resetPasswordWithToken(token, password);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("reset_token");
+      window.history.replaceState({}, "", url);
+      openAuthModal("login");
+      const loginStatus = $("authStatus");
+      if (loginStatus) loginStatus.textContent = "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.";
+    } catch (error) {
+      if (status) status.textContent = getAuthErrorMessage(error.message);
+    } finally {
+      button.disabled = false;
     }
   });
 }
@@ -1866,18 +1996,26 @@ function renderAvailabilityPicker(coach) {
   if (!picker || !select || !coach) return;
   const slots = state.availabilityByCoach[String(coach.id)] || [];
   if (!slots.length) {
-    picker.hidden = true;
+    picker.hidden = false;
     if (error) error.hidden = true;
     if (timeField) timeField.hidden = false;
     select.required = false;
+    const loadState = state.availabilityLoadStates[String(coach.id)] || "idle";
+    select.disabled = true;
+    select.innerHTML = loadState === "loading"
+      ? `<option>예약 가능 시간을 불러오는 중...</option>`
+      : loadState === "error"
+        ? `<option>시간표를 불러오지 못했습니다 · 희망 시간을 직접 입력해주세요</option>`
+        : `<option>등록된 확정 시간이 없습니다 · 희망 시간을 직접 입력해주세요</option>`;
     if (timeInput) {
       timeInput.readOnly = false;
       timeInput.required = true;
-      timeInput.placeholder = "예: 2026-08-20 21:00 (코치와 협의)";
+      timeInput.placeholder = "예: 8/26 21:00 또는 평일 20시 이후";
     }
     return;
   }
   picker.hidden = false;
+  select.disabled = false;
   if (error) error.hidden = true;
   if (timeField) timeField.hidden = true;
   select.required = true;
@@ -2061,6 +2199,59 @@ function mountBookingForm(mountId, coach) {
   });
 }
 
+let authSessionCheckTimer = null;
+
+function clearLocalSessionState() {
+  state.currentUser = null;
+  state.coachDashboardLoadState = "idle";
+  state.coachDashboardLoadError = "";
+  state.studentReservationLoadState = "idle";
+  state.studentReservationLoadError = "";
+  state.bookings = [];
+  state.refundRequests = [];
+  state.submittedReviewIds = [];
+  state.coachProfile = null;
+  state.coachProfileLoadState = "idle";
+  state.coachProfileLoadError = "";
+}
+
+async function checkAuthSession({ notify = false } = {}) {
+  if (!state.currentUser || !API_BASE_URL || API_BASE_URL.includes("YOUR-COACH-API")) return true;
+  try {
+    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && result.ok && result.user) {
+      state.currentUser = result.user;
+      return true;
+    }
+    if (response.status === 401 || !result.user) {
+      clearLocalSessionState();
+      render();
+      if (notify) {
+        openAuthModal("login");
+        const status = $("authStatus");
+        if (status) status.textContent = "로그인 세션이 만료되었습니다. 다시 로그인해주세요.";
+      }
+      return false;
+    }
+  } catch {
+    // 네트워크 오류는 세션 만료로 단정하지 않습니다.
+  }
+  return true;
+}
+
+function startAuthSessionWatcher() {
+  if (authSessionCheckTimer) window.clearInterval(authSessionCheckTimer);
+  authSessionCheckTimer = window.setInterval(() => checkAuthSession({ notify: true }), 10 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) checkAuthSession({ notify: true });
+  });
+}
+
 async function loadCurrentUser() {
   if (!API_BASE_URL || API_BASE_URL.includes("YOUR-COACH-API")) return;
   const requestId = ++state.authRequestId;
@@ -2160,7 +2351,6 @@ function getAuthErrorMessage(error) {
     invalid_display_name: "닉네임은 1~12자로 입력해주세요.",
     display_name_too_short: "닉네임은 1~12자로 입력해주세요.",
     display_name_too_long: "닉네임은 1~12자로 입력해주세요.",
-    email_already_exists: "이미 가입된 이메일입니다.",
     display_name_already_exists: "이미 사용 중인 닉네임입니다.",
     nickname_change_too_soon: "닉네임은 24시간에 한 번만 변경할 수 있습니다.",
     nickname_change_locked: "닉네임 변경 가능 시간이 아직 지나지 않았습니다.",
@@ -2170,6 +2360,12 @@ function getAuthErrorMessage(error) {
     cannot_delete_account: "현재 계정은 회원탈퇴를 처리할 수 없습니다.",
     missing_credentials: "이메일과 비밀번호를 입력해주세요.",
     invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
+    email_already_exists: "이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.",
+    discord_already_linked: "이 Discord 계정은 이미 다른 사이트 계정에 연결되어 있습니다.",
+    account_link_required: "같은 이메일의 기존 계정이 있습니다. 기존 계정으로 로그인한 뒤 소셜 계정을 연결해주세요.",
+    invalid_reset_token: "비밀번호 재설정 링크가 올바르지 않거나 만료되었습니다.",
+    reset_token_expired: "비밀번호 재설정 링크가 만료되었습니다. 다시 요청해주세요.",
+    password_reset_unavailable: "비밀번호 재설정 기능을 사용할 수 없습니다. 잠시 후 다시 시도해주세요.",
   };
   return messages[error] || "처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
 }

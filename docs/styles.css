@@ -1019,13 +1019,24 @@ button {
   color: var(--text);
   position: relative;
   box-shadow: 0 24px 70px rgba(0,0,0,0.34);
-  overflow: hidden;
+  overflow: visible;
 }
 .auth-dialog .crop-close {
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
   color: var(--text);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+  z-index: 4;
 }
 .auth-tabs {
   display: grid;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   background: var(--line);
@@ -1060,6 +1071,19 @@ button {
   cursor: not-allowed;
   opacity: 0.6;
 }
+.auth-text-button {
+  justify-self: center;
+  min-height: auto !important;
+  padding: 2px 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--brand-dark) !important;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-text-button:hover { opacity: 0.75; }
 .auth-divider {
   display: flex;
   align-items: center;
