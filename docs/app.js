@@ -771,12 +771,11 @@ function openAuthModal(mode = "login") {
 }
 
 function enforcePasswordInputLimit(root = document) {
-  root.querySelectorAll('input[name="password"]').forEach((input) => {
-    input.maxLength = PASSWORD_MAX_LENGTH;
+  root.querySelectorAll('.password-field input[type="password"], .password-field input[data-password-input]').forEach((input) => {
+    input.maxLength = 128;
+    input.dataset.passwordInput = "true";
     input.addEventListener("input", () => {
-      if (input.value.length > PASSWORD_MAX_LENGTH) {
-        input.value = input.value.slice(0, PASSWORD_MAX_LENGTH);
-      }
+      if (input.value.length > 128) input.value = input.value.slice(0, 128);
     });
   });
 }
@@ -786,6 +785,7 @@ function bindPasswordToggles(root = document) {
     button.addEventListener("click", () => {
       const input = button.closest(".password-field")?.querySelector("input");
       if (!input) return;
+      input.dataset.passwordInput = "true";
       const shouldShow = input.type === "password";
       input.type = shouldShow ? "text" : "password";
       button.textContent = shouldShow ? "숨김" : "보기";
@@ -806,7 +806,7 @@ function renderAuthMarkup(mode) {
         <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
         <label>비밀번호
           <span class="password-field">
-            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 128자 이하">
+            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="128" autocomplete="new-password" placeholder="8자 이상, 128자 이하">
             <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
           </span>
         </label>
@@ -840,7 +840,7 @@ function renderAuthMarkup(mode) {
       <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
       <label>비밀번호
         <span class="password-field">
-          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="current-password" placeholder="8자 이상, 128자 이하">
+          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="128" autocomplete="current-password" placeholder="8자 이상, 128자 이하">
           <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
         </span>
       </label>
