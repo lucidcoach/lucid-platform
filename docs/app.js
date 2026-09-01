@@ -1,9 +1,5 @@
-const categories = [
-  { id: "league", label: "리그오브레전드" },
-  { id: "valorant", label: "발로란트" },
-  { id: "academy", label: "테스트" },
-];
 
+import { categories, filterSets, purposes, adminLineOptions, adminFieldOptions, priceUnits, badgeOptions, text, samples, imageMigration, tierRank, leagueLessonOverrides, legacyCoachKeys, state } from "./js/catalog.js";
 import {
   ADMIN_TOKEN_KEY,
   API_BASE_URL,
@@ -28,7 +24,33 @@ import {
   saveCoachToApi,
   updateUserRole,
 } from "./js/admin.js";
-import { userIsAdmin, userIsCoach, userRoles } from "./js/auth.js";
+import { deleteCurrentUser as deleteCurrentUserApi, fetchCurrentUser, loginUser, logoutAuthSessions, signupUser, updateCurrentUser, userIsAdmin, userIsCoach, userRoles } from "./js/auth.js";
+import {
+  getCoachBadges,
+  getCoachPurposes,
+  getDetailImage,
+  getFeaturedImage,
+  getImageStyle,
+  getPurposeLabels,
+  getTierClass,
+  getWideImageStyle,
+  renderBadge,
+  renderCoachCard,
+  renderFeaturedCard,
+} from "./js/components/coachCard.js";
+import {
+  createCoachLesson,
+  deleteCoachLesson,
+  fetchCoachAvailability,
+  fetchCoachCatalog,
+  fetchCoachLessons,
+  fetchCoachProfile,
+  fetchCoachReviews,
+  fetchCoachSchedule,
+  saveCoachLesson,
+  saveCoachProfile,
+  saveCoachSchedule as saveCoachScheduleApi,
+} from "./js/coachService.js";
 import {
   buildReservationPayload,
   cancelPayment,
@@ -69,238 +91,6 @@ import {
   splitCsv,
 } from "./js/utils.js";
 
-const filterSets = {
-  league: {
-    type: [
-      { id: "all", label: "전체" },
-      { id: "value", label: "가성비 리플레이" },
-      { id: "low", label: "입문/저티어" },
-      { id: "high", label: "고티어/프로지망" },
-      { id: "team", label: "팀게임/스크림" },
-    ],
-    segment: [
-      { id: "all", label: "전체 라인" },
-      { id: "top", label: "탑" },
-      { id: "mid", label: "미드" },
-      { id: "jungle", label: "정글" },
-      { id: "adc", label: "원딜" },
-      { id: "support", label: "서폿" },
-    ],
-  },
-  valorant: {
-    type: [
-      { id: "all", label: "전체" },
-      { id: "value", label: "가성비 리플레이" },
-      { id: "low", label: "입문/저티어" },
-      { id: "high", label: "고티어/프로지망" },
-      { id: "team", label: "팀게임/스크림" },
-    ],
-    segment: [
-      { id: "all", label: "전체 역할" },
-      { id: "duelist", label: "타격대" },
-      { id: "controller", label: "전략가" },
-      { id: "initiator", label: "척후대" },
-      { id: "sentinel", label: "감시자" },
-      { id: "aim", label: "에임/피킹" },
-    ],
-  },
-  academy: {
-    type: [
-      { id: "all", label: "전체" },
-      { id: "entry", label: "입문" },
-      { id: "curriculum", label: "커리큘럼" },
-      { id: "branding", label: "브랜딩" },
-    ],
-    segment: [
-      { id: "all", label: "전체 과정" },
-      { id: "coach-basic", label: "기초 과정" },
-      { id: "coach-advanced", label: "심화 과정" },
-      { id: "operation", label: "운영/관리" },
-    ],
-  },
-};
-
-const purposes = Object.values(filterSets).flatMap((set) => [...set.type, ...set.segment]).filter(
-  (item, index, array) => item.id !== "all" && array.findIndex((candidate) => candidate.id === item.id) === index
-);
-
-const adminLineOptions = {
-  league: ["탑", "미드", "정글", "원딜", "서폿"],
-  valorant: ["타격대", "척후대", "감시자", "전략가"],
-  academy: ["기초 과정", "심화 과정", "운영/관리"],
-};
-
-const adminFieldOptions = {
-  league: ["운영", "라인전", "시야", "오브젝트", "팀게임", "고티어"],
-  valorant: ["에임", "피킹", "엔트리", "스크림", "리플레이", "팀 피드백"],
-  academy: ["코치 입문", "커리큘럼", "피드백", "브랜딩", "운영", "수강생 관리"],
-};
-
-const priceUnits = {
-  time: ["30분", "1시간", "1.5시간", "2시간"],
-  game: ["1게임", "2게임", "3게임"],
-};
-
-const badgeOptions = ["엠버서더", "최우수", "우수", "추천", "일반", "저티어 입문", "입문 추천", "리뷰 우수", "팀 피드백 가능"];
-
-const text = {
-  navMarket: "강의 목록",
-  navBookings: "예약 관리",
-  navAdmin: "코치 관리",
-  navUsers: "회원 관리",
-  sideLabel: "예약 안내",
-  sideCopy: "코치 목록에서 원하는 상품을 고르면 상세 정보와 강의 구매를 바로 진행할 수 있습니다.",
-  heroEyebrow: "LoL 리플레이 분석 · 라인전 교정 · 팀 피드백",
-  heroTitle: "LoL 코칭 플랫폼",
-  metricCoachesLabel: "강의",
-  metricBookingsLabel: "예약",
-  metricRatingLabel: "평점",
-  searchLabel: "검색",
-  searchPlaceholder: "코치명, 라인, 챔피언, 강의명",
-  bookingEyebrow: "관리자 화면",
-  bookingTitle: "예약 신청 목록",
-  clearBookingsBtn: "예약 새로고침",
-  thStatus: "상태",
-  thStudent: "수강생",
-  thLesson: "강의",
-  thTime: "희망 시간",
-  thContact: "연락처",
-  thMemo: "메모",
-  adminEyebrow: "로컬 편집",
-  adminTitle: "코치 관리",
-  resetCoachesBtn: "4명 · 8강의로 초기화",
-  labelCategory: "카테고리",
-  labelName: "코치명",
-  labelTagline: "한 줄 소개",
-  labelPurpose: "분류",
-  labelRoles: "전문 분야",
-  labelPrice: "가격",
-  labelImage: "이미지 경로",
-  labelImagePosition: "이미지 위치",
-  labelBadges: "배지",
-  labelBio: "상세 설명",
-  optLeague: "리그오브레전드",
-  optValorant: "발로란트",
-  optAcademy: "테스트",
-  saveCoachBtn: "저장",
-  newCoachBtn: "새 강의",
-  deleteCoachBtn: "삭제",
-  bookingContactLabel: "Riot ID / Discord",
-  bookingTimeLabel: "희망 시간",
-  bookingMemoLabel: "요청사항",
-  bookingSubmitBtn: "강의 구매",
-  featuredTitle: "추천 코칭 상품",
-  featuredHint: "후기와 재예약률이 좋은 강의",
-  expertTitle: "코칭 상품 찾기",
-  expertHint: "라인, 티어, 팀게임 기준으로 골라보세요.",
-};
-
-const samples = [
-  { id: "coach-shineast", category: "league", name: "샤이니스트 코치", coachKey: "shineast", coachProfileName: "샤이니스트 코치", tier: "최우수", coachTier: "최우수", coachSummary: "프로팀 출신 · 모든 라인 피드백 · 팀게임 운영까지 가능", tagline: "프로팀식 운영, 라인전 교정, 팀게임 피드백까지 보는 고급 코칭", bio: "모든 라인과 팀게임을 프로팀 관점으로 점검합니다. 미니맵 시선, 턴 사용, 귀환 타이밍, 오더와 시야 컨트롤처럼 승패를 가르는 선택을 리플레이로 정리합니다.", purpose: ["value", "team", "high", "mid"], roles: ["탑", "정글", "미드", "원딜", "서폿", "팀게임"], price: "100,000원 / 1시간", image: "assets/shineast.png", featuredImage: "assets/shineast2.png", detailImage: "assets/shineast2.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 5.0, lessons: 212, reviews: [["사이니스트", "복기하면서 제가 맵을 거의 안 보고 있었다는 걸 깨달았어요."], ["미드연습중", "라인을 밀어야 할 때와 받아야 할 때가 구분됐어요."]], badges: ["최우수", "추천"], featuredAd: true },
-  { id: "coach-shineast-mid-value", category: "league", name: "미드 가성비 리플레이", coachKey: "shineast", coachProfileName: "샤이니스트 코치", tier: "최우수", coachTier: "최우수", coachSummary: "프로팀 출신 · 모든 라인 피드백 · 팀게임 운영까지 가능", tagline: "미드 라인전, 로밍 타이밍, 한타 합류를 핵심 장면 중심으로 빠르게 교정", bio: "미드 리플레이를 중심으로 라인 주도권, 귀환 타이밍, 정글과의 턴 사용, 사이드 합류 판단을 압축해서 봅니다. 부담 없는 리플레이 점검형 상품입니다.", purpose: ["value", "mid"], roles: ["미드", "라인전", "로밍", "리플레이"], price: "50,000원 / 1게임", image: "assets/shineast.png", featuredImage: "assets/shineast2.png", detailImage: "assets/shineast2.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.9, lessons: 84, reviews: [["미드연습중", "로밍을 가야 하는 타이밍이 명확해졌어요."], ["아지르유저", "라인을 밀고 뭘 해야 하는지 정리가 됐습니다."]], badges: ["추천", "리뷰 우수"] },
-  { id: "coach-mireu", category: "league", name: "정미르 코치", coachKey: "mireu", coachProfileName: "정미르 코치", tier: "우수", coachTier: "우수", coachSummary: "우수 수강생 · 저티어 친화 · 정글/팀게임 피드백", tagline: "저티어와 일반 수강생에게 쉬운 정글 동선, 갱각, 오브젝트 판단 코칭", bio: "학교 강의 경험을 바탕으로 입문자와 저티어가 바로 적용할 수 있는 판단 기준을 쉽게 정리합니다. 정글 첫 동선, 갱각, 오브젝트 판단과 팀게임 피드백을 부담 없는 가격대로 진행합니다.", purpose: ["jungle", "low", "team", "value"], roles: ["정글", "저티어", "팀게임", "입문"], price: "35,000원 / 1시간", image: "assets/mireu.png", featuredImage: "assets/mireu2.png", detailImage: "assets/mireu2.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.6, lessons: 72, reviews: [["게스트", "이전 리플레이로 설명해주셔서 이해가 빨랐어요."], ["입문자", "연습 순서가 생겨서 좋았습니다."]], badges: ["우수", "입문 추천"] },
-  { id: "coach-mireu-jungle-basic", category: "league", name: "저티어 정글 동선 입문", coachKey: "mireu", coachProfileName: "정미르 코치", tier: "우수", coachTier: "우수", coachSummary: "우수 수강생 · 저티어 친화 · 정글/팀게임 피드백", tagline: "첫 동선, 갱각, 오브젝트 판단을 저티어 기준으로 쉽게 정리하는 입문 코칭", bio: "정글을 막 시작했거나 동선이 자주 꼬이는 수강생에게 맞춘 강의입니다. 첫 캠프 선택, 라인 상태 읽기, 갱킹 타이밍, 용과 전령 판단을 쉬운 기준으로 정리합니다.", purpose: ["jungle", "low", "value"], roles: ["정글", "저티어", "입문", "오브젝트"], price: "25,000원 / 1게임", image: "assets/mireu.png", featuredImage: "assets/mireu2.png", detailImage: "assets/mireu2.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.6, lessons: 38, reviews: [["브론즈정글", "첫 동선 기준이 생겼어요."], ["누누연습", "오브젝트를 언제 쳐야 하는지 알겠어요."]], badges: ["입문 추천", "저티어 입문"] },
-  { id: "coach-persona", category: "league", name: "페르소나 코치", coachKey: "persona", coachProfileName: "페르소나 코치", tier: "우수", coachTier: "우수", coachSummary: "탑 라이너 출신 · 이론 중심 · 고티어까지 가능", tagline: "탑 라인 매치업, 웨이브, 텔 타이밍을 이론 중심으로 정리하는 코칭", bio: "탑 라인에서 손해를 보는 구간을 매치업과 웨이브 기준으로 분석합니다. 라인전 이론, 텔레포트 타이밍, 사이드 운영처럼 탑 라이너에게 중요한 판단을 리플레이로 점검합니다.", purpose: ["top", "high", "value"], roles: ["탑", "라인전", "고티어", "이론"], price: "45,000원 / 1시간", image: "assets/persona2.png", featuredImage: "assets/persona.png", detailImage: "assets/persona.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.5, lessons: 41, reviews: [["게스트", "지게 보는 각도 고칠 게 명확했습니다."], ["초보탑", "뭘 몰라서 지는지 알게 됐어요."]], badges: ["우수"] },
-  { id: "coach-persona-top-matchup", category: "league", name: "탑 매치업 집중 리플레이", coachKey: "persona", coachProfileName: "페르소나 코치", tier: "우수", coachTier: "우수", coachSummary: "탑 라이너 출신 · 이론 중심 · 고티어까지 가능", tagline: "탑 라인 매치업과 웨이브 손해 구간을 한 게임 단위로 짚는 리플레이 코칭", bio: "탑 라인에서 솔킬각, 웨이브 위치, 귀환 타이밍, 텔레포트 사용을 매치업별로 점검합니다. 특정 챔피언 상대법을 빠르게 정리하고 싶은 수강생에게 맞춘 상품입니다.", purpose: ["top", "value"], roles: ["탑", "매치업", "라인전", "웨이브"], price: "30,000원 / 1게임", image: "assets/persona2.png", featuredImage: "assets/persona.png", detailImage: "assets/persona.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.5, lessons: 29, reviews: [["탑연습", "상성 때문에 지는 줄 알았는데 웨이브가 문제였어요."], ["잭스유저", "딜교 타이밍이 훨씬 명확해졌습니다."]], badges: ["추천", "우수"] },
-  { id: "coach-mephi", category: "league", name: "메피 코치", coachKey: "mephi", coachProfileName: "메피 코치", tier: "엠버서더", coachTier: "엠버서더", coachSummary: "전프로 바텀 라이너 · 전 라인 피드백 · 팀게임 리뷰 가능", tagline: "바텀 라인전과 전 라인 리플레이를 전프로 관점으로 보는 코칭", bio: "시즌 5부터 현재까지 챌린저를 유지한 바텀 라이너 관점으로 라인전, 교전, 한타 포지션을 점검합니다. 전 라인 피드백과 팀게임 리뷰까지 가능하며, 운영과 시야 컨트롤도 함께 봅니다.", purpose: ["adc", "support", "team", "high"], roles: ["원딜", "서폿", "전 라인", "팀게임"], price: "70,000원 / 1시간", image: "assets/mephi.png", featuredImage: "assets/mephi2.png", detailImage: "assets/mephi2.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.8, lessons: 103, reviews: [["리조또", "라인전 전에 계속 뭘 봐야 하는지 처음으로 이해됐어요."], ["봄", "상대 정글 위치를 근거로 플레이하는 법을 배웠습니다."]], badges: ["엠버서더", "추천"], featuredAd: true },
-  { id: "coach-mephi-bot-lane", category: "league", name: "바텀 라인전 듀오 피드백", coachKey: "mephi", coachProfileName: "메피 코치", tier: "엠버서더", coachTier: "엠버서더", coachSummary: "전프로 바텀 라이너 · 전 라인 피드백 · 팀게임 리뷰 가능", tagline: "원딜과 서폿의 라인전 합, 선2렙, 교전각을 전프로 관점으로 점검", bio: "바텀 듀오 또는 원딜/서폿 개인에게 맞춘 상품입니다. 선2렙 설계, 미니언 웨이브, 시야 타이밍, 용 전 교전 준비를 리플레이로 정리합니다.", purpose: ["adc", "support", "high", "value"], roles: ["원딜", "서폿", "라인전", "교전"], price: "55,000원 / 1게임", image: "assets/mephi.png", featuredImage: "assets/mephi2.png", detailImage: "assets/mephi2.png", imagePosition: "center center", featuredImagePosition: "center center", detailImagePosition: "center center", rating: 4.8, lessons: 67, reviews: [["원딜유저", "서폿이랑 언제 싸워야 하는지 알게 됐어요."], ["서폿연습", "와드 타이밍이 훨씬 깔끔해졌습니다."]], badges: ["엠버서더", "리뷰 우수"] },
-];
-
-const initialBookings = [];
-
-const imageMigration = {
-  "assets/logo.png": "assets/logo.jpg",
-  "assets/lol-logo.png": "assets/logo.jpg",
-  "assets/lollogo.png": "assets/logo.jpg",
-  "assets/NSshineast.jpg": "assets/shineast.png",
-  "assets/mephicoach.png": "assets/mephi.png",
-  "assets/mireucoach.png": "assets/mireu.png",
-  "assets/personacoach.png": "assets/persona2.png",
-};
-const tierRank = { "엠버서더": 0, "최우수": 1, "우수": 2, "일반": 3 };
-
-const leagueLessonOverrides = {
-  "coach-shineast": { coachKey: "shineast", purpose: ["value", "team", "high", "mid"] },
-  "coach-mireu": { coachKey: "mireu" },
-  "coach-persona": { coachKey: "persona" },
-  "coach-mephi": { coachKey: "mephi" },
-};
-const legacyCoachKeys = { "lol-1": "persona", "lol-2": "shineast", "lol-3": "mireu", "lol-5": "mephi" };
-const state = {
-  activeView: "market",
-  category: "league",
-  type: "all",
-  segment: "all",
-  selectedCoachId: null,
-  selectedCoachKey: null,
-  recentCoachKeys: [],
-  coachSelfKey: "shineast",
-  coachSelfLessonId: null,
-  query: "",
-  coachExplorerQuery: "",
-  coachExplorerRole: "all",
-  coachExplorerTier: "all",
-  coaches: [],
-  coachSelfLessons: null,
-  coachLoadState: "idle",
-  adminCoachSettings: [],
-  adminCoachSettingsLoadState: "idle",
-  adminCoachSettingsLoadError: "",
-  adminCoachSettingsRequestId: 0,
-  adminCoachQuery: "",
-  adminSelectedCoachKey: "",
-  bookings: [],
-  bookingLoadState: "idle",
-  bookingLoadError: "",
-  bookingRequestId: 0,
-  coachDashboardLoadState: "idle",
-  coachDashboardLoadError: "",
-  studentReservationLoadState: "idle",
-  studentReservationLoadError: "",
-  bookingFilterStatus: "all",
-  bookingQuery: "",
-  bookingPendingStatuses: {},
-  selectedBookingId: null,
-  users: [],
-  userLoadState: "idle",
-  userLoadError: "",
-  userRequestId: 0,
-  userQuery: "",
-  userSaveStates: {},
-  coachRequests: [],
-  coachRequestLoadState: "idle",
-  coachRequestLoadError: "",
-  cropSourceImage: "",
-  cropTarget: null,
-  coachProfile: null,
-  coachProfileLoadState: "idle",
-  coachProfileLoadError: "",
-  currentUser: null,
-  authLoadState: "idle",
-  authRequestId: 0,
-  availabilityByCoach: {},
-  availabilityLoadStates: {},
-  coachAvailability: [],
-  coachAvailabilityLoadState: "idle",
-  coachAvailabilityLoadError: "",
-  coachSchedule: { weekly: [], overrides: [], slots: [] },
-  coachScheduleLoadState: "idle",
-  coachScheduleLoadError: "",
-  coachScheduleWeekStart: "",
-  coachScheduleDraft: null,
-  coachScheduleShowAllHours: false,
-  coachScheduleEditMode: "weekly",
-  refundRequests: [],
-  adminRefundRequests: [],
-  refundAdminLoadState: "idle",
-  refundAdminLoadError: "",
-  reviewsByCoach: {},
-  submittedReviewIds: [],
-  accountOverview: null,
-  accountOverviewLoadState: "idle",
-  accountOverviewLoadError: "",
-  settlementCalendarMonth: "",
-};
 
 function migrateCoachImages(coaches) {
   return normalizeCoachProfiles(coaches.map((coach) => ({
@@ -377,10 +167,6 @@ function boot() {
   bindEvents();
   showOAuthResult();
   loadCurrentUser();
-  startAuthSessionWatcher();
-  if (new URLSearchParams(window.location.search).get("reset_token")) {
-    openAuthModal("reset");
-  }
   loadCoachesFromApi();
 }
 
@@ -406,7 +192,11 @@ function showOAuthResult() {
   }
 }
 
+let eventsBound = false;
+
 function bindEvents() {
+  if (eventsBound) return;
+  eventsBound = true;
   $("homeLogo").addEventListener("click", () => {
     state.activeView = "market";
     state.category = "league";
@@ -767,25 +557,14 @@ function openAuthModal(mode = "login") {
   const modal = $("authModal");
   const body = $("authBody");
   if (!modal || !body) return;
-  const nextMode = ["login", "signup", "guest", "forgot", "reset"].includes(mode) ? mode : "login";
+  const nextMode = ["login", "signup", "guest"].includes(mode) ? mode : "login";
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.authMode === nextMode || (nextMode === "forgot" && button.dataset.authMode === "login") || (nextMode === "reset" && button.dataset.authMode === "login"));
+    button.classList.toggle("active", button.dataset.authMode === nextMode);
   });
   body.innerHTML = renderAuthMarkup(nextMode);
   bindAuthForm(nextMode);
-  enforcePasswordInputLimit(body);
   bindPasswordToggles(body);
   modal.hidden = false;
-}
-
-function enforcePasswordInputLimit(root = document) {
-  root.querySelectorAll('.password-field input[type="password"], .password-field input[data-password-input]').forEach((input) => {
-    input.maxLength = PASSWORD_MAX_LENGTH;
-    input.dataset.passwordInput = "true";
-    input.addEventListener("input", () => {
-      if (input.value.length > PASSWORD_MAX_LENGTH) input.value = input.value.slice(0, PASSWORD_MAX_LENGTH);
-    });
-  });
 }
 
 function bindPasswordToggles(root = document) {
@@ -793,7 +572,6 @@ function bindPasswordToggles(root = document) {
     button.addEventListener("click", () => {
       const input = button.closest(".password-field")?.querySelector("input");
       if (!input) return;
-      input.dataset.passwordInput = "true";
       const shouldShow = input.type === "password";
       input.type = shouldShow ? "text" : "password";
       button.textContent = shouldShow ? "숨김" : "보기";
@@ -804,40 +582,6 @@ function bindPasswordToggles(root = document) {
 }
 
 function renderAuthMarkup(mode) {
-  if (mode === "forgot") {
-    return `
-      <form class="auth-content" id="passwordRecoveryForm">
-        <h2 id="authTitle">비밀번호 찾기</h2>
-        <p>가입한 이메일을 입력하면 비밀번호 재설정 안내를 요청합니다.</p>
-        <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
-        <button class="primary" type="submit">재설정 안내 받기</button>
-        <button class="auth-text-button" type="button" data-back-to-login>로그인으로 돌아가기</button>
-        <span class="auth-status" id="authStatus" aria-live="polite"></span>
-      </form>
-    `;
-  }
-  if (mode === "reset") {
-    return `
-      <form class="auth-content" id="passwordResetForm">
-        <h2 id="authTitle">새 비밀번호 설정</h2>
-        <p>새 비밀번호를 8자 이상 32자 이하로 입력해주세요.</p>
-        <label>새 비밀번호
-          <span class="password-field">
-            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 32자 이하">
-            <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
-          </span>
-        </label>
-        <label>새 비밀번호 확인
-          <span class="password-field">
-            <input name="passwordConfirm" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="한 번 더 입력">
-            <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
-          </span>
-        </label>
-        <button class="primary" type="submit">비밀번호 변경</button>
-        <span class="auth-status" id="authStatus" aria-live="polite"></span>
-      </form>
-    `;
-  }
   if (mode === "signup") {
     return `
       <form class="auth-content" id="authForm">
@@ -848,7 +592,7 @@ function renderAuthMarkup(mode) {
         <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
         <label>비밀번호
           <span class="password-field">
-            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 32자 이하">
+            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 128자 이하">
             <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
           </span>
         </label>
@@ -861,14 +605,15 @@ function renderAuthMarkup(mode) {
     const selected = state.coaches.find((coach) => coach.id === state.selectedCoachId);
     return `
       <form class="auth-content" id="guestConsultForm">
-        <h2 id="authTitle">로그인 없이 구매 상담</h2>
+        <span class="eyebrow">비회원 강의 구매</span>
+        <h2 id="authTitle">비회원으로 강의 구매</h2>
         <p>로그인 없이 Riot ID와 연락처를 남기면 운영진이 확인 후 구매 일정을 안내합니다.</p>
         ${selected ? `<div class="guest-selected"><span>선택 강의</span><strong>${escapeHtml(selected.name)}</strong><em>${escapeHtml(selected.price)}</em></div>` : ""}
         <label>Riot 닉네임#태그<input name="riotId" required placeholder="Riot 닉네임#태그"></label>
         <label>연락처<input name="contact" required placeholder="디스코드 또는 이메일"></label>
         <label>받고싶은 피드백 라인 및 포인트<textarea name="feedbackPoint" required rows="4" placeholder="예: 탑 라인, 가렌 1/5/10 게임 라인전이 잘 안풀려서 피드백 받고 싶습니다."></textarea></label>
         <label>강의 방식<textarea name="lessonStyle" required rows="3" placeholder="예: 주2회 한달 강의 희망합니다."></textarea></label>
-        <button class="primary" type="submit">구매 상담 신청</button>
+        <button class="primary" type="submit">비회원 강의 구매</button>
         <span class="auth-status" id="guestConsultStatus" aria-live="polite"></span>
       </form>
     `;
@@ -881,12 +626,11 @@ function renderAuthMarkup(mode) {
       <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email" placeholder="example@email.com"></label>
       <label>비밀번호
         <span class="password-field">
-          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="current-password" placeholder="8자 이상, 32자 이하">
+          <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="current-password" placeholder="비밀번호">
           <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
         </span>
       </label>
       <button class="primary" type="submit">로그인</button>
-      <button class="auth-text-button" type="button" data-forgot-password>비밀번호를 잊으셨나요?</button>
       <div class="auth-divider"><span>또는 소셜 계정으로</span></div>
       <div class="social-auth" aria-label="소셜 로그인">
         <button class="google" type="button" data-oauth-provider="google"><img src="assets/google-logo.jpg" alt=""><span>Google로 계속하기</span></button>
@@ -903,14 +647,6 @@ function bindAuthForm(mode) {
     bindGuestConsultForm();
     return;
   }
-  if (mode === "forgot") {
-    bindPasswordRecoveryForm();
-    return;
-  }
-  if (mode === "reset") {
-    bindPasswordResetForm();
-    return;
-  }
   const form = $("authForm");
   if (!form) return;
   form.querySelectorAll("[data-oauth-provider]").forEach((button) => {
@@ -918,7 +654,6 @@ function bindAuthForm(mode) {
       window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${button.dataset.oauthProvider}/start`);
     });
   });
-  form.querySelector("[data-forgot-password]")?.addEventListener("click", () => openAuthModal("forgot"));
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const button = form.querySelector("button[type='submit']");
@@ -940,8 +675,6 @@ function bindAuthForm(mode) {
             password: data.get("password"),
           });
       state.currentUser = user;
-      state.accountOverview = null;
-      state.accountOverviewLoadState = "idle";
       if (state.currentUser?.coachKey) state.coachSelfKey = state.currentUser.coachKey;
       state.coachDashboardLoadState = "idle";
       state.coachDashboardLoadError = "";
@@ -960,89 +693,6 @@ function bindAuthForm(mode) {
     } finally {
       button.disabled = false;
       button.textContent = originalText;
-    }
-  });
-}
-
-async function requestPasswordRecovery(email) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/password/forgot`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-  return result;
-}
-
-async function resetPasswordWithToken(token, password) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/password/reset`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, password }),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-  return result;
-}
-
-function bindPasswordRecoveryForm() {
-  const form = $("passwordRecoveryForm");
-  if (!form) return;
-  form.querySelector("[data-back-to-login]")?.addEventListener("click", () => openAuthModal("login"));
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const status = $("authStatus");
-    const button = form.querySelector("button[type='submit']");
-    const email = String(new FormData(form).get("email") || "").trim();
-    button.disabled = true;
-    if (status) status.textContent = "";
-    try {
-      await requestPasswordRecovery(email);
-      if (status) status.textContent = "입력한 이메일이 가입되어 있다면 재설정 안내가 전송됩니다.";
-    } catch (error) {
-      if (status) status.textContent = getAuthErrorMessage(error.message);
-    } finally {
-      button.disabled = false;
-    }
-  });
-}
-
-function bindPasswordResetForm() {
-  const form = $("passwordResetForm");
-  if (!form) return;
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const status = $("authStatus");
-    const button = form.querySelector("button[type='submit']");
-    const data = new FormData(form);
-    const password = String(data.get("password") || "");
-    const passwordConfirm = String(data.get("passwordConfirm") || "");
-    const token = new URLSearchParams(window.location.search).get("reset_token") || "";
-    if (password !== passwordConfirm) {
-      if (status) status.textContent = "새 비밀번호가 서로 일치하지 않습니다.";
-      return;
-    }
-    if (!token) {
-      if (status) status.textContent = "재설정 링크가 없거나 만료되었습니다. 비밀번호 찾기를 다시 진행해주세요.";
-      return;
-    }
-    button.disabled = true;
-    if (status) status.textContent = "";
-    try {
-      await resetPasswordWithToken(token, password);
-      const url = new URL(window.location.href);
-      url.searchParams.delete("reset_token");
-      window.history.replaceState({}, "", url);
-      openAuthModal("login");
-      const loginStatus = $("authStatus");
-      if (loginStatus) loginStatus.textContent = "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.";
-    } catch (error) {
-      if (status) status.textContent = getAuthErrorMessage(error.message);
-    } finally {
-      button.disabled = false;
     }
   });
 }
@@ -1080,338 +730,36 @@ function bindGuestConsultForm() {
   });
 }
 
-function won(value) {
-  return `${Number(value || 0).toLocaleString("ko-KR")}원`;
-}
-
-function maskAccountNumber(value) {
-  const text = String(value || "").trim();
-  if (text.length <= 4) return text;
-  return `${text.slice(0, Math.min(4, text.length - 4))}${"•".repeat(Math.max(2, text.length - 8))}${text.slice(-4)}`;
-}
-
-async function loadAccountOverview() {
-  if (!state.currentUser || state.accountOverviewLoadState === "loading") return;
-  state.accountOverviewLoadState = "loading";
-  try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/overview`, { credentials: "include" });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-    state.accountOverview = result;
-    state.accountOverviewLoadState = "loaded";
-    state.accountOverviewLoadError = "";
-  } catch (error) {
-    state.accountOverviewLoadState = "error";
-    state.accountOverviewLoadError = getAuthErrorMessage(error.message);
-  }
-  if (state.activeView === "student") renderStudentHome();
-}
-
-function renderCouponList(coupons) {
-  if (!Array.isArray(coupons) || !coupons.length) return `<div class="account-empty">보유 중인 할인쿠폰이 없습니다.</div>`;
-  return `<div class="coupon-list">${coupons.map((coupon) => {
-    const discount = coupon.discountType === "percent" ? `${coupon.discountValue}%` : won(coupon.discountValue);
-    return `<div class="coupon-card"><strong>${escapeHtml(coupon.title || coupon.code)}</strong><span>${escapeHtml(coupon.code || "")} · ${escapeHtml(discount)}</span>${coupon.expiresAt ? `<small>${escapeHtml(formatDateTime(coupon.expiresAt))}까지</small>` : ""}</div>`;
-  }).join("")}</div>`;
-}
-
-function renderSettlementDetailMarkup(entries) {
-  const rows = Array.isArray(entries) ? entries : [];
-  return `<div class="settlement-detail-modal" id="settlementDetailModal" hidden>
-    <div class="settlement-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="settlementDetailTitle">
-      <div class="settlement-detail-head"><div><span>코치 정산</span><strong id="settlementDetailTitle">정산 상세 내역</strong></div><button type="button" class="secondary mini" id="settlementDetailCloseBtn">닫기</button></div>
-      <div class="settlement-detail-summary"><span>이번 달 정산 예정</span><strong>${won((state.accountOverview?.income || {}).monthNet || 0)}</strong></div>
-      <div class="settlement-detail-table-wrap"><table class="settlement-detail-table"><thead><tr><th>결제일</th><th>수강생</th><th>강의</th><th>결제금액</th><th>수수료</th><th>정산액</th></tr></thead><tbody>
-        ${rows.length ? rows.map((entry) => `<tr><td>${escapeHtml(entry.date || "-")}</td><td>${escapeHtml(entry.student || "수강생")}</td><td>${escapeHtml(entry.lesson || "강의")}</td><td>${won(entry.gross || 0)}</td><td>${won(entry.fee || Math.max(0, Number(entry.gross || 0) - Number(entry.net || 0)))}</td><td><strong>${won(entry.net || 0)}</strong></td></tr>`).join("") : `<tr><td colspan="6" class="account-empty">정산 내역이 없습니다.</td></tr>`}
-      </tbody></table></div>
-    </div>
-  </div>`;
-}
-
-function openSettlementDetail() {
-  const modal = $("settlementDetailModal");
-  if (modal) modal.hidden = false;
-}
-function closeSettlementDetail() {
-  const modal = $("settlementDetailModal");
-  if (modal) modal.hidden = true;
-}
-
-function scheduleDraftValue(key) {
-  if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
-  return Boolean(state.coachScheduleDraft[key]);
-}
-
-function applyScheduleCellClick(key, shiftKey, firstHour = 0, lastHour = 24) {
-  if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
-  const [weekdayText, minuteText] = String(key || "").split(":");
-  const weekday = Number(weekdayText);
-  const minute = Number(minuteText);
-  const anchorKey = state.coachScheduleShiftAnchor || "";
-  const [anchorWeekdayText, anchorMinuteText] = String(anchorKey || "").split(":");
-  const anchorWeekday = Number(anchorWeekdayText);
-  const anchorMinute = Number(anchorMinuteText);
-
-  if (
-    shiftKey &&
-    anchorKey &&
-    Number.isFinite(weekday) &&
-    Number.isFinite(minute) &&
-    weekday === anchorWeekday &&
-    Number.isFinite(anchorMinute)
-  ) {
-    const from = Math.max(firstHour * 60, Math.min(anchorMinute, minute));
-    const to = Math.min((lastHour - 1) * 60, Math.max(anchorMinute, minute));
-    const value = Boolean(state.coachScheduleDraft[anchorKey]);
-    for (let rangeMinute = from; rangeMinute <= to; rangeMinute += 60) {
-      state.coachScheduleDraft[`${weekday}:${rangeMinute}`] = value;
-    }
-  } else {
-    state.coachScheduleDraft[key] = !scheduleDraftValue(key);
-  }
-  state.coachScheduleShiftAnchor = key;
-}
-
-function renderAccountScheduleCalendarMarkup() {
-  if (!isCoachUser()) return "";
-  if (state.coachScheduleLoadState === "loading" || state.coachScheduleLoadState === "idle") {
-    return `<section class="account-section"><div class="student-panel-head"><span>코치 전용</span><strong>코칭 가능한 시간</strong></div><div class="account-empty">시간표를 불러오는 중...</div></section>`;
-  }
-  const weekStart = getCoachScheduleWeekStart();
-  const weekdays = [1,2,3,4,5,6,7];
-  const labels = ["월","화","수","목","금","토","일"];
-  const firstHour = 8;
-  const lastHour = 24;
-  const cells = [];
-  for (let hour = firstHour; hour < lastHour; hour += 1) {
-    cells.push(`<div class="mini-schedule-time">${String(hour).padStart(2,"0")}:00</div>`);
-    weekdays.forEach((weekday) => {
-      const date = addLocalDays(weekStart, weekday - 1);
-      const minute = hour * 60;
-      const cell = getScheduleCell(state.coachSchedule, date, minute);
-      const key = `${weekday}:${minute}`;
-      const open = state.coachScheduleDraft?.[key] ?? cell.open;
-      cells.push(`<button type="button" class="mini-schedule-cell ${open ? "open" : ""} ${cell.booked ? "booked" : ""}" data-account-schedule-cell="${key}" ${cell.booked ? "disabled" : ""}>${cell.booked ? "예약" : (open ? "가능" : "")}</button>`);
-    });
-  }
-  return `<section class="account-section account-schedule-compact">
-    <div class="student-panel-head"><span>코치 전용 · 모든 강의 공통</span><strong>코칭 가능한 시간</strong></div>
-    <div class="mini-schedule-hint">클릭 · 같은 요일에서 Shift+클릭으로 위↕아래 시간 구간 선택</div>
-    <div class="mini-schedule-head"><span></span>${labels.map((label, i) => `<b>${label}<small>${escapeHtml(isoDateOnly(addLocalDays(weekStart, i)).slice(5).replace("-", "/"))}</small></b>`).join("")}</div>
-    <div class="mini-schedule-grid">${cells.join("")}</div>
-    <div class="account-schedule-actions"><button type="button" class="secondary" id="accountSchedulePrevBtn">이전 주</button><button type="button" class="secondary" id="accountScheduleTodayBtn">이번 주</button><button type="button" class="secondary" id="accountScheduleNextBtn">다음 주</button><button type="button" class="primary" id="accountScheduleSaveBtn">매주 반복으로 저장</button></div>
-  </section>`;
-}
-
-
-function getLoginMethod(overview, provider) {
-  return overview?.loginMethods?.[provider] || { connected: false };
-}
-
-function renderLoginConnections(overview) {
-  const providers = [
-    ["google", "Google", "assets/google-logo.jpg"],
-    ["naver", "네이버", "assets/naver.jpg"],
-    ["discord", "Discord", "assets/discord-login.png"],
-  ];
-  return `
-    <section class="account-section account-connections-section">
-      <div class="account-simple-heading"><strong>계정 연결</strong></div>
-      <div class="account-connection-grid">
-        ${providers.map(([provider, label, icon]) => {
-          const method = getLoginMethod(overview, provider);
-          return `<div class="account-connection-card ${method.connected ? "connected" : ""}">
-            <span class="account-connection-logo"><img src="${icon}" alt="${label}"></span>
-            <strong>${label}</strong>
-            ${method.connected
-              ? `<span class="account-connection-status connected">연결됨</span>`
-              : `<button type="button" class="account-connection-status link" data-link-provider="${provider}">연동</button>`}
-          </div>`;
-        }).join("")}
-      </div>
-    </section>`;
-}
-
-function startAccountProviderLink(provider) {
-  if (!state.currentUser) {
-    openAuthModal("login");
-    return;
-  }
-  window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${encodeURIComponent(provider)}/start`);
-}
-
-async function saveAccountPassword(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const status = $("accountPasswordStatus");
-  const button = form.querySelector("button[type='submit']");
-  const data = new FormData(form);
-  const password = String(data.get("password") || "");
-  const passwordConfirm = String(data.get("passwordConfirm") || "");
-  if (password !== passwordConfirm) {
-    if (status) status.textContent = "새 비밀번호가 서로 일치하지 않습니다.";
-    return;
-  }
-  if (button) button.disabled = true;
-  if (status) { status.textContent = ""; status.className = "save-status"; }
-  try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/password`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        currentPassword: data.get("currentPassword") || "",
-        password,
-      }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-    state.accountOverviewLoadState = "idle";
-    await loadAccountOverview();
-    if (status) { status.textContent = "비밀번호 로그인 설정이 저장되었습니다."; status.className = "save-status success"; }
-    alert("이제 이메일과 비밀번호로도 같은 Lucid 계정에 로그인할 수 있습니다.");
-  } catch (error) {
-    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
-  } finally {
-    if (button) button.disabled = false;
-  }
-}
-
 function renderAccountPanelMarkup() {
   if (!state.currentUser) return "";
   const user = state.currentUser;
-  const overview = state.accountOverview || {};
   const nickname = user.displayName || user.nickname || "";
-  const riotId = user.riotId || user.riot_id || "";
   const availableAt = user.nicknameChangeAvailableAt || user.nickname_change_available_at || "";
   const availableText = availableAt ? formatDateTime(availableAt) : "변경 가능";
   const needsNickname = Boolean(user.needsNickname || user.nicknameSetupRequired || user.nickname_setup_required);
-  const income = overview.income || {};
   return `
     <section class="student-panel account-panel" id="accountPanel">
-      <div class="student-panel-head"><span>내 정보</span><strong>계정 및 서비스 정보</strong></div>
+      <div class="student-panel-head"><span>내 정보</span><strong>계정 설정</strong></div>
       ${needsNickname ? `<p class="account-required">서비스 이용을 위해 닉네임을 먼저 설정해주세요.</p>` : ""}
-      <section class="account-section">
-        <h3>기본 정보</h3>
-        <form class="account-profile-grid" id="accountProfileForm">
-          <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" value="${escapeHtml(nickname)}"></label>
-          <label>Riot ID#태그<input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"></label>
-          <button class="primary" type="submit" id="accountProfileSaveBtn">기본 정보 저장</button>
-          <span class="save-status" id="accountProfileStatus" aria-live="polite"></span>
-        </form>
-      </section>
-      ${renderLoginConnections(overview)}
-      <section class="account-section account-assets">
-        <div class="account-stat"><span>현재 잔여 포인트</span><strong>${Number(overview.points || 0).toLocaleString("ko-KR")}P</strong></div>
-        ${isCoachUser() ? `<div class="account-stat"><span>이번 달 수익</span><strong>${won(income.monthNet || 0)}</strong><small>플랫폼 수수료 ${Number(income.commissionRate || 0)}% 반영 · 결제 완료 기준</small></div>` : ""}
-      </section>
-      <section class="account-section"><div class="student-panel-head"><span>혜택</span><strong>보유 중인 할인쿠폰</strong></div>${state.accountOverviewLoadState === "loading" ? `<div class="account-empty">불러오는 중...</div>` : renderCouponList(overview.coupons || [])}</section>
-      ${isCoachUser() ? `<div class="coach-account-tools-row">
-        <div class="coach-account-tool coach-account-tool-schedule">${renderAccountScheduleCalendarMarkup()}</div>
-        <div class="coach-account-tool coach-account-tool-settlement">
-          <section class="account-section coach-finance-compact">
-            <div class="student-panel-head"><span>코치 전용</span><strong>정산 내역</strong></div>
-            <div class="coach-settlement-mini">
-              <span>이번 달 정산 예정</span>
-              <strong>${won(income.monthNet || 0)}</strong>
-              <button type="button" class="secondary mini" id="settlementDetailOpenBtn">상세 내역 보기</button>
-            </div>
-          </section>
-        </div>
+      <form class="account-form" id="accountNicknameForm">
+        <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" pattern=".{1,12}" value="${escapeHtml(nickname)}"></label>
+        <button class="secondary" type="submit" id="accountNicknameSaveBtn">닉네임 저장</button>
+        <span class="save-status" id="accountNicknameStatus" aria-live="polite">다음 변경 가능: ${escapeHtml(availableText)}</span>
+      </form>
+      <div class="account-danger">
+        <div><strong>회원탈퇴</strong><small>탈퇴하면 계정과 로그인 세션을 사용할 수 없습니다.</small></div>
+        <button class="danger" type="button" id="accountDeleteBtn">회원탈퇴</button>
       </div>
-      ${renderSettlementDetailMarkup(income.entries || [])}` : ""}
-      ${state.accountOverviewLoadState === "error" ? `<p class="save-status error">${escapeHtml(state.accountOverviewLoadError)}</p>` : ""}
-      <div class="account-danger account-danger-bottom"><div><strong>회원탈퇴</strong><small>탈퇴하면 계정과 로그인 세션을 사용할 수 없습니다. 결제/정산 기록은 법적·회계상 필요한 범위에서 보존될 수 있습니다.</small></div><button class="danger" type="button" id="accountDeleteBtn">회원탈퇴</button></div>
-    </section>`;
+    </section>
+    ${isCoachUser() ? renderScheduleSummaryMarkup() : ""}
+  `;
 }
 
 function mountAccountPanel(container) {
   if (!container || !state.currentUser) return;
   container.insertAdjacentHTML("afterbegin", renderAccountPanelMarkup());
-  $("accountProfileForm")?.addEventListener("submit", saveAccountProfile);
-  document.querySelectorAll("[data-link-provider]").forEach((button) => button.addEventListener("click", () => startAccountProviderLink(button.dataset.linkProvider)));
+  $("accountNicknameForm")?.addEventListener("submit", saveAccountNickname);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
-  $("settlementDetailOpenBtn")?.addEventListener("click", openSettlementDetail);
-  $("settlementDetailCloseBtn")?.addEventListener("click", closeSettlementDetail);
-  $("settlementDetailModal")?.addEventListener("click", (event) => { if (event.target.id === "settlementDetailModal") closeSettlementDetail(); });
-  document.querySelectorAll("[data-account-schedule-cell]").forEach((button) => button.addEventListener("click", (event) => {
-    applyScheduleCellClick(button.dataset.accountScheduleCell, event.shiftKey, 8, 24);
-    renderStudentHome();
-  }));
-  $("accountSchedulePrevBtn")?.addEventListener("click", () => moveAccountScheduleWeek(-7));
-  $("accountScheduleTodayBtn")?.addEventListener("click", () => { state.coachScheduleWeekStart = isoDateOnly(startOfLocalWeek(new Date())); loadCoachSchedule(); });
-  $("accountScheduleNextBtn")?.addEventListener("click", () => moveAccountScheduleWeek(7));
-  $("accountScheduleSaveBtn")?.addEventListener("click", saveAccountSchedule);
-}
-
-async function saveAccountProfile(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const status = $("accountProfileStatus");
-  const button = $("accountProfileSaveBtn");
-  const data = new FormData(form);
-  const nickname = String(data.get("nickname") || "").trim();
-  const riotId = String(data.get("riotId") || "").trim();
-  if (!nickname || [...nickname].length > 12) { if (status) status.textContent = "닉네임은 1~12자로 입력해주세요."; return; }
-  if (riotId && (!riotId.includes("#") || riotId.startsWith("#") || riotId.endsWith("#"))) { if (status) status.textContent = "Riot ID는 닉네임#태그 형식으로 입력해주세요."; return; }
-  if (button) button.disabled = true;
-  if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
-  try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ displayName: nickname, riotId }) });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok || !result.user) throw new Error(result.error || `HTTP ${response.status}`);
-    state.currentUser = result.user;
-    if (status) { status.textContent = "기본 정보를 저장했습니다."; status.className = "save-status success"; }
-  } catch (error) {
-    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
-  } finally { if (button) button.disabled = false; }
-}
-
-async function savePayoutProfile(event) {
-  event.preventDefault();
-  const status = $("payoutStatus");
-  const data = new FormData(event.currentTarget);
-  try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/payout`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(data.entries())) });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-    state.accountOverview = { ...(state.accountOverview || {}), payout: result.payout };
-    if (status) { status.textContent = "정산 계좌를 저장했습니다."; status.className = "save-status success"; }
-  } catch (error) { if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; } }
-}
-
-function changeSettlementMonth(direction) {
-  const current = getSettlementMonthDate();
-  current.setMonth(current.getMonth() + (direction === "next" ? 1 : -1));
-  state.settlementCalendarMonth = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
-  renderStudentHome();
-}
-
-function toggleAccountScheduleCell(key) {
-  if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
-  state.coachScheduleDraft[key] = !state.coachScheduleDraft[key];
-  renderStudentHome();
-}
-
-function moveAccountScheduleWeek(days) {
-  const start = getCoachScheduleWeekStart();
-  state.coachScheduleWeekStart = isoDateOnly(addLocalDays(start, days));
-  loadCoachSchedule();
-}
-
-async function saveAccountSchedule() {
-  const button = $("accountScheduleSaveBtn");
-  if (button) button.disabled = true;
-  try {
-    const weekly = buildWeeklyEntriesFromDraft();
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/schedule`, { method: "PUT", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekly, mode: "weekly" }) });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-    state.coachScheduleLoadState = "idle";
-    await loadCoachSchedule();
-    alert("모든 내 강의에 적용되는 반복 코칭 시간을 저장했습니다.");
-  } catch (error) { alert(`코칭 시간을 저장하지 못했습니다.\n${error.message || error}`); }
-  finally { if (button) button.disabled = false; }
 }
 
 async function saveAccountNickname(event) {
@@ -1430,21 +778,9 @@ async function saveAccountNickname(event) {
     status.className = "save-status loading";
   }
   try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ displayName: nickname, nickname }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok || !result.user) {
-      const error = new Error(result.error || `HTTP ${response.status}`);
-      error.retryAt = result.retryAt || result.retry_at || "";
-      throw error;
-    }
-    state.currentUser = result.user;
+    state.currentUser = await updateCurrentUser({ displayName: nickname, nickname });
     if (status) {
-      status.textContent = `저장 완료 · 다음 변경 가능: ${formatDateTime(result.user.nicknameChangeAvailableAt || result.user.nickname_change_available_at || "") || "변경 가능"}`;
+      status.textContent = `저장 완료 · 다음 변경 가능: ${formatDateTime(state.currentUser.nicknameChangeAvailableAt || state.currentUser.nickname_change_available_at || "") || "변경 가능"}`;
       status.className = "save-status success";
     }
     render();
@@ -1462,9 +798,7 @@ async function saveAccountNickname(event) {
 async function deleteCurrentAccount() {
   if (!state.currentUser || !window.confirm("정말 회원탈퇴할까요? 계정과 로그인 세션을 사용할 수 없게 됩니다.")) return;
   try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, { method: "DELETE", credentials: "include" });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    await deleteCurrentUserApi();
     state.currentUser = null;
     state.activeView = "market";
     state.bookings = [];
@@ -1481,7 +815,6 @@ function renderStudentHome() {
   if (isCoachUser()) {
     renderCoachDashboard(container);
     mountAccountPanel(container);
-    if (state.accountOverviewLoadState === "idle") loadAccountOverview();
     if (state.coachScheduleLoadState === "idle") loadCoachSchedule();
     return;
   }
@@ -1491,7 +824,6 @@ function renderStudentHome() {
     $("studentLoginBtn")?.addEventListener("click", () => openAuthModal("login"));
     return;
   }
-  if (state.accountOverviewLoadState === "idle") loadAccountOverview();
   if (state.studentReservationLoadState === "loading" || state.studentReservationLoadState === "idle") {
     container.innerHTML = `<div class="student-empty"><strong>예약 내역을 불러오는 중입니다.</strong></div>`;
     mountAccountPanel(container);
@@ -2025,7 +1357,7 @@ function renderMarket() {
     Array.from(document.querySelectorAll("#featuredList [data-coach-id]")).map((card) => card.dataset.coachId)
   );
   const listed = visible.filter((coach) => !featuredIds.has(coach.id));
-  $("coachList").innerHTML = listed.length ? listed.map(renderCoachCard).join("") : `
+  $("coachList").innerHTML = listed.length ? listed.map((coach) => renderCoachCard(coach, state.selectedCoachId)).join("") : `
     <div class="empty">검색 결과가 없습니다.</div>
   `;
   document.querySelectorAll("[data-coach-id]").forEach((card) => {
@@ -2087,109 +1419,6 @@ function getFeaturedCoachSlots(visible) {
     .sort((a, b) => (tierRank[a.tier] ?? 9) - (tierRank[b.tier] ?? 9) || getFeaturedScore(b) - getFeaturedScore(a));
 }
 
-function renderFeaturedCard(coach) {
-  const originalPrice = getOriginalPrice(coach.price);
-  const featuredImage = getFeaturedImage(coach);
-  const purposeText = getPurposeLabels(coach.purpose).slice(0, 2).join(" · ");
-  return `
-    <article class="featured-card ${getTierClass(coach)}" data-coach-id="${escapeHtml(coach.id)}">
-      <div class="featured-image">
-        <img src="${escapeHtml(featuredImage)}" alt="" style="${escapeHtml(getWideImageStyle(coach, "featuredImagePosition"))}">
-        <span class="ad-label">추천</span>
-        <span class="tier-ribbon">${escapeHtml(coach.tier)}</span>
-      </div>
-      <div class="featured-body">
-        <h3>${escapeHtml(coach.name)}</h3>
-        <p class="coach-owner">${escapeHtml(coach.coachProfileName || coach.name)}</p>
-        <p class="purpose-label">${escapeHtml(purposeText)}</p>
-        <p class="featured-summary">${escapeHtml(coach.tagline)}</p>
-        <div class="featured-rating">★ ${coach.rating.toFixed(1)} <span>(${coach.lessons || 0})</span></div>
-        <div class="featured-price">
-          <strong>${escapeHtml(coach.price)}</strong>
-          ${originalPrice ? `<del>${escapeHtml(originalPrice)}</del>` : ""}
-        </div>
-        <button class="detail-link" type="button" data-detail-id="${escapeHtml(coach.id)}">상세보기</button>
-      </div>
-    </article>
-  `;
-}
-
-function getOriginalPrice(price) {
-  const amount = Number(String(price || "").replace(/[^\d]/g, ""));
-  if (!amount) return "";
-  return `${Math.round(amount * 1.7).toLocaleString("ko-KR")}원`;
-}
-
-function renderCoachCard(coach) {
-  const badges = getCoachBadges(coach);
-  const imageStyle = getImageStyle(coach);
-  const purposeText = getPurposeLabels(coach.purpose).slice(0, 2).join(" · ");
-  return `
-    <article class="coach-card ${coach.id === state.selectedCoachId ? "active" : ""} ${getTierClass(coach)}" data-coach-id="${escapeHtml(coach.id)}">
-      <div class="avatar-frame"><img class="avatar" src="${escapeHtml(coach.image)}" alt="" style="${escapeHtml(imageStyle)}"></div>
-      <div class="coach-main">
-        ${badges.length ? `<div class="rank-badges">${badges.map(renderBadge).join("")}</div>` : ""}
-        <h3>${escapeHtml(coach.name)}</h3>
-        <span class="coach-owner">${escapeHtml(coach.coachProfileName || coach.name)}</span>
-        <span class="purpose-label">${escapeHtml(purposeText)}</span>
-        <p>${escapeHtml(coach.tagline)}</p>
-        <div class="chips">${(coach.roles || []).map((role) => `<span class="chip">${escapeHtml(role)}</span>`).join("")}</div>
-      </div>
-      <div class="card-foot">
-        <span>★ ${coach.rating.toFixed(1)} · 후기 ${coach.reviews?.length || 0}</span>
-        <span class="price">${escapeHtml(coach.price)}</span>
-      </div>
-      <button class="detail-link card-detail-link" type="button" data-detail-id="${escapeHtml(coach.id)}">상세보기</button>
-    </article>
-  `;
-}
-
-function getCoachBadges(coach) {
-  if (coach.tier === "엠버서더") return ["추천", "엠버서더"];
-  if (coach.tier === "최우수") return ["추천", "최우수"];
-  if (coach.tier === "우수") return ["추천", "우수"];
-  return coach.badges || [];
-}
-
-function renderBadge(label) {
-  const className = label === "추천" ? "badge recommend" : ["최우수", "엠버서더"].includes(label) ? "badge best" : "badge good";
-  return `<span class="${className}">${escapeHtml(label)}</span>`;
-}
-
-function getTierClass(coach) {
-  if (["최우수", "엠버서더"].includes(coach.tier)) return "tier-best";
-  if (coach.tier === "우수") return "tier-good";
-  return "tier-normal";
-}
-
-function getImageStyle(coach) {
-  return `object-position: ${coach.imagePosition || "center center"};`;
-}
-
-function getFeaturedImage(coach) {
-  return coach.featuredImage || coach.bannerImage || coach.heroImage || coach.image || "assets/logo.jpg";
-}
-
-function getDetailImage(coach) {
-  return coach.detailImage || coach.bannerImage || coach.heroImage || coach.featuredImage || coach.image || "assets/logo.jpg";
-}
-
-function getWideImageStyle(coach, positionKey) {
-  return `object-position: ${coach[positionKey] || coach.bannerImagePosition || "center center"};`;
-}
-
-function getCoachPurposes(coach) {
-  const raw = Array.isArray(coach?.purpose) ? coach.purpose : String(coach?.purpose || "").split(",");
-  return raw.map((item) => String(item).trim()).filter(Boolean);
-}
-
-function getPurposeLabels(value) {
-  const ids = Array.isArray(value) ? value : String(value || "").split(",");
-  const labels = ids
-    .map((id) => purposes.find((purpose) => purpose.id === String(id).trim())?.label || String(id).trim())
-    .filter(Boolean);
-  return labels.length ? labels : ["분류 미지정"];
-}
 
 function renderDetail() {
   const coach = state.coaches.find((item) => item.id === state.selectedCoachId);
@@ -2282,10 +1511,7 @@ async function loadPublicAvailability(coachId) {
   try {
     const fromDate = new Date();
     const range = new URLSearchParams({ from: isoDateOnly(fromDate), to: isoDateOnly(addLocalDays(fromDate, 30)) });
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coaches/${encodeURIComponent(key)}/availability?${range.toString()}`, { credentials: "include" });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-    const raw = result.availability || result.slots || result.items || [];
+    const raw = await fetchCoachAvailability(key, Object.fromEntries(range));
     state.availabilityByCoach[key] = Array.isArray(raw) ? raw.map(normalizeAvailabilitySlot).filter((slot) => slot.id && slot.available && slot.status === "open") : [];
     state.availabilityLoadStates[key] = "loaded";
   } catch (error) {
@@ -2306,26 +1532,18 @@ function renderAvailabilityPicker(coach) {
   if (!picker || !select || !coach) return;
   const slots = state.availabilityByCoach[String(coach.id)] || [];
   if (!slots.length) {
-    picker.hidden = false;
+    picker.hidden = true;
     if (error) error.hidden = true;
     if (timeField) timeField.hidden = false;
     select.required = false;
-    const loadState = state.availabilityLoadStates[String(coach.id)] || "idle";
-    select.disabled = true;
-    select.innerHTML = loadState === "loading"
-      ? `<option>예약 가능 시간을 불러오는 중...</option>`
-      : loadState === "error"
-        ? `<option>시간표를 불러오지 못했습니다 · 희망 시간을 직접 입력해주세요</option>`
-        : `<option>등록된 확정 시간이 없습니다 · 희망 시간을 직접 입력해주세요</option>`;
     if (timeInput) {
       timeInput.readOnly = false;
       timeInput.required = true;
-      timeInput.placeholder = "예: 8/26 21:00 또는 평일 20시 이후";
+      timeInput.placeholder = "예: 2026-08-20 21:00 (코치와 협의)";
     }
     return;
   }
   picker.hidden = false;
-  select.disabled = false;
   if (error) error.hidden = true;
   if (timeField) timeField.hidden = true;
   select.required = true;
@@ -2345,10 +1563,7 @@ async function loadCoachReviews(coachId) {
   const key = String(coachId || "");
   if (!key || state.reviewsByCoach[key]) return;
   try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coaches/${encodeURIComponent(key)}/reviews`, { credentials: "include" });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) return;
-    const reviews = result.reviews || result.items || [];
+    const reviews = await fetchCoachReviews(key);
     state.reviewsByCoach[key] = Array.isArray(reviews) ? reviews : [];
     const coach = state.coaches.find((item) => String(item.id) === key);
     if (coach) {
@@ -2509,71 +1724,14 @@ function mountBookingForm(mountId, coach) {
   });
 }
 
-let authSessionCheckTimer = null;
-
-function clearLocalSessionState() {
-  state.currentUser = null;
-  state.coachDashboardLoadState = "idle";
-  state.coachDashboardLoadError = "";
-  state.studentReservationLoadState = "idle";
-  state.studentReservationLoadError = "";
-  state.bookings = [];
-  state.refundRequests = [];
-  state.submittedReviewIds = [];
-  state.coachProfile = null;
-  state.coachProfileLoadState = "idle";
-  state.coachProfileLoadError = "";
-}
-
-async function checkAuthSession({ notify = false } = {}) {
-  if (!state.currentUser || !API_BASE_URL || API_BASE_URL.includes("YOUR-COACH-API")) return true;
-  try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-    });
-    const result = await response.json().catch(() => ({}));
-    if (response.ok && result.ok && result.user) {
-      state.currentUser = result.user;
-      return true;
-    }
-    if (response.status === 401 || !result.user) {
-      clearLocalSessionState();
-      render();
-      if (notify) {
-        openAuthModal("login");
-        const status = $("authStatus");
-        if (status) status.textContent = "로그인 세션이 만료되었습니다. 다시 로그인해주세요.";
-      }
-      return false;
-    }
-  } catch {
-    // 네트워크 오류는 세션 만료로 단정하지 않습니다.
-  }
-  return true;
-}
-
-function startAuthSessionWatcher() {
-  if (authSessionCheckTimer) window.clearInterval(authSessionCheckTimer);
-  authSessionCheckTimer = window.setInterval(() => checkAuthSession({ notify: true }), 10 * 60 * 1000);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) checkAuthSession({ notify: true });
-  });
-}
-
 async function loadCurrentUser() {
   if (!API_BASE_URL || API_BASE_URL.includes("YOUR-COACH-API")) return;
   const requestId = ++state.authRequestId;
   state.authLoadState = "loading";
   try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/me`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const result = await response.json().catch(() => ({}));
+    const user = await fetchCurrentUser();
     if (requestId !== state.authRequestId) return;
-    state.currentUser = response.ok && result.ok ? result.user : null;
+    state.currentUser = user;
     state.coachSelfLessons = null;
     if (state.currentUser?.coachKey) state.coachSelfKey = state.currentUser.coachKey;
     state.coachSchedule = { weekly: [], overrides: [], slots: [] };
@@ -2601,35 +1759,10 @@ async function loadCurrentUser() {
   }
 }
 
-async function signupUser(payload) {
-  return requestAuth("/api/auth/signup", payload);
-}
-
-async function loginUser(payload) {
-  return requestAuth("/api/auth/login", payload);
-}
-
-async function requestAuth(path, payload) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok || !result.user) {
-    throw new Error(result.error || `HTTP ${response.status}`);
-  }
-  return result.user;
-}
-
 async function logoutUser() {
   state.authRequestId += 1;
   try {
-    await Promise.allSettled(["auth", "admin"].map((scope) => fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/${scope}/logout`, {
-      method: "POST",
-      credentials: "include",
-    })));
+    await logoutAuthSessions();
   } finally {
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
     state.currentUser = null;
@@ -2656,11 +1789,12 @@ function getAuthErrorMessage(error) {
   const messages = {
     invalid_email: "이메일 형식을 확인해주세요.",
     weak_password: "비밀번호는 8자 이상이어야 합니다.",
-    password_too_long: "비밀번호는 32자 이하로 입력해주세요.",
+    password_too_long: "비밀번호는 128자 이하로 입력해주세요.",
     missing_display_name: "닉네임을 입력해주세요.",
     invalid_display_name: "닉네임은 1~12자로 입력해주세요.",
     display_name_too_short: "닉네임은 1~12자로 입력해주세요.",
     display_name_too_long: "닉네임은 1~12자로 입력해주세요.",
+    email_already_exists: "이미 가입된 이메일입니다.",
     display_name_already_exists: "이미 사용 중인 닉네임입니다.",
     nickname_change_too_soon: "닉네임은 24시간에 한 번만 변경할 수 있습니다.",
     nickname_change_locked: "닉네임 변경 가능 시간이 아직 지나지 않았습니다.",
@@ -2670,17 +1804,6 @@ function getAuthErrorMessage(error) {
     cannot_delete_account: "현재 계정은 회원탈퇴를 처리할 수 없습니다.",
     missing_credentials: "이메일과 비밀번호를 입력해주세요.",
     invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
-    invalid_riot_id: "Riot ID는 닉네임#태그 형식으로 입력해주세요.",
-    invalid_reset_token: "비밀번호 재설정 링크가 만료되었거나 올바르지 않습니다.",
-    invalid_payout_profile: "은행명, 계좌번호, 예금주를 모두 입력해주세요.",
-    email_already_exists: "이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.",
-    discord_already_linked: "이 Discord 계정은 이미 다른 Lucid 계정에 연결되어 있습니다.",
-    provider_already_linked: "이 소셜 계정은 이미 다른 Lucid 계정에 연결되어 있습니다.",
-    current_password_invalid: "현재 비밀번호가 맞지 않습니다.",
-    account_link_required: "같은 이메일의 기존 계정이 있습니다. 기존 계정으로 로그인한 뒤 소셜 계정을 연결해주세요.",
-    invalid_reset_token: "비밀번호 재설정 링크가 올바르지 않거나 만료되었습니다.",
-    reset_token_expired: "비밀번호 재설정 링크가 만료되었습니다. 다시 요청해주세요.",
-    password_reset_unavailable: "비밀번호 재설정 기능을 사용할 수 없습니다. 잠시 후 다시 시도해주세요.",
   };
   return messages[error] || "처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
 }
@@ -2869,7 +1992,7 @@ async function loadCoachReservations() {
     state.coachDashboardLoadState = "error";
     state.coachDashboardLoadError = error.status === 401
       ? "코치 계정 인증이 만료되었습니다. 다시 로그인해주세요."
-      : "예약 데이터를 불러오지 못했습니다. 서버가 최신 coach_api.py로 배포됐는지 확인해주세요.";
+      : "코치 전용 예약 API가 배포되지 않았거나 일시적으로 사용할 수 없습니다.";
     renderStudentHome();
   }
 }
@@ -2910,6 +2033,7 @@ async function loadReservations(options = {}) {
 
 async function loadAdminRefundRequests() {
   if (state.activeView !== "bookings") return;
+  const requestId = state.bookingRequestId;
   state.refundAdminLoadState = "loading";
   state.refundAdminLoadError = "";
   renderRefundAdminPanel();
@@ -3016,13 +2140,9 @@ async function loadCoachesFromApi() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), COACH_API_TIMEOUT_MS);
     try {
-      const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coaches`, {
-        signal: controller.signal,
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-      if (Array.isArray(result.coaches)) {
-        state.coaches = getPublicCatalogCoaches(result.coaches);
+      const coaches = await fetchCoachCatalog({ signal: controller.signal });
+      if (Array.isArray(coaches)) {
+        state.coaches = getPublicCatalogCoaches(coaches);
         if (state.selectedCoachId && !state.coaches.some((coach) => coach.id === state.selectedCoachId)) {
           state.selectedCoachId = null;
         }
@@ -3091,17 +2211,7 @@ async function loadCoachProfile() {
   state.coachProfileLoadError = "";
   renderCoachSelf();
   try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/profile`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) {
-      const error = new Error(result.error || `HTTP ${response.status}`);
-      error.status = response.status;
-      throw error;
-    }
-    state.coachProfile = result.profile || null;
+    state.coachProfile = await fetchCoachProfile();
     await loadCoachSelfLessonsApi();
     applyCoachProfileToCatalog(state.coachProfile);
     state.coachProfileLoadState = "loaded";
@@ -3114,66 +2224,24 @@ async function loadCoachProfile() {
 }
 
 async function loadCoachSelfLessonsApi() {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/lessons`, {
-    credentials: "include",
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-  state.coachSelfLessons = migrateCoachImages(result.coaches || []);
+  state.coachSelfLessons = migrateCoachImages(await fetchCoachLessons());
   return state.coachSelfLessons;
 }
 
 async function saveCoachProfileApi(payload) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/profile`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) {
-    const error = new Error(result.error || `HTTP ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-  return result.profile || payload;
+  return saveCoachProfile(payload);
 }
 
 async function saveCoachLessonToApi(lesson) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/lessons/${encodeURIComponent(lesson.id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(lesson),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) {
-    const error = new Error(result.error || `HTTP ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-  return result.lesson || result.coach || lesson;
+  return saveCoachLesson(lesson);
 }
 
 async function createCoachLessonApi(name) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/lessons`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ name }),
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-  return result.coach;
+  return createCoachLesson(name);
 }
 
 async function deleteCoachLessonApi(id) {
-  const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/lessons/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  await deleteCoachLesson(id);
 }
 
 async function resetCoachesToSamples() {
@@ -3277,9 +2345,6 @@ async function submitCoachApplication(event) {
       contact: data.get("contact"),
       intro: data.get("intro"),
       sample: data.get("sample"),
-      bankName: data.get("bankName"),
-      accountNumber: data.get("accountNumber"),
-      accountHolder: data.get("accountHolder"),
     });
     form.reset();
     if (status) {
@@ -3331,7 +2396,6 @@ function getCoachRequestErrorMessage(error) {
     already_coach: "이미 코치 권한이 있는 계정입니다.",
     missing_coach_name: "코치 이름을 입력해주세요.",
     pending_request_exists: "이미 확인 대기 중인 코치 등록 요청이 있습니다.",
-    invalid_payout_profile: "정산 은행, 계좌번호, 예금주를 모두 입력해주세요.",
   };
   return messages[error] || "요청을 보내지 못했습니다. 잠시 후 다시 시도해주세요.";
 }
@@ -4170,10 +3234,7 @@ async function loadCoachSchedule() {
   renderCoachAvailabilityPanel();
   try {
     const coachId = getFallbackCoachKey();
-    const query = new URLSearchParams({ coachId, from, to });
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/schedule?${query.toString()}`, { credentials: "include" });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    const result = await fetchCoachSchedule({ coachId, from, to });
     state.coachSchedule = scheduleResultPayload(result);
     state.coachAvailability = state.coachSchedule.slots;
     state.coachScheduleDraft = state.coachScheduleEditMode === "week"
@@ -4244,8 +3305,10 @@ function renderCoachAvailabilityPanel() {
       <div class="schedule-save-row"><span class="save-status" id="coachScheduleStatus" aria-live="polite"></span><button type="button" class="primary" id="saveCoachScheduleBtn">주간 일정 저장</button></div>
     </section>
   `;
-  document.querySelectorAll("[data-schedule-cell]").forEach((button) => button.addEventListener("click", (event) => {
-    applyScheduleCellClick(button.dataset.scheduleCell, event.shiftKey, firstHour, lastHour);
+  document.querySelectorAll("[data-schedule-cell]").forEach((button) => button.addEventListener("click", () => {
+    const key = button.dataset.scheduleCell;
+    if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
+    state.coachScheduleDraft[key] = !state.coachScheduleDraft[key];
     renderCoachAvailabilityPanel();
   }));
   $("schedulePrevWeekBtn")?.addEventListener("click", () => changeCoachScheduleWeek(-7));
@@ -4299,20 +3362,13 @@ async function saveCoachSchedule() {
   if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
   try {
     const coachId = getFallbackCoachKey();
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/coach/schedule?${new URLSearchParams({ coachId, from, to }).toString()}`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const result = await saveCoachScheduleApi({ coachId, from, to }, {
         coachId,
         from,
         to,
         weekly: state.coachScheduleEditMode === "weekly" ? buildWeeklyEntriesFromDraft() : (state.coachSchedule.weekly || []),
         overrides: state.coachScheduleEditMode === "week" ? buildScheduleOverridesFromDraft() : (state.coachSchedule.overrides || []),
-      }),
     });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
     state.coachSchedule = scheduleResultPayload(result);
     state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
     state.coachScheduleLoadState = "loaded";

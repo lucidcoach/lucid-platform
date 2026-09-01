@@ -1,0 +1,457 @@
+/* Canonical stylesheet chunk 5/8; preserve source order. */
+
+.student-flow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.student-flow div {
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.72);
+}
+.student-main-grid {
+  display: grid;
+  grid-template-columns: minmax(520px, 1.35fr) minmax(340px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+.student-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+.student-grid.lower {
+  grid-template-columns: minmax(420px, 1.2fr) minmax(320px, 0.8fr);
+}
+.student-panel {
+  padding: 16px;
+  min-width: 0;
+}
+.student-history-panel {
+  padding: 18px;
+}
+.student-review-panel {
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfffd 100%);
+  border-color: #b8e8cc;
+}
+.student-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.student-panel-head span {
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+.student-panel-head strong {
+  font-size: 18px;
+}
+.student-wallet p,
+.student-review-card p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.student-review-list {
+  display: grid;
+  gap: 10px;
+}
+.student-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.student-actions button:disabled,
+.student-review-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.student-next,
+.student-empty,
+.student-review-card {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+.student-next strong,
+.student-empty strong,
+.student-review-card strong {
+  font-size: 16px;
+}
+.student-next span,
+.student-empty span,
+.student-review-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.student-next em,
+.student-row em {
+  justify-self: start;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #e9f8f0;
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+.student-history {
+  display: grid;
+  gap: 8px;
+}
+.student-timeline {
+  display: grid;
+  gap: 10px;
+}
+.student-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
+}
+.student-row .mini { align-self: center; }
+.student-row span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.student-row strong,
+.student-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.student-row small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.student-row small.student-review-state {
+  color: var(--brand-dark);
+  font-weight: 900;
+}
+.coach-self-head {
+  align-items: flex-end;
+}
+.coach-self-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 760px;
+}
+.coach-self-tab {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 800;
+}
+.coach-self-tab.active {
+  border-color: #9de0bb;
+  background: #e9f8f0;
+  color: var(--brand-dark);
+}
+.coach-self-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+.coach-self-preview,
+.coach-self-editor {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 0;
+}
+.coach-self-profile {
+  margin: 0 0 16px;
+}
+.coach-self-profile-form {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+.coach-self-profile-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.coach-self-profile-head > div {
+  display: grid;
+  gap: 4px;
+}
+.coach-self-profile-head small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.coach-self-profile-head small.profile-load-error {
+  color: #b42318;
+}
+.coach-self-profile-grid {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+}
+.coach-self-profile-grid > div {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+.coach-self-profile-form .image-preview {
+  min-height: 0;
+}
+.coach-self-profile-label,
+.coach-self-tier > span {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.coach-self-profile-media .image-preview-frame {
+  width: 180px;
+  height: 180px;
+  display: grid;
+  place-items: center;
+}
+.image-preview-empty {
+  padding: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.coach-self-file-button {
+  position: relative;
+  width: 180px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+}
+.coach-self-file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.coach-self-profile-media .image-crop-button { width: 180px; }
+.coach-self-tier {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.coach-self-tier strong {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 14%, var(--panel));
+  color: var(--brand-dark);
+  font-size: 12px;
+}
+.coach-self-tier small { color: var(--muted); }
+body[data-theme="dark"] .toggle-line {
+  border-color: #315b70;
+  background: #17293a;
+  color: #bfdbfe;
+}
+body[data-theme="dark"] .toggle-line input { color-scheme: dark; }
+.coach-self-grid {
+  display: grid;
+  gap: 10px;
+}
+.coach-self-lesson-picker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.coach-self-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.coach-self-picker-head span { color: var(--muted); font-size: 12px; font-weight: 800; }
+.coach-self-picker-head button { margin-left: auto; }
+.coach-self-editor .coach-self-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.coach-self-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  text-align: left;
+}
+.coach-self-card:hover,
+.coach-self-card.active {
+  border-color: #9de0bb;
+  box-shadow: 0 10px 24px rgba(21, 32, 43, 0.08);
+}
+.coach-self-card img {
+  width: 74px;
+  height: 74px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+.coach-self-card span {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.coach-self-card strong,
+.coach-self-card small,
+.coach-self-card em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coach-self-card strong {
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.coach-self-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.coach-self-card em {
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.coach-self-form {
+  display: grid;
+  gap: 12px;
+}
+.coach-self-lesson-image {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+.coach-self-lesson-image .image-preview-frame {
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+}
+.coach-self-lesson-image-actions { display: grid; gap: 8px; justify-items: start; }
+.coach-self-lesson-image-actions .coach-self-file-button,
+.coach-self-lesson-image-actions .image-crop-button { width: 150px; }
+
+.schedule-panel { gap: 12px; }
+.schedule-actions, .schedule-toolbar, .schedule-save-row, .schedule-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.schedule-actions { justify-content: flex-end; }
+.schedule-week-title { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+.schedule-week-title strong { color: var(--text); font-size: 13px; }
+.schedule-toolbar { justify-content: flex-start; color: var(--muted); font-size: 12px; }
+.schedule-mode { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
+.schedule-mode select { min-height: 34px; padding: 6px 8px; }
+.schedule-grid-wrap { max-height: 560px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+.schedule-grid { min-width: 720px; display: grid; grid-template-columns: 58px repeat(7, minmax(72px, 1fr)); grid-auto-rows: 40px; }
+.schedule-corner, .schedule-day-head, .schedule-time-label { position: sticky; z-index: 2; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 11px; }
+.schedule-corner, .schedule-day-head { top: 0; z-index: 3; font-weight: 900; }
+.schedule-corner { left: 0; }
+.schedule-day-head { flex-direction: column; gap: 2px; }
+.schedule-day-head small { color: var(--muted); font-weight: 500; }
+.schedule-time-label { left: 0; z-index: 2; background: var(--panel); }
+.schedule-cell { min-width: 0; padding: 3px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--panel-2); color: transparent; font-size: 10px; font-weight: 800; transition: background .12s, color .12s; }
+.schedule-cell:hover:not(:disabled) { outline: 2px solid var(--blue); outline-offset: -2px; }
+.schedule-cell.open { background: color-mix(in srgb, var(--brand) 22%, var(--panel-2)); color: var(--brand-dark); }
+.schedule-cell.closed { background: var(--panel-2); }
+.schedule-cell.booked { cursor: not-allowed; background: color-mix(in srgb, var(--muted) 40%, var(--panel-2)); color: var(--text); }
+.schedule-cell small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+.schedule-legend { color: var(--muted); font-size: 11px; }
+.schedule-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.schedule-legend i { width: 12px; height: 12px; display: inline-block; border-radius: 3px; border: 1px solid var(--line); background: var(--panel-2); }
+.schedule-legend i.open { background: color-mix(in srgb, var(--brand) 22%, var(--panel-2)); }
+.schedule-legend i.booked { background: color-mix(in srgb, var(--muted) 40%, var(--panel-2)); }
+.schedule-save-row { justify-content: space-between; }
+.schedule-summary { margin-top: 14px; }
+.schedule-summary-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.schedule-summary-list span { padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-2); color: var(--muted); font-size: 12px; }
+.schedule-summary-list b { margin-right: 5px; color: var(--text); }
+.schedule-summary-empty { margin: 0; color: var(--muted); font-size: 13px; }
+.coach-self-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.coach-self-editor-actions { display: flex; align-items: center; gap: 8px; }
+.coach-self-editor-head span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.coach-self-editor-head h3 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+.admin-form {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: start;
+}
+.admin-form label small {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.admin-form .wide, .form-actions {
+  grid-column: 1 / -1;
+}
+.image-position-raw {
+  display: none;
+}
+.image-adjust {
+  display: grid;
+  grid-template-columns: 220px minmax(260px, 1fr);
+  gap: 12px 16px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}

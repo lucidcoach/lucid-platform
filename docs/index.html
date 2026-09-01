@@ -284,10 +284,6 @@
           <label>현재 티어 / 경력<input name="tier" placeholder="예: 마스터, 팀 코치 경험 1년"></label>
           <label>희망 가격<input name="price" placeholder="예: 30,000원 / 1게임"></label>
           <label>연락처<input name="contact" required placeholder="디스코드 또는 이메일"></label>
-          <label>정산 은행<input name="bankName" required maxlength="40" placeholder="예: 국민은행"></label>
-          <label>정산 계좌번호<input name="accountNumber" required maxlength="80" inputmode="numeric" placeholder="하이픈 포함 가능"></label>
-          <label>예금주<input name="accountHolder" required maxlength="40" placeholder="예금주명"></label>
-          <label class="wide coach-payout-note">정산 정보는 코치 승인 및 정산 처리에만 사용되며 일반 사용자에게 공개되지 않습니다.</label>
           <label class="wide">한 줄 소개<textarea name="intro" required rows="3" placeholder="예: 미드 라인전과 로밍 타이밍을 빠르게 잡아드립니다."></textarea></label>
           <label class="wide">관리자에게 남길 내용<textarea name="sample" rows="5" placeholder="코칭 방식, 가능 시간, 대표 챔피언, 경력 등을 적어주세요."></textarea></label>
           <div class="form-actions">
@@ -372,7 +368,7 @@
       <div class="auth-tabs">
         <button type="button" class="active" data-auth-mode="login">로그인</button>
         <button type="button" data-auth-mode="signup">회원가입</button>
-        <button type="button" data-auth-mode="guest">비회원 구매</button>
+        <button type="button" data-auth-mode="guest">비회원 강의 구매</button>
       </div>
       <div id="authBody"></div>
     </div>
@@ -395,6 +391,6 @@
   </div>
 
   <script src="https://js.tosspayments.com/v2/standard"></script>
-  <script type="module" src="app.js?v=20260824-account1"></script>
+  <script type="module" src="app.js?v=20260822-6c"></script>
 </body>
 </html>
