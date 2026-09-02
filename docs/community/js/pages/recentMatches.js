@@ -20,7 +20,12 @@ export async function loadRecent({ append = false } = {}) {
     $("loadMoreBtn").hidden = state.recentOffset >= Number(data.total || 0) || !(data.matches || []).length;
     bindExpanders(target);
   } catch (error) {
-    target.innerHTML = `<div class="empty-state"><strong>내전 기록을 불러오지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`;
-    showStatus(error.message); $("loadMoreBtn").hidden = true;
+    const notConfigured = error.code === "community_guild_not_configured";
+    target.innerHTML = notConfigured
+      ? `<div class="empty-state"><strong>커뮤니티 전적 연결을 기다리고 있습니다.</strong><span>공개할 Lucid 내전 서버를 연결하면 최근 경기부터 자동으로 표시됩니다.</span></div>`
+      : `<div class="empty-state"><strong>내전 기록을 불러오지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`;
+    if (!notConfigured) showStatus(error.message);
+    else showStatus("");
+    $("loadMoreBtn").hidden = true;
   } finally { state.recentLoading = false; }
 }

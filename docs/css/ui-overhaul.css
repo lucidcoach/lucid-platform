@@ -640,3 +640,32 @@ td { border-top: 1px solid var(--line); }
   .site-header-inner { grid-template-columns: 1fr auto; }
   .service-switcher { grid-column: 1 / -1; }
 }
+
+
+/* 2026-09-03 v2: desktop product switcher is horizontal, OP.GG-style sibling tabs. */
+@media (min-width: 621px) {
+  .service-switcher {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    width: auto;
+    padding: 3px;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+  }
+  .service-switch {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 3px 10px 3px 4px;
+    border-radius: 9px;
+    white-space: nowrap;
+  }
+  .service-copy { gap: 5px; }
+  .service-copy strong { font-size: 12px; }
+  .service-copy small { font-size: 11px; }
+}

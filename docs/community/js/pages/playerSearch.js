@@ -26,5 +26,10 @@ export async function searchPlayers(query) {
     if(players.length===1){ await openPlayer(players[0].userId,players[0].guildId); return; }
     target.innerHTML=`<h1 class="search-title">검색 결과</h1><div class="search-results-block">${players.map(candidate).join("") || `<div class="empty-state"><strong>검색 결과가 없습니다.</strong><span>Lucid Bot에 등록된 닉네임인지 확인해주세요.</span></div>`}</div>`;
     target.querySelectorAll(".search-candidate").forEach((b)=>b.addEventListener("click",()=>openPlayer(b.dataset.userId,b.dataset.guildId)));
-  } catch(error) { target.innerHTML=`<div class="empty-state"><strong>검색하지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`; }
+  } catch(error) {
+    const notConfigured = error.code === "community_guild_not_configured";
+    target.innerHTML = notConfigured
+      ? `<div class="empty-state"><strong>커뮤니티 전적 연결을 기다리고 있습니다.</strong><span>공개 서버 연결 후 닉네임 검색을 사용할 수 있습니다.</span></div>`
+      : `<div class="empty-state"><strong>검색하지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`;
+  }
 }

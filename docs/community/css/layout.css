@@ -49,3 +49,29 @@
 .analysis-empty-state p { max-width:700px; margin:0; color:var(--muted); line-height:1.7; }
 .analysis-preview-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:8px; }
 .analysis-preview-grid span { padding:6px 10px; border:1px solid var(--line); border-radius:999px; color:#aebbd0; font-size:11px; }
+
+
+/* 2026-09-03 v2: LUCID Coach / Community are horizontal sibling services. */
+@media (min-width: 561px) {
+  .community-service-switcher {
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:5px;
+    min-width:0;
+    width:auto;
+    padding:3px;
+    border:1px solid var(--line-soft);
+    border-radius:12px;
+    background:rgba(18,24,36,.72);
+  }
+  .community-service-switcher .service-switch {
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-height:36px;
+    padding:3px 10px 3px 4px;
+    border-radius:9px;
+    white-space:nowrap;
+  }
+}
