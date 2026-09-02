@@ -593,3 +593,5 @@ td { border-top: 1px solid var(--line); }
   .account-schedule-editor { padding:10px; }
   .account-schedule-editor-head { align-items:flex-start; }
 }
+
+.community-switch-link { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; }
