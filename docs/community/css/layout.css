@@ -121,3 +121,44 @@
     padding:0 11px;
   }
 }
+
+
+/* v9 recent searches */
+.compact-community-search{
+  grid-template-columns:auto minmax(260px,420px) minmax(0,1fr);
+  gap:8px;
+}
+.recent-searches{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  overflow:hidden;
+}
+.recent-search-chip{
+  max-width:140px;
+  min-height:30px;
+  padding:0 9px;
+  border:1px solid #2a3548;
+  border-radius:7px;
+  background:#0b1018;
+  color:#9eacc0;
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+}
+.recent-search-chip:hover{
+  border-color:#7057ff;
+  color:#fff;
+}
+@media (max-width:860px){
+  .compact-community-search{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+  .recent-searches{
+    grid-column:1/-1;
+  }
+}

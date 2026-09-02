@@ -65,3 +65,14 @@
 .preview-name-wrap .award-mark svg{width:13px;height:13px}
 .preview-name-wrap .award-mark.mvp{box-shadow:0 0 9px rgba(255,190,55,.16)}
 .preview-name-wrap .award-mark.ace{box-shadow:0 0 8px rgba(84,126,232,.13)}
+
+
+/* v10 level + rune/spell */
+.preview-player{grid-template-columns:24px minmax(0,1fr) auto;align-items:center;column-gap:6px}
+.preview-champion-wrap,.score-champion-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.preview-champion-wrap>img{width:24px;height:24px;border-radius:5px;object-fit:cover}
+.preview-level,.score-level{position:absolute;right:-2px;bottom:-2px;min-width:13px;height:13px;padding:0 2px;border-radius:4px;background:#080b10;border:1px solid rgba(255,255,255,.25);color:#fff;font-size:8px;font-style:normal;font-weight:900;line-height:11px;text-align:center}
+.preview-loadout{display:inline-flex;align-items:center}
+.preview-loadout .rune-spells,.score-rune-spells .rune-spells{gap:2px}
+.preview-loadout .rune-icon,.preview-loadout .spell-icon,.score-rune-spells .rune-icon,.score-rune-spells .spell-icon{width:16px;height:16px}
+.score-rune-spells{display:inline-flex;margin-left:4px}

@@ -46,4 +46,4 @@ export function normalizeMode(match) {
 export const teamLabel = (team) => team === "blue" ? "블루팀" : "레드팀";
 export const isWinner = (match, team) => String(match?.winner || "").toLowerCase().includes(team);
 export const focusKda = (player) => player ? `${player.kills || 0} / ${player.deaths || 0} / ${player.assists || 0}` : "-";
-export const scoreClass = (score) => Number(score || 0) < 40 ? "low" : (Number(score || 0) < 60 ? "mid" : "");
+export const scoreClass = (score) => Number(score || 0) < 45 ? "low" : (Number(score || 0) < 58 ? "mid" : "");

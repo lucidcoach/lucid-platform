@@ -429,3 +429,67 @@
     gap:5px;
   }
 }
+
+
+/* v9 role rows */
+.profile-aliases{display:none!important}
+.role-tier-line{
+  display:flex;
+  align-items:center;
+  min-height:36px;
+  gap:10px;
+}
+.role-tier-role{
+  flex:0 0 46px;
+  align-self:center;
+  display:flex;
+  align-items:center;
+  height:100%;
+}
+.role-tier-main{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.role-tier-main img{
+  width:26px;
+  height:26px;
+}
+.role-tier-main strong{
+  min-width:auto;
+}
+.role-tier-record{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  justify-self:auto;
+  margin-left:4px;
+}
+.role-tier-line.unplaced{
+  display:flex;
+  align-items:center;
+}
+.role-tier-unplaced{
+  display:inline-flex;
+  align-items:center;
+}
+
+
+/* v10 personal final build */
+.champion-level{position:absolute;right:2px;top:36px;min-width:17px;height:17px;padding:0 3px;border-radius:5px;background:#070a0f;border:1px solid rgba(255,255,255,.28);color:#fff;font-size:9px;font-weight:900;line-height:15px;text-align:center}
+.personal-actions{display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.build-toggle{width:30px;height:30px;border:1px solid #283349;border-radius:7px;background:#0b1018;color:#9aabc3;cursor:pointer;font-size:17px}
+.build-toggle:hover,.build-toggle.active{border-color:#7b61ff;color:#fff;background:#1a1731}
+.build-detail-panel{display:none;padding:0 12px 12px}
+.personal-match.build-expanded .build-detail-panel{display:block}
+.build-detail-grid{display:grid;grid-template-columns:120px minmax(150px,.8fr) minmax(220px,1.2fr);gap:8px;padding:12px;border:1px solid #273247;border-radius:9px;background:#090e15}
+.build-detail-grid>div{min-width:0;padding:8px 10px;border-radius:7px;background:#0d131d}
+.build-detail-grid>div>span{display:block;margin-bottom:7px;color:#77879f;font-size:9px;font-weight:800}
+.build-detail-grid>div>strong{font-size:17px}
+.build-items-row{grid-column:1/-1}
+.spell-list,.rune-list{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.spell-list .spell-icon{width:28px;height:28px;border-radius:6px}
+.rune-list .rune-icon{width:28px;height:28px;border-radius:50%}
+.build-detail-grid .loadout img{width:30px;height:30px}
+@media (max-width:760px){.build-detail-grid{grid-template-columns:1fr 1fr}.build-items-row{grid-column:1/-1}}

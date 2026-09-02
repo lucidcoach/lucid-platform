@@ -58,9 +58,11 @@ function roleTierBoard(rows = []) {
       }
       return `<div class="role-tier-line">
         <span class="role-tier-role">${escapeHtml(role)}</span>
-        <img src="${escapeHtml(tierIcon(row.tier))}" alt="" loading="lazy">
-        <strong>${escapeHtml(row.tier)}</strong>
-        <span class="role-tier-record"><em>${Number(row.wins || 0)}승</em> <b>${Number(row.losses || 0)}패</b></span>
+        <span class="role-tier-main">
+          <img src="${escapeHtml(tierIcon(row.tier))}" alt="" loading="lazy">
+          <strong>${escapeHtml(row.tier)}</strong>
+          <span class="role-tier-record"><em>${Number(row.wins || 0)}승</em><b>${Number(row.losses || 0)}패</b></span>
+        </span>
       </div>`;
     }).join("")}</div>
   </section>`;
@@ -132,7 +134,6 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
         <div class="profile-name"><span class="tier-badge">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div>
-        ${aliases.length > 1 ? `<div class="profile-aliases">등록 계정 ${aliases.map((name)=>`<span>${escapeHtml(name)}</span>`).join("")}</div>` : ""}
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 ${Number(p.winRate || 0).toFixed(1)}%</small></div>
           <div class="profile-record"><span>평균 KDA</span><strong>${Number(p.averageKda || 0).toFixed(2)}</strong></div>
