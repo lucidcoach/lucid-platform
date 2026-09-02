@@ -476,20 +476,172 @@
 }
 
 
-/* v10 personal final build */
-.champion-level{position:absolute;right:2px;top:36px;min-width:17px;height:17px;padding:0 3px;border-radius:5px;background:#070a0f;border:1px solid rgba(255,255,255,.28);color:#fff;font-size:9px;font-weight:900;line-height:15px;text-align:center}
-.personal-actions{display:flex;align-items:center;justify-content:flex-end;gap:4px}
-.build-toggle{width:30px;height:30px;border:1px solid #283349;border-radius:7px;background:#0b1018;color:#9aabc3;cursor:pointer;font-size:17px}
-.build-toggle:hover,.build-toggle.active{border-color:#7b61ff;color:#fff;background:#1a1731}
-.build-detail-panel{display:none;padding:0 12px 12px}
+
+
+/* v10.2 magnifier detail: compact DeepLOL-inspired build layout, restyled for Lucid */
+.build-detail-panel{
+  display:none;
+  padding:0 12px 12px;
+}
 .personal-match.build-expanded .build-detail-panel{display:block}
-.build-detail-grid{display:grid;grid-template-columns:120px minmax(150px,.8fr) minmax(220px,1.2fr);gap:8px;padding:12px;border:1px solid #273247;border-radius:9px;background:#090e15}
-.build-detail-grid>div{min-width:0;padding:8px 10px;border-radius:7px;background:#0d131d}
-.build-detail-grid>div>span{display:block;margin-bottom:7px;color:#77879f;font-size:9px;font-weight:800}
-.build-detail-grid>div>strong{font-size:17px}
-.build-items-row{grid-column:1/-1}
-.spell-list,.rune-list{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.spell-list .spell-icon{width:28px;height:28px;border-radius:6px}
-.rune-list .rune-icon{width:28px;height:28px;border-radius:50%}
-.build-detail-grid .loadout img{width:30px;height:30px}
-@media (max-width:760px){.build-detail-grid{grid-template-columns:1fr 1fr}.build-items-row{grid-column:1/-1}}
+
+.match-analysis-panel{
+  display:grid;
+  gap:10px;
+  padding-top:4px;
+}
+.analysis-build-section{
+  overflow:hidden;
+  border:1px solid #283249;
+  border-radius:9px;
+  background:#0a0f17;
+}
+.analysis-build-title{
+  padding:9px 11px;
+  border-bottom:1px solid #242e42;
+  background:#0d131d;
+  color:#dce4f0;
+  font-size:11px;
+  font-weight:900;
+}
+.item-build-track{
+  display:flex;
+  align-items:flex-start;
+  gap:5px;
+  min-width:max-content;
+}
+.final-build-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:70px;
+  padding:12px;
+  overflow-x:auto;
+}
+.build-sub-label{
+  flex:0 0 auto;
+  color:#7f8fa7;
+  font-size:9px;
+  font-weight:800;
+}
+.item-build-track.timeline-mode{
+  padding:12px;
+  overflow-x:auto;
+}
+.item-build-step{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  min-width:38px;
+}
+.item-build-icon{
+  position:relative;
+  width:34px;
+  height:34px;
+  border:1px solid #313d55;
+  border-radius:6px;
+  overflow:hidden;
+  background:#101722;
+}
+.item-build-icon img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.item-build-step span{
+  color:#899ab1;
+  font-size:8px;
+  font-weight:800;
+}
+.item-build-step small{
+  color:#d78b8b;
+  font-size:7px;
+  font-weight:800;
+}
+.item-build-step.sell .item-build-icon{opacity:.6}
+.item-build-step.undo .item-build-icon{opacity:.45}
+.build-arrow{
+  align-self:center;
+  margin-top:9px;
+  color:#46546c;
+  font-size:16px;
+  font-style:normal;
+}
+.build-empty-line{
+  padding:20px 12px;
+  color:#6f8099;
+  font-size:10px;
+  text-align:center;
+}
+
+.skill-build-wrap{
+  padding:12px;
+  overflow-x:auto;
+}
+.skill-sequence{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-width:max-content;
+  margin-bottom:11px;
+}
+.skill-sequence>i{
+  color:#46546c;
+  font-style:normal;
+}
+.skill-seq-chip{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-height:30px;
+  padding:0 8px;
+  border:1px solid #2a354a;
+  border-radius:6px;
+  background:#101722;
+}
+.skill-seq-chip b{font-size:11px}
+.skill-seq-chip small{
+  color:#8c9cb3;
+  font-size:8px;
+}
+.skill-grid{
+  display:grid;
+  gap:2px;
+  min-width:720px;
+}
+.skill-grid-row{
+  display:grid;
+  grid-template-columns:30px repeat(var(--skill-cols), minmax(24px,1fr));
+  gap:2px;
+}
+.skill-grid-row>strong,
+.skill-grid-row>span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:24px;
+  border-radius:3px;
+}
+.skill-grid-row>strong{
+  color:#9aa9bd;
+  background:#151c27;
+  font-size:10px;
+}
+.skill-grid-row>span{
+  background:#0d131c;
+  color:#fff;
+  font-size:8px;
+  font-weight:900;
+}
+.skill-grid-row>span.picked{box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.skill-q{background:#b64d74!important}
+.skill-w{background:#7b4bb0!important}
+.skill-e{background:#3978b9!important}
+.skill-r{background:#c58b27!important}
+
+@media (max-width:760px){
+  .final-build-row{align-items:flex-start}
+  .skill-grid{min-width:620px}
+}

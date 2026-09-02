@@ -28,6 +28,6 @@ export function playerMatchCard(match, userId) {
       <div class="focus-cs"><strong>${Number(player.cs || 0).toLocaleString()} CS</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>
       <div class="personal-items">${(player.items || []).length ? renderItems(player,6) : ""}</div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
-      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
+      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
     </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,userId)}</article>`;
 }

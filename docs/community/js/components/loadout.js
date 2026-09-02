@@ -35,13 +35,93 @@ export function renderRuneSpells(player) {
   return `<div class="rune-spells">${keystone}${spells}</div>`;
 }
 
+function minuteLabel(value) {
+  const seconds = Number(value || 0);
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  const minute = Math.floor(seconds / 60);
+  const second = Math.floor(seconds % 60);
+  return second ? `${minute}:${String(second).padStart(2,"0")}` : `${minute}분`;
+}
+
+function itemTimeline(player) {
+  const rows = Array.isArray(player?.itemTimeline) ? player.itemTimeline : [];
+  if (rows.length) {
+    return `<div class="item-build-track timeline-mode">${rows.map((row) => {
+      const itemId = Number(row?.item || row?.itemId || 0);
+      const action = String(row?.action || "BUY").toUpperCase();
+      const time = minuteLabel(row?.time ?? row?.timestamp);
+      const actionLabel = action === "SELL" ? "판매" : action === "UNDO" ? "되돌림" : "";
+      return `<div class="item-build-step ${action.toLowerCase()}">
+        <div class="item-build-icon">${itemId > 0 ? image(itemIcon(itemId), `아이템 ${itemId}`) : ""}</div>
+        <span>${time || "-"}</span>
+        ${actionLabel ? `<small>${actionLabel}</small>` : ""}
+      </div>`;
+    }).join(`<i class="build-arrow" aria-hidden="true">›</i>`)}</div>`;
+  }
+
+  const items = Array.isArray(player?.items) ? player.items.filter((id) => Number(id) > 0) : [];
+  if (!items.length) {
+    return `<div class="build-empty-line">저장된 아이템 정보가 없습니다.</div>`;
+  }
+  return `<div class="final-build-row">
+    <span class="build-sub-label">최종 빌드</span>
+    <div class="item-build-track final-mode">${items.map((id) =>
+      `<div class="item-build-step"><div class="item-build-icon">${image(itemIcon(id), `아이템 ${id}`)}</div></div>`
+    ).join(`<i class="build-arrow" aria-hidden="true">›</i>`)}</div>
+  </div>`;
+}
+
+function skillBuild(player) {
+  const rows = Array.isArray(player?.skillBuild) ? player.skillBuild : [];
+  if (!rows.length) {
+    return `<div class="build-empty-line">
+      스킬 순서 데이터가 저장되지 않은 경기입니다.
+    </div>`;
+  }
+
+  const clean = rows
+    .map((row) => ({
+      level: Number(row?.level || 0),
+      skill: String(row?.skill || "").toUpperCase(),
+    }))
+    .filter((row) => row.level > 0 && ["Q","W","E","R"].includes(row.skill))
+    .sort((a,b) => a.level - b.level);
+
+  if (!clean.length) {
+    return `<div class="build-empty-line">스킬 순서 데이터가 없습니다.</div>`;
+  }
+
+  const skills = ["Q","W","E","R"];
+  const maxLevel = Math.max(18, ...clean.map((row) => row.level));
+  const byLevel = new Map(clean.map((row) => [row.level, row.skill]));
+
+  return `<div class="skill-build-wrap">
+    <div class="skill-sequence">${clean.slice(0,18).map((row) =>
+      `<span class="skill-seq-chip skill-${row.skill.toLowerCase()}"><b>${row.skill}</b><small>Lv.${row.level}</small></span>`
+    ).join(`<i>›</i>`)}</div>
+    <div class="skill-grid" style="--skill-cols:${maxLevel}">
+      ${skills.map((skill) => `<div class="skill-grid-row">
+        <strong>${skill}</strong>
+        ${Array.from({length:maxLevel},(_,index)=>{
+          const level=index+1;
+          const picked=byLevel.get(level);
+          return `<span class="${picked===skill ? `picked skill-${skill.toLowerCase()}` : ""}">${picked===skill ? level : ""}</span>`;
+        }).join("")}
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
 export function renderBuildSummary(player) {
-  const level = Number(player?.level || 0);
-  return `<div class="build-detail-grid">
-    <div><span>최종 레벨</span><strong>${level > 0 ? level : "-"}</strong></div>
-    <div><span>소환사 주문</span>${renderSpells(player) || `<small>기록 없음</small>`}</div>
-    <div><span>룬</span>${renderRunes(player) || `<small>기록 없음</small>`}</div>
-    <div class="build-items-row"><span>최종 아이템</span>${renderItems(player,7) || `<small>기록 없음</small>`}</div>
+  return `<div class="match-analysis-panel">
+    <section class="analysis-build-section">
+      <div class="analysis-build-title">아이템 빌드</div>
+      ${itemTimeline(player)}
+    </section>
+    <section class="analysis-build-section">
+      <div class="analysis-build-title">스킬 빌드</div>
+      ${skillBuild(player)}
+    </section>
   </div>`;
 }
 
