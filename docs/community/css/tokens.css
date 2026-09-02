@@ -1,0 +1,8 @@
+:root {
+  color-scheme: dark;
+  --bg: #080b11; --panel: #0f141d; --panel-2: #121927; --line: #263043; --line-soft: #1c2431;
+  --text: #f6f8fc; --muted: #91a0b7; --purple: #7d5cff; --purple-soft: #1d1738;
+  --blue: #4879d9; --blue-soft: #18284a; --red: #d95b66; --red-soft: #452229;
+  --green: #58d7a4; --yellow: #f4c85d; --danger: #ff6b77; --radius: 14px;
+  --shadow: 0 18px 40px rgba(0,0,0,.2); --content: 1180px; --header-content: 1280px;
+}
