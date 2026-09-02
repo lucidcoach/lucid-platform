@@ -655,6 +655,7 @@ authAccountPage = createAuthAccountPage({
   loadCoachProfile: (...args) => loadCoachProfile(...args),
   handlePaymentReturn: (...args) => handlePaymentReturn(...args),
   renderScheduleSummaryMarkup: (...args) => renderScheduleSummaryMarkup(...args),
+  renderCoachAvailabilityPanel: (...args) => renderCoachAvailabilityPanel(...args),
 });
 adminDashboardPage = createAdminDashboardPage({
   render: (...args) => render(...args),

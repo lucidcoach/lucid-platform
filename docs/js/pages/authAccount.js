@@ -27,6 +27,7 @@ export function createAuthAccountPage({
   loadCoachProfile,
   handlePaymentReturn,
   renderScheduleSummaryMarkup,
+  renderCoachAvailabilityPanel,
 }) {
 function showOAuthResult() {
   const url = new URL(window.location.href);
@@ -468,42 +469,42 @@ function renderAccountDashboardMarkup() {
             <button class="primary mini" type="button" id="accountCoachCenterBtn2">일정 · 강의 관리</button>
           </div>
         </div>
-        ${error ? `<div class="account-data-error">예약 현황을 불러오지 못했습니다. 코치 현황에서 다시 확인해주세요.</div>` : `
+        ${error ? `<div class="account-data-error compact">예약 통계만 불러오지 못했습니다. 코칭 가능 시간 설정은 아래에서 그대로 사용할 수 있습니다.</div>` : `
           <div class="account-kpi-row">
             <article><span>이번 주 예약</span><strong>${loading ? "…" : `${thisWeek.length}건`}</strong></article>
             <article><span>완료 강의 매출</span><strong>${loading ? "…" : formatWon(completedRevenue)}</strong><small>정산 전 · 완료 예약 기준</small></article>
             <article><span>완료 수강생</span><strong>${loading ? "…" : `${uniqueStudents.size}명`}</strong></article>
             <article><span>주간 가능 시간</span><strong>${state.coachScheduleLoadState === "loaded" ? `${weeklyHours.toLocaleString("ko-KR")}시간` : "…"}</strong></article>
           </div>
-          <div class="account-dashboard-grid">
-            <article class="account-next-card account-upcoming-card">
-              <span>다가오는 예약</span>
-              ${upcoming.length ? `
-                <div class="account-upcoming-list">
-                  ${upcoming.map((row) => `
-                    <div>
-                      <strong>${escapeHtml(row.time || "시간 확인 중")}</strong>
-                      <p>${escapeHtml(row.student || "수강생")} · ${escapeHtml(row.lesson || row.coachName || "강의")}</p>
-                    </div>
-                  `).join("")}
-                </div>
-              ` : `<strong>예정된 예약 없음</strong><p>새 예약이 들어오면 여기에 표시됩니다.</p>`}
-            </article>
-            <article class="account-schedule-card">
-              <div><span>코칭 가능 시간</span><button class="text-button" type="button" id="accountScheduleEditBtn">시간표 수정</button></div>
-              ${state.coachScheduleLoadState === "loaded"
-                ? (renderScheduleSummaryMarkup ? renderScheduleSummaryMarkup() : "")
-                : `<p>주간 시간표를 불러오는 중입니다.</p>`}
-            </article>
-          </div>
-          <div class="account-schedule-editor ${state.accountScheduleExpanded ? "open" : ""}" id="accountScheduleEditorWrap" ${state.accountScheduleExpanded ? "" : "hidden"}>
-            <div class="account-schedule-editor-head">
-              <div><span>코칭 가능 시간 설정</span><strong>주간 시간표</strong></div>
-              <button class="secondary mini" type="button" id="accountScheduleCloseBtn">접기</button>
-            </div>
-            <div id="accountCoachAvailabilityPanel"></div>
-          </div>
+          <article class="account-next-card account-upcoming-card">
+            <span>다가오는 예약</span>
+            ${upcoming.length ? `
+              <div class="account-upcoming-list">
+                ${upcoming.map((row) => `
+                  <div>
+                    <strong>${escapeHtml(row.time || "시간 확인 중")}</strong>
+                    <p>${escapeHtml(row.student || "수강생")} · ${escapeHtml(row.lesson || row.coachName || "강의")}</p>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `<strong>예정된 예약 없음</strong><p>새 예약이 들어오면 여기에 표시됩니다.</p>`}
+          </article>
         `}
+
+        <article class="account-schedule-card account-schedule-card-primary">
+          <div><span>코칭 가능 시간</span><button class="primary mini" type="button" id="accountScheduleEditBtn">시간표 수정</button></div>
+          ${state.coachScheduleLoadState === "loaded"
+            ? (renderScheduleSummaryMarkup ? renderScheduleSummaryMarkup() : "")
+            : `<p>주간 시간표를 불러오는 중입니다.</p>`}
+        </article>
+
+        <div class="account-schedule-editor ${state.accountScheduleExpanded ? "open" : ""}" id="accountScheduleEditorWrap" ${state.accountScheduleExpanded ? "" : "hidden"}>
+          <div class="account-schedule-editor-head">
+            <div><span>코칭 가능 시간 설정</span><strong>주간 시간표</strong></div>
+            <button class="secondary mini" type="button" id="accountScheduleCloseBtn">접기</button>
+          </div>
+          <div id="accountCoachAvailabilityPanel"></div>
+        </div>
       </section>
     `;
   }
