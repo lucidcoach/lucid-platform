@@ -46,14 +46,21 @@ function tierIcon(tier = "") {
 function roleTierBoard(rows = []) {
   const roles = ["탑", "정글", "미드", "원딜", "서폿"];
   const byRole = new Map(rows.map((row) => [row.role, row]));
-  return `<section class="role-tier-board" aria-label="라인별 내전 티어">
-    <div class="profile-section-title"><strong>라인별 내전 티어</strong><span>현재 내전 MMR 기준</span></div>
-    <div class="role-tier-grid">${roles.map((role) => {
-      const row = byRole.get(role) || { role, tier: "I4", mmr: 0 };
-      return `<div class="role-tier-card">
+  return `<section class="role-tier-board role-tier-compact" aria-label="라인별 내전 티어">
+    <div class="profile-section-title"><strong>라인별 내전 티어</strong></div>
+    <div class="role-tier-list">${roles.map((role) => {
+      const row = byRole.get(role) || { role, tier: "미배치", placed: false, wins: 0, losses: 0 };
+      if (!row.placed || row.tier === "미배치") {
+        return `<div class="role-tier-line unplaced">
+          <span class="role-tier-role">${escapeHtml(role)}</span>
+          <span class="role-tier-unplaced">미배치</span>
+        </div>`;
+      }
+      return `<div class="role-tier-line">
         <span class="role-tier-role">${escapeHtml(role)}</span>
         <img src="${escapeHtml(tierIcon(row.tier))}" alt="" loading="lazy">
-        <div><strong>${escapeHtml(row.tier || "-")}</strong><span>${Number(row.mmr || 0).toLocaleString()}점</span></div>
+        <strong>${escapeHtml(row.tier)}</strong>
+        <span class="role-tier-record"><em>${Number(row.wins || 0)}승</em> <b>${Number(row.losses || 0)}패</b></span>
       </div>`;
     }).join("")}</div>
   </section>`;
@@ -72,7 +79,7 @@ function championRow(row) {
 function championStatsPanel(groups = {}) {
   const tabs = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
   return `<section class="champion-stats-panel">
-    <div class="profile-section-title"><strong>챔피언 통계</strong><span>상세 기록 전체 기준 · 평균 KDA는 비율만 표시</span></div>
+    <div class="profile-section-title"><strong>챔피언 통계</strong></div>
     <div class="champion-role-tabs" role="tablist">${tabs.map((role, i) => `<button type="button" class="champion-role-tab${i === 0 ? " active" : ""}" data-champion-role="${escapeHtml(role)}">${escapeHtml(role)}</button>`).join("")}</div>
     <div class="champion-stat-head"><span>챔피언</span><span>게임</span><span>승률</span><span>KDA</span></div>
     <div class="champion-stat-list" data-champion-list></div>
@@ -122,19 +129,20 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
 
-    target.innerHTML=`<section class="profile-head profile-head-compact">
-      <div class="profile-identity">
+    target.innerHTML=`<section class="profile-dashboard-grid">
+      <div class="profile-summary-panel">
         <div class="profile-name"><span class="tier-badge">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div>
         ${aliases.length > 1 ? `<div class="profile-aliases">등록 계정 ${aliases.map((name)=>`<span>${escapeHtml(name)}</span>`).join("")}</div>` : ""}
+        <div class="profile-overview profile-overview-compact">
+          <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 ${Number(p.winRate || 0).toFixed(1)}%</small></div>
+          <div class="profile-record"><span>평균 KDA</span><strong>${Number(p.averageKda || 0).toFixed(2)}</strong></div>
+        </div>
+        ${roleTierBoard(p.roleTiers || [])}
       </div>
-      <div class="profile-overview profile-overview-clean">
-        <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 ${Number(p.winRate || 0).toFixed(1)}%</small></div>
-        <div class="profile-record"><span>평균 KDA</span><strong>${Number(p.averageKda || 0).toFixed(2)}</strong><small>상세 기록 기준</small></div>
-        <div class="profile-record"><span>평균 AI Score</span><strong>${p.averageAiScore == null ? "-" : Number(p.averageAiScore).toFixed(1)}</strong><small>AI Score 저장 경기 기준</small></div>
+      <div class="profile-champion-panel">
+        ${championStatsPanel(p.championStats || {})}
       </div>
     </section>
-    ${roleTierBoard(p.roleTiers || [])}
-    ${championStatsPanel(p.championStats || {})}
     <div class="match-feed personal-feed">${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});

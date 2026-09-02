@@ -31,15 +31,14 @@
   </header>
 
   <main class="community-main">
-    <section class="search-strip" aria-label="내전 전적 검색">
-      <form id="playerSearchForm" class="player-search">
-        <label for="playerSearchInput">닉네임 검색</label>
+    <section class="search-strip compact-community-search" aria-label="내전 전적 검색">
+      <button class="community-home-button" id="communityHomeBtn" type="button">커뮤니티</button>
+      <form id="playerSearchForm" class="player-search compact-player-search">
         <div class="search-control">
-          <input id="playerSearchInput" type="search" autocomplete="off" placeholder="내전 닉네임 입력">
+          <input id="playerSearchInput" type="search" autocomplete="off" placeholder="닉네임 검색" aria-label="내전 닉네임 검색">
           <button type="submit">검색</button>
         </div>
       </form>
-      <button class="clear-search" id="clearSearchBtn" type="button" hidden>최근 내전으로</button>
     </section>
 
     <section id="statusBanner" class="status-banner" hidden></section>

@@ -45,7 +45,7 @@ function bindEvents() {
     const query=$("playerSearchInput").value.trim();
     if(query) searchPlayers(query, { historyMode: "push" });
   });
-  $("clearSearchBtn").addEventListener("click",()=>goRecent());
+  $("communityHomeBtn").addEventListener("click",()=>goRecent());
   $("refreshMatchesBtn").addEventListener("click",()=>loadRecent());
   $("loadMoreBtn").addEventListener("click",()=>loadRecent({append:true}));
   document.querySelectorAll("[data-match-category]").forEach((button) => {

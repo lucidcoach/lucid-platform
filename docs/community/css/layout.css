@@ -75,3 +75,49 @@
     white-space:nowrap;
   }
 }
+
+
+/* v7 compact community search */
+.compact-community-search{
+  display:grid;
+  grid-template-columns:auto minmax(260px,460px);
+  align-items:center;
+  justify-content:start;
+  gap:8px;
+  margin-bottom:26px;
+}
+.compact-player-search{
+  width:100%;
+}
+.compact-player-search .search-control{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+}
+.compact-player-search .search-control input{
+  min-width:0;
+}
+.community-home-button{
+  height:42px;
+  padding:0 15px;
+  border:1px solid rgba(138,113,255,.55);
+  border-radius:9px;
+  background:#17142a;
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+.community-home-button:hover{
+  background:#211c3b;
+  border-color:#8a71ff;
+}
+@media (max-width:620px){
+  .compact-community-search{
+    grid-template-columns:auto minmax(0,1fr);
+    gap:7px;
+  }
+  .community-home-button{
+    padding:0 11px;
+  }
+}
