@@ -19,8 +19,8 @@ import {
   userRoles,
 } from "../auth.js";
 import { loginAdmin } from "../admin.js";
-import { submitGuestConsultation } from "../reservations.js";
-import { byId as $, escapeHtml, formatDateTime } from "../utils.js";
+import { paymentStatus, submitGuestConsultation } from "../reservations.js";
+import { byId as $, escapeHtml, formatDateTime, formatWon, parseReservationPrice } from "../utils.js";
 
 export function createAuthAccountPage({
   render: renderApp,
@@ -127,7 +127,7 @@ function renderUserActions() {
   }
   if (!loginButton || !guestButton) return;
   if (state.currentUser) {
-    const accountRole = isAdminUser() ? "관리자" : (isCoachUser() ? "코치" : "일반");
+    const accountRole = isAdminUser() ? "관리자" : (isCoachUser() ? "코치" : "수강생");
     loginButton.textContent = `${accountRole} · ${state.currentUser.displayName || state.currentUser.email || "내 계정"}`;
     const studentNav = $("navStudent");
     if (studentNav) studentNav.textContent = isCoachUser() ? "코치 현황" : "내 수강";
@@ -389,6 +389,156 @@ function bindGuestConsultForm() {
   });
 }
 
+
+function accountBookingDate(row) {
+  const candidates = [
+    row?.scheduledAt, row?.scheduled_at, row?.startAt, row?.start_at,
+    row?.reservationAt, row?.reservation_at, row?.time,
+  ];
+  for (const value of candidates) {
+    if (!value) continue;
+    const raw = String(value).trim();
+    const normalized = raw
+      .replace(/[.]/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/, "$1T$2");
+    const date = new Date(normalized);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return null;
+}
+
+function accountWeekBounds(now = new Date()) {
+  const start = new Date(now);
+  const day = start.getDay() || 7;
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - day + 1);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
+function accountUpcomingRows(rows) {
+  const now = new Date();
+  return rows
+    .filter((row) => !["완료", "취소"].includes(String(row?.status || "")))
+    .map((row) => ({ row, date: accountBookingDate(row) }))
+    .sort((a, b) => {
+      if (a.date && b.date) return a.date - b.date;
+      if (a.date) return -1;
+      if (b.date) return 1;
+      return 0;
+    })
+    .filter((item) => !item.date || item.date >= now)
+    .map((item) => item.row);
+}
+
+function renderAccountDashboardMarkup() {
+  const rows = Array.isArray(state.bookings) ? state.bookings : [];
+  if (isCoachUser()) {
+    const loading = state.coachDashboardLoadState === "loading" || state.coachDashboardLoadState === "idle";
+    const error = state.coachDashboardLoadState === "error";
+    const completed = rows.filter((row) => String(row.status || "") === "완료");
+    const active = rows.filter((row) => !["완료", "취소"].includes(String(row.status || "")));
+    const { start, end } = accountWeekBounds();
+    const thisWeek = active.filter((row) => {
+      const date = accountBookingDate(row);
+      return date && date >= start && date < end;
+    });
+    const completedRevenue = completed.reduce((sum, row) => {
+      const paid = Number(row.payment?.amount || row.paymentAmount || row.payment_amount || 0);
+      if (paid > 0) return sum + paid;
+      return sum + Number(parseReservationPrice(row.coachPrice).amount || 0);
+    }, 0);
+    const uniqueStudents = new Set(
+      completed.map((row) => String(row.student || row.studentName || row.contact || "").trim()).filter(Boolean)
+    );
+    const upcoming = accountUpcomingRows(active).slice(0, 3);
+    const weeklyHours = (state.coachSchedule?.weekly || []).reduce(
+      (sum, item) => sum + (item.enabled === false ? 0 : Math.max(0, Number(item.endMinute || 0) - Number(item.startMinute || 0)) / 60),
+      0
+    );
+
+    return `
+      <section class="account-role-dashboard">
+        <div class="account-section-head">
+          <div><span>코치 대시보드</span><strong>이번 주 운영 현황</strong></div>
+          <div class="account-head-actions">
+            <button class="secondary mini" type="button" id="accountCoachDashboardBtn">예약 현황</button>
+            <button class="primary mini" type="button" id="accountCoachCenterBtn2">일정 · 강의 관리</button>
+          </div>
+        </div>
+        ${error ? `<div class="account-data-error">예약 현황을 불러오지 못했습니다. 코치 현황에서 다시 확인해주세요.</div>` : `
+          <div class="account-kpi-row">
+            <article><span>이번 주 예약</span><strong>${loading ? "…" : `${thisWeek.length}건`}</strong></article>
+            <article><span>완료 강의 매출</span><strong>${loading ? "…" : formatWon(completedRevenue)}</strong><small>정산 전 · 완료 예약 기준</small></article>
+            <article><span>완료 수강생</span><strong>${loading ? "…" : `${uniqueStudents.size}명`}</strong></article>
+            <article><span>주간 가능 시간</span><strong>${state.coachScheduleLoadState === "loaded" ? `${weeklyHours.toLocaleString("ko-KR")}시간` : "…"}</strong></article>
+          </div>
+          <div class="account-dashboard-grid">
+            <article class="account-next-card account-upcoming-card">
+              <span>다가오는 예약</span>
+              ${upcoming.length ? `
+                <div class="account-upcoming-list">
+                  ${upcoming.map((row) => `
+                    <div>
+                      <strong>${escapeHtml(row.time || "시간 확인 중")}</strong>
+                      <p>${escapeHtml(row.student || "수강생")} · ${escapeHtml(row.lesson || row.coachName || "강의")}</p>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : `<strong>예정된 예약 없음</strong><p>새 예약이 들어오면 여기에 표시됩니다.</p>`}
+            </article>
+            <article class="account-schedule-card">
+              <div><span>반복 일정</span><button class="text-button" type="button" id="accountScheduleManageBtn">시간표 관리</button></div>
+              ${state.coachScheduleLoadState === "loaded"
+                ? (renderScheduleSummaryMarkup ? renderScheduleSummaryMarkup() : "")
+                : `<p>주간 시간표를 불러오는 중입니다.</p>`}
+            </article>
+          </div>
+        `}
+      </section>
+    `;
+  }
+
+  const loading = state.studentReservationLoadState === "loading" || state.studentReservationLoadState === "idle";
+  const error = state.studentReservationLoadState === "error";
+  const active = rows.filter((row) => !["완료", "취소"].includes(String(row.status || "")));
+  const paid = rows.filter((row) => ["PAID", "PARTIALLY_REFUNDED"].includes(paymentStatus(row)));
+  const payable = rows.filter((row) =>
+    ["신규", "상담중", "결제대기", "코치확정대기", "예약확정"].includes(String(row.status || "")) &&
+    !["PAID", "PARTIALLY_REFUNDED", "CANCELED", "REFUNDED"].includes(paymentStatus(row))
+  );
+  const reviewable = rows.filter((row) => String(row.status || "") === "완료" && paymentStatus(row) === "PAID" && !row.review);
+  const next = accountUpcomingRows(active)[0];
+  const paidAmount = paid.reduce((sum, row) => sum + Number(row.payment?.amount || 0), 0);
+
+  return `
+    <section class="account-role-dashboard">
+      <div class="account-section-head">
+        <div><span>수강 대시보드</span><strong>내 코칭 현황</strong></div>
+        <button class="primary mini" type="button" id="accountStudentCenterBtn">내 수강 보기</button>
+      </div>
+      ${error ? `<div class="account-data-error">수강 내역을 불러오지 못했습니다. 내 수강에서 다시 확인해주세요.</div>` : `
+        <div class="account-kpi-row">
+          <article><span>진행 중 예약</span><strong>${loading ? "…" : `${active.length}건`}</strong></article>
+          <article><span>결제 완료</span><strong>${loading ? "…" : formatWon(paidAmount)}</strong></article>
+          <article><span>결제 대기</span><strong>${loading ? "…" : `${payable.length}건`}</strong></article>
+          <article><span>후기 작성</span><strong>${loading ? "…" : `${reviewable.length}건`}</strong></article>
+        </div>
+        <article class="account-next-card student">
+          <span>다음 코칭</span>
+          ${next ? `
+            <strong>${escapeHtml(next.time || "시간 확인 중")}</strong>
+            <p>${escapeHtml(next.coachName || "코치")} · ${escapeHtml(next.lesson || "예약 강의")}</p>
+            <small>${escapeHtml(next.status || "")}</small>
+          ` : `<strong>예정된 코칭 없음</strong><p>예약이 확정되면 다음 일정이 여기에 표시됩니다.</p>`}
+        </article>
+      `}
+    </section>
+  `;
+}
+
 function renderAccountPanelMarkup() {
   if (!state.currentUser) return "";
   const user = state.currentUser;
@@ -397,7 +547,7 @@ function renderAccountPanelMarkup() {
   const availableAt = user.nicknameChangeAvailableAt || user.nickname_change_available_at || "";
   const availableText = availableAt ? formatDateTime(availableAt) : "변경 가능";
   const needsNickname = Boolean(user.needsNickname || user.nicknameSetupRequired || user.nickname_setup_required);
-  const roleLabel = isAdminUser() ? "관리자 계정" : (isCoachUser() ? "코치 계정" : "일반 계정");
+  const roleLabel = isAdminUser() ? "관리자 계정" : (isCoachUser() ? "코치 계정" : "수강생 계정");
   const discordConnected = Boolean(user.discordConnected || user.discord_connected || user.discordDisplayName || user.discord_display_name);
   return `
     <section class="account-overview">
@@ -407,9 +557,17 @@ function renderAccountPanelMarkup() {
         <strong>${escapeHtml(nickname || "닉네임 미설정")}</strong>
         <small>${escapeHtml(user.email || "")}</small>
       </div>
-      ${isCoachUser() ? `<button class="secondary account-coach-link" type="button" id="accountCoachCenterBtn">코치센터</button>` : ""}
+      ${isCoachUser()
+        ? `<button class="secondary account-coach-link" type="button" id="accountCoachCenterBtn">코치센터</button>`
+        : `<button class="secondary account-coach-link" type="button" id="accountStudentQuickBtn">내 수강</button>`}
     </section>
+
+    ${renderAccountDashboardMarkup()}
+
     <section class="student-panel account-panel" id="accountPanel">
+      <div class="account-section-head settings">
+        <div><span>계정 설정</span><strong>프로필 · 게임 계정</strong></div>
+      </div>
       ${needsNickname ? `<p class="account-required">닉네임을 설정해주세요.</p>` : ""}
       <div class="account-settings-grid">
         <form class="account-setting-card" id="accountNicknameForm">
@@ -443,7 +601,14 @@ function mountAccountPanel(container) {
   $("accountNicknameForm")?.addEventListener("submit", saveAccountNickname);
   $("accountRiotForm")?.addEventListener("submit", saveAccountRiotId);
   document.querySelectorAll("[data-account-oauth]").forEach((button) => button.addEventListener("click", () => startAccountOAuth(button.dataset.accountOauth)));
-  $("accountCoachCenterBtn")?.addEventListener("click", () => { state.coachSelfKey = getFallbackCoachKey(); state.activeView = "coachSelf"; renderApp(); });
+  const openCoachCenter = () => { state.coachSelfKey = getFallbackCoachKey(); state.activeView = "coachSelf"; renderApp(); };
+  const openStudentCenter = () => { state.activeView = "student"; renderApp(); };
+  $("accountCoachCenterBtn")?.addEventListener("click", openCoachCenter);
+  $("accountCoachCenterBtn2")?.addEventListener("click", openCoachCenter);
+  $("accountScheduleManageBtn")?.addEventListener("click", openCoachCenter);
+  $("accountCoachDashboardBtn")?.addEventListener("click", openStudentCenter);
+  $("accountStudentCenterBtn")?.addEventListener("click", openStudentCenter);
+  $("accountStudentQuickBtn")?.addEventListener("click", openStudentCenter);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
 }
 

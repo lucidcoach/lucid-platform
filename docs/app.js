@@ -376,6 +376,12 @@ function renderAccountView() {
     return;
   }
   mountAccountPanel(container);
+  if (isCoachUser()) {
+    if (state.coachDashboardLoadState === "idle") loadCoachReservations();
+    if (state.coachScheduleLoadState === "idle") loadCoachSchedule();
+  } else if (state.studentReservationLoadState === "idle") {
+    loadStudentReservations();
+  }
 }
 
 function renderMetrics() {

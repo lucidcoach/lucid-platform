@@ -432,6 +432,64 @@ function buildScheduleDraft(schedule) {
   return draft;
 }
 
+
+function getSavedScheduleDraft() {
+  return state.coachScheduleEditMode === "week"
+    ? buildScheduleDraft(state.coachSchedule || { weekly: [], overrides: [], slots: [] })
+    : buildScheduleDraft({ ...(state.coachSchedule || { weekly: [], overrides: [], slots: [] }), overrides: [] });
+}
+
+function isCoachScheduleDraftDirty() {
+  if (!state.coachScheduleDraft) return false;
+  const saved = getSavedScheduleDraft();
+  for (let weekday = 1; weekday <= 7; weekday += 1) {
+    for (let minute = 0; minute < 1440; minute += 60) {
+      const key = `${weekday}:${minute}`;
+      if (Boolean(saved[key]) !== Boolean(state.coachScheduleDraft[key])) return true;
+    }
+  }
+  return false;
+}
+
+function resetCoachScheduleDraft() {
+  state.coachScheduleDraft = getSavedScheduleDraft();
+  state.coachScheduleLastCellKey = "";
+  state.coachScheduleNotice = "저장된 일정으로 되돌렸습니다.";
+  renderCoachAvailabilityPanel();
+}
+
+function toggleCoachScheduleCell(key, shiftKey = false) {
+  if (!state.coachScheduleDraft) state.coachScheduleDraft = getSavedScheduleDraft();
+  const [weekdayRaw, minuteRaw] = String(key || "").split(":");
+  const weekday = Number(weekdayRaw);
+  const minute = Number(minuteRaw);
+  if (!weekday || Number.isNaN(minute)) return;
+
+  const targetOpen = !Boolean(state.coachScheduleDraft[key]);
+  const anchor = String(state.coachScheduleLastCellKey || "");
+  const [anchorDayRaw, anchorMinuteRaw] = anchor.split(":");
+  const anchorDay = Number(anchorDayRaw);
+  const anchorMinute = Number(anchorMinuteRaw);
+
+  if (shiftKey && anchor && anchorDay === weekday && !Number.isNaN(anchorMinute)) {
+    const start = Math.min(anchorMinute, minute);
+    const end = Math.max(anchorMinute, minute);
+    const weekStart = getCoachScheduleWeekStart();
+    const date = addLocalDays(weekStart, weekday - 1);
+    for (let cursor = start; cursor <= end; cursor += 60) {
+      const cell = getScheduleCell(state.coachSchedule, date, cursor);
+      if (cell.booked) continue;
+      state.coachScheduleDraft[`${weekday}:${cursor}`] = targetOpen;
+    }
+  } else {
+    state.coachScheduleDraft[key] = targetOpen;
+  }
+
+  state.coachScheduleLastCellKey = key;
+  state.coachScheduleNotice = "저장되지 않은 변경사항입니다. 저장 버튼을 눌러야 서버에 반영됩니다.";
+  renderCoachAvailabilityPanel();
+}
+
 function buildScheduleBaseDraft(schedule) {
   const draft = {};
   for (let weekday = 1; weekday <= 7; weekday += 1) {
@@ -495,6 +553,8 @@ async function loadCoachSchedule() {
       ? buildScheduleDraft(state.coachSchedule)
       : buildScheduleDraft({ ...state.coachSchedule, overrides: [] });
     state.coachScheduleLoadState = "loaded";
+    state.coachScheduleNotice = "";
+    state.coachScheduleLastCellKey = "";
   } catch (error) {
     state.coachScheduleLoadState = "error";
     state.coachScheduleLoadError = error instanceof TypeError
@@ -504,6 +564,7 @@ async function loadCoachSchedule() {
   }
   renderCoachAvailabilityPanel();
   if (state.activeView === "student") renderStudentHome();
+  if (state.activeView === "account") renderApp();
 }
 
 function renderScheduleSummaryMarkup() {
@@ -535,6 +596,7 @@ function renderCoachAvailabilityPanel() {
   const lastHour = 24;
   const weekdays = [1, 2, 3, 4, 5, 6, 7];
   const weekdayLabels = ["월", "화", "수", "목", "금", "토", "일"];
+  const scheduleDirty = isCoachScheduleDraftDirty();
   const cells = [];
   for (let hour = firstHour; hour < lastHour; hour += 1) {
     cells.push(`<div class="schedule-time-label">${String(hour).padStart(2, "0")}:00</div>`);
@@ -553,27 +615,41 @@ function renderCoachAvailabilityPanel() {
       <div class="availability-head"><div><span>예약 일정</span><strong>주간 시간표</strong></div><div class="schedule-actions"><button type="button" class="secondary mini" id="schedulePrevWeekBtn">이전 주</button><button type="button" class="secondary mini" id="scheduleTodayBtn">이번 주</button><button type="button" class="secondary mini" id="scheduleNextWeekBtn">다음 주</button></div></div>
       <div class="schedule-week-title"><strong>${from} ~ ${to}</strong><span>${state.coachScheduleEditMode === "week" ? "이 주에만 적용됩니다." : "다음 주에도 같은 시간으로 반복됩니다."} 예약된 칸은 수정할 수 없습니다.</span></div>
       ${state.coachScheduleLoadState === "error" ? `<small class="save-status error">${escapeHtml(state.coachScheduleLoadError)}</small>` : ""}
-      <div class="schedule-toolbar"><label class="schedule-mode">편집 범위<select id="scheduleEditMode"><option value="weekly" ${state.coachScheduleEditMode === "weekly" ? "selected" : ""}>매주 반복 기본값</option><option value="week" ${state.coachScheduleEditMode === "week" ? "selected" : ""}>이 주만 변경</option></select></label><button type="button" class="secondary mini" id="scheduleHourToggleBtn">${state.coachScheduleShowAllHours ? "06시 이후만 보기" : "전체 24시간 보기"}</button><span>기본 화면은 06:00~24:00이며 내부에서만 스크롤됩니다.</span></div>
+      <div class="schedule-toolbar"><label class="schedule-mode">편집 범위<select id="scheduleEditMode"><option value="weekly" ${state.coachScheduleEditMode === "weekly" ? "selected" : ""}>매주 반복 기본값</option><option value="week" ${state.coachScheduleEditMode === "week" ? "selected" : ""}>이 주만 변경</option></select></label><button type="button" class="secondary mini" id="scheduleHourToggleBtn">${state.coachScheduleShowAllHours ? "06시 이후만 보기" : "전체 24시간 보기"}</button><span>Shift+클릭하면 같은 요일의 시간 구간을 한 번에 선택합니다.</span></div>
       <div class="schedule-grid-wrap"><div class="schedule-grid" style="--schedule-days: 7"><div class="schedule-corner">시간</div>${weekdayLabels.map((label, index) => `<div class="schedule-day-head">${label}<small>${isoDateOnly(addLocalDays(weekStart, index)).slice(5)}</small></div>`).join("")}${cells.join("")}</div></div>
       <div class="schedule-legend"><span><i class="open"></i>가능</span><span><i class="closed"></i>불가능</span><span><i class="booked"></i>예약됨</span></div>
-      <div class="schedule-save-row"><span class="save-status" id="coachScheduleStatus" aria-live="polite"></span><button type="button" class="primary" id="saveCoachScheduleBtn">주간 일정 저장</button></div>
+      <div class="schedule-save-row">
+        <span class="save-status ${scheduleDirty ? "warning" : (state.coachScheduleNotice ? "success" : "")}" id="coachScheduleStatus" aria-live="polite">${escapeHtml(state.coachScheduleNotice || (scheduleDirty ? "저장되지 않은 변경사항" : "저장된 일정"))}</span>
+        <div class="schedule-save-actions">
+          ${scheduleDirty ? `<button type="button" class="secondary" id="resetCoachScheduleBtn">변경 취소</button>` : ""}
+          <button type="button" class="primary" id="saveCoachScheduleBtn" ${scheduleDirty ? "" : "disabled"}>주간 일정 저장</button>
+        </div>
+      </div>
     </section>
   `;
-  document.querySelectorAll("[data-schedule-cell]").forEach((button) => button.addEventListener("click", () => {
-    const key = button.dataset.scheduleCell;
-    if (!state.coachScheduleDraft) state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
-    state.coachScheduleDraft[key] = !state.coachScheduleDraft[key];
-    renderCoachAvailabilityPanel();
+  document.querySelectorAll("[data-schedule-cell]").forEach((button) => button.addEventListener("click", (event) => {
+    toggleCoachScheduleCell(button.dataset.scheduleCell, event.shiftKey);
   }));
   $("schedulePrevWeekBtn")?.addEventListener("click", () => changeCoachScheduleWeek(-7));
   $("scheduleNextWeekBtn")?.addEventListener("click", () => changeCoachScheduleWeek(7));
-  $("scheduleTodayBtn")?.addEventListener("click", () => { state.coachScheduleWeekStart = ""; state.coachScheduleLoadState = "idle"; loadCoachSchedule(); });
+  $("scheduleTodayBtn")?.addEventListener("click", () => {
+    if (isCoachScheduleDraftDirty() && !window.confirm("저장하지 않은 일정 변경이 있습니다. 저장하지 않고 이번 주로 이동할까요?")) return;
+    state.coachScheduleWeekStart = "";
+    state.coachScheduleLoadState = "idle";
+    state.coachScheduleDraft = null;
+    state.coachScheduleLastCellKey = "";
+    state.coachScheduleNotice = "";
+    loadCoachSchedule();
+  });
   $("scheduleEditMode")?.addEventListener("change", (event) => {
     state.coachScheduleEditMode = event.target.value === "week" ? "week" : "weekly";
-    state.coachScheduleDraft = state.coachScheduleEditMode === "week" ? buildScheduleDraft(state.coachSchedule) : buildScheduleDraft({ ...state.coachSchedule, overrides: [] });
+    state.coachScheduleDraft = getSavedScheduleDraft();
+    state.coachScheduleLastCellKey = "";
+    state.coachScheduleNotice = "";
     renderCoachAvailabilityPanel();
   });
   $("scheduleHourToggleBtn")?.addEventListener("click", () => { state.coachScheduleShowAllHours = !state.coachScheduleShowAllHours; renderCoachAvailabilityPanel(); });
+  $("resetCoachScheduleBtn")?.addEventListener("click", resetCoachScheduleDraft);
   $("saveCoachScheduleBtn")?.addEventListener("click", saveCoachSchedule);
 }
 
@@ -600,9 +676,12 @@ function bindCoachSelfLessonPicker(editor) {
 }
 
 function changeCoachScheduleWeek(days) {
+  if (isCoachScheduleDraftDirty() && !window.confirm("저장하지 않은 일정 변경이 있습니다. 저장하지 않고 다른 주로 이동할까요?")) return;
   state.coachScheduleWeekStart = isoDateOnly(addLocalDays(getCoachScheduleWeekStart(), days));
   state.coachScheduleLoadState = "idle";
   state.coachScheduleDraft = null;
+  state.coachScheduleLastCellKey = "";
+  state.coachScheduleNotice = "";
   loadCoachSchedule();
 }
 
@@ -624,14 +703,16 @@ async function saveCoachSchedule() {
       overrides: state.coachScheduleEditMode === "week" ? buildScheduleOverridesFromDraft() : (state.coachSchedule.overrides || []),
     });
     state.coachSchedule = scheduleResultPayload(result);
-    state.coachScheduleDraft = buildScheduleDraft(state.coachSchedule);
+    state.coachScheduleDraft = getSavedScheduleDraft();
     state.coachScheduleLoadState = "loaded";
-    if (status) { status.textContent = "저장 완료 · 매주 반복됩니다."; status.className = "save-status success"; }
+    state.coachScheduleLastCellKey = "";
+    state.coachScheduleNotice = state.coachScheduleEditMode === "week" ? "저장 완료 · 이 주에만 적용됩니다." : "저장 완료 · 매주 반복됩니다.";
     renderCoachAvailabilityPanel();
     if (state.activeView === "student") renderStudentHome();
   } catch (error) {
     const message = error instanceof TypeError ? "서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요." : error.message || "서버 오류";
-    if (status) { status.textContent = `저장 실패: ${message}`; status.className = "save-status error"; }
+    state.coachScheduleNotice = `저장 실패: ${message}`;
+    if (status) { status.textContent = state.coachScheduleNotice; status.className = "save-status error"; }
   } finally {
     if (button) button.disabled = false;
   }

@@ -44,16 +44,16 @@ function renderStudentHome() {
 
   container.innerHTML = `
     <section class="student-summary-strip">
-      <article><span>결제 완료</span><strong>${formatWon(paidAmount)}</strong><em>${paidRows.length}건</em></article>
-      <article class="wide"><span>다음 일정</span><strong>${nextLesson ? escapeHtml(nextLesson.time || "시간 확인 중") : "예약 없음"}</strong><em>${nextLesson ? escapeHtml(nextLesson.lesson || "예약 강의") : ""}</em></article>
-      <article><span>결제 대기</span><strong>${payableRows.length}건</strong><em>${payableRows.length ? "결제 가능 예약 확인" : "없음"}</em></article>
+      <article><span>총 결제</span><strong>${formatWon(paidAmount)}</strong><em>${paidRows.length}건</em></article>
+      <article class="wide"><span>다음 코칭</span><strong>${nextLesson ? escapeHtml(nextLesson.time || "시간 확인 중") : "일정 없음"}</strong><em>${nextLesson ? `${escapeHtml(nextLesson.coachName || "코치")} · ${escapeHtml(nextLesson.lesson || "예약 강의")}` : ""}</em></article>
+      <article><span>결제 필요</span><strong>${payableRows.length}건</strong><em>${payableRows.length ? "확인 필요" : "없음"}</em></article>
     </section>
 
     <section class="student-main-grid">
       <article class="student-panel student-history-panel">
         <div class="student-panel-head">
           <span>내역</span>
-          <strong>강의 구매 / 신청 내역</strong>
+          <strong>예약 · 수강 내역</strong>
         </div>
         <div class="student-timeline">
           ${historyRows.map((row) => `
@@ -82,7 +82,7 @@ function renderStudentHome() {
       <article class="student-panel student-review-panel">
         <div class="student-panel-head">
           <span>후기</span>
-          <strong>후기 / 결제 안내</strong>
+          <strong>처리할 항목</strong>
         </div>
         ${reviewableRows.length ? `
           <div class="student-review-list">
@@ -103,7 +103,6 @@ function renderStudentHome() {
               <div class="student-review-card">
                 <strong>${escapeHtml(row.lesson)}</strong>
                 <span>${escapeHtml(row.coachPrice)} · ${escapeHtml(row.time)}</span>
-                <p>서버에 저장된 상품 가격으로 주문을 만들며, 브라우저에서 보낸 금액은 사용하지 않습니다.</p>
                 <button class="primary" type="button" data-pay-reservation="${escapeHtml(row.id)}">토스로 결제하기</button>
               </div>
             `).join("")}
@@ -111,8 +110,8 @@ function renderStudentHome() {
         ` : ""}
         ${!reviewableRows.length && !payableRows.length ? `
           <div class="student-empty">
-            <strong>결제할 예약이 없습니다.</strong>
-            <span>예약이 확정되면 결제 버튼이 표시됩니다.</span>
+            <strong>지금 처리할 항목이 없습니다.</strong>
+            <span>결제나 후기 작성이 필요하면 여기에 표시됩니다.</span>
           </div>
         ` : ""}
       </article>
@@ -182,7 +181,7 @@ function renderCoachDashboard(container) {
   container.innerHTML = `
     <section class="coach-summary-grid">
       <article class="coach-summary-card"><span>판매 시간</span><strong>${totals.hours.toLocaleString("ko-KR")}시간</strong><small>완료 기준</small></article>
-      <article class="coach-summary-card"><span>예상 매출</span><strong>${formatWon(totals.revenue)}</strong><small>완료 예약 기준</small></article>
+      <article class="coach-summary-card"><span>완료 강의 매출</span><strong>${formatWon(totals.revenue)}</strong><small>정산 전</small></article>
       <article class="coach-summary-card"><span>완료 수강생</span><strong>${students.size.toLocaleString("ko-KR")}명</strong><small>고유 수강생</small></article>
       <article class="coach-summary-card"><span>전체 예약</span><strong>${active.length.toLocaleString("ko-KR")}건</strong><small>완료 ${completed.length.toLocaleString("ko-KR")}건</small></article>
     </section>

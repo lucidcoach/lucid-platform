@@ -32,8 +32,13 @@ export function createReservationPage({
   renderMetrics,
   loginForReservations,
 }) {
+function refreshReservationConsumerView() {
+  if (state.activeView === "account") renderApp();
+  else renderStudentHome();
+}
+
 function maybeLoadStudentReservations() {
-  if (state.activeView !== "student" || !state.currentUser || isCoachUser() || state.studentReservationLoadState !== "idle") return;
+  if (!["student", "account"].includes(state.activeView) || !state.currentUser || isCoachUser() || state.studentReservationLoadState !== "idle") return;
   loadStudentReservations();
 }
 
@@ -43,7 +48,7 @@ async function loadStudentReservations() {
   const userId = String(state.currentUser.id || "");
   state.studentReservationLoadState = "loading";
   state.studentReservationLoadError = "";
-  renderStudentHome();
+  refreshReservationConsumerView();
   try {
     const [reservations, refundRequests] = await Promise.all([
       fetchMyReservations(),
@@ -60,7 +65,7 @@ async function loadStudentReservations() {
     state.studentReservationLoadState = "error";
     state.studentReservationLoadError = error.message || "예약 API를 사용할 수 없습니다.";
   }
-  renderStudentHome();
+  refreshReservationConsumerView();
 }
 
 function getRefundRequestFor(booking) {
@@ -161,7 +166,7 @@ async function handlePaymentReturn() {
 }
 
 function maybeLoadCoachDashboardReservations() {
-  if (state.activeView !== "student" || !isCoachUser() || state.coachDashboardLoadState !== "idle") return;
+  if (!["student", "account"].includes(state.activeView) || !isCoachUser() || state.coachDashboardLoadState !== "idle") return;
   loadCoachReservations();
 }
 
@@ -170,25 +175,25 @@ async function loadCoachReservations() {
   if (!API_BASE_URL || API_BASE_URL.includes("YOUR-COACH-API")) {
     state.coachDashboardLoadState = "error";
     state.coachDashboardLoadError = "예약 API 주소가 아직 설정되지 않았습니다.";
-    renderStudentHome();
+    refreshReservationConsumerView();
     return;
   }
   state.coachDashboardLoadState = "loading";
   state.coachDashboardLoadError = "";
   state.bookings = [];
-  renderStudentHome();
+  refreshReservationConsumerView();
   try {
     state.bookings = await fetchCoachReservations();
     state.coachDashboardLoadState = "loaded";
     renderMetrics();
-    renderStudentHome();
+    refreshReservationConsumerView();
   } catch (error) {
     state.bookings = [];
     state.coachDashboardLoadState = "error";
     state.coachDashboardLoadError = error.status === 401
       ? "코치 계정 인증이 만료되었습니다. 다시 로그인해주세요."
       : "코치 전용 예약 API가 배포되지 않았거나 일시적으로 사용할 수 없습니다.";
-    renderStudentHome();
+    refreshReservationConsumerView();
   }
 }
 
