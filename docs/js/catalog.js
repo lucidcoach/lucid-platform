@@ -79,14 +79,14 @@ export const priceUnits = {
 export const badgeOptions = ["엠버서더", "최우수", "우수", "추천", "일반", "저티어 입문", "입문 추천", "리뷰 우수", "팀 피드백 가능"];
 
 export const text = {
-  navMarket: "강의 목록",
+  navMarket: "코칭",
   navBookings: "예약 관리",
   navAdmin: "코치 관리",
   navUsers: "회원 관리",
   sideLabel: "예약 안내",
   sideCopy: "코치 목록에서 원하는 상품을 고르면 상세 정보와 강의 구매를 바로 진행할 수 있습니다.",
-  heroEyebrow: "LoL 리플레이 분석 · 라인전 교정 · 팀 피드백",
-  heroTitle: "LoL 코칭 플랫폼",
+  heroEyebrow: "LUCID COACH",
+  heroTitle: "코칭",
   metricCoachesLabel: "강의",
   metricBookingsLabel: "예약",
   metricRatingLabel: "평점",

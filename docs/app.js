@@ -157,15 +157,15 @@ function normalizeCoachProfiles(coaches) {
 }
 
 function boot() {
-  applyTheme(localStorage.getItem(THEME_KEY) || "light");
+  applyTheme(localStorage.getItem(THEME_KEY) || "dark");
   Object.entries(text).forEach(([id, value]) => {
     const el = $(id);
     if (!el) return;
     if (el.tagName === "INPUT") el.placeholder = value;
     else el.textContent = value;
   });
-  $("navStudent").textContent = "내 정보";
-  $("navCoachSearch").textContent = "맞춤 강의 검색";
+  $("navStudent").textContent = "내 강의";
+  $("navCoachSearch").textContent = "코치 찾기";
   $("searchInput").placeholder = text.searchPlaceholder;
   $("coachImagePosition").placeholder = "예: center 8%, 72% 12%";
   state.coaches = [];
@@ -192,6 +192,20 @@ function bindEvents() {
     state.query = "";
     $("searchInput").value = "";
     render();
+  });
+
+  document.querySelectorAll("[data-view-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextView = button.dataset.viewJump;
+      if (!nextView || !document.getElementById(`${nextView}View`)) return;
+      state.activeView = nextView;
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  $("heroCoachSearchBtn")?.addEventListener("click", () => {
+    openCoachExplorer();
   });
 
   document.querySelectorAll(".nav-item").forEach((button) => {
