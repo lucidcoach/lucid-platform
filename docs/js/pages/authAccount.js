@@ -102,7 +102,7 @@ function renderRoleMenu() {
   menu.hidden = false;
   menu.innerHTML = `
     <span class="label">${canManageLessons ? "코치 메뉴" : "계정 메뉴"}</span>
-    ${canManageLessons ? `<button class="role-menu-button ${state.activeView === "coachSelf" ? "active" : ""}" id="openCoachSelfMenuBtn" type="button">내 강의 관리</button>` : ""}
+    ${canManageLessons ? `<button class="role-menu-button ${state.activeView === "coachSelf" ? "active" : ""}" id="openCoachSelfMenuBtn" type="button">코치센터</button>` : ""}
     ${!isAdminUser() && !isCoachUser() ? `<button class="role-menu-button ${state.activeView === "coachApply" ? "active" : ""}" id="openCoachApplyMenuBtn" type="button">코치 등록 요청</button>` : ""}
   `;
   $("openCoachSelfMenuBtn")?.addEventListener("click", () => {
@@ -127,7 +127,10 @@ function renderUserActions() {
   }
   if (!loginButton || !guestButton) return;
   if (state.currentUser) {
-    loginButton.textContent = state.currentUser.displayName || state.currentUser.email || "내 계정";
+    const accountRole = isAdminUser() ? "관리자" : (isCoachUser() ? "코치" : "일반");
+    loginButton.textContent = `${accountRole} · ${state.currentUser.displayName || state.currentUser.email || "내 계정"}`;
+    const studentNav = $("navStudent");
+    if (studentNav) studentNav.textContent = isCoachUser() ? "코치 현황" : "내 수강";
     loginButton.title = "내 정보 열기";
     loginButton.setAttribute("aria-label", "내 정보 열기");
     loginButton.classList.add("active-user");
@@ -142,6 +145,8 @@ function renderUserActions() {
     }
   } else {
     loginButton.textContent = "로그인";
+    const studentNav = $("navStudent");
+    if (studentNav) studentNav.textContent = "내 수강";
     loginButton.title = "로그인";
     loginButton.setAttribute("aria-label", "로그인");
     loginButton.classList.remove("active-user");
@@ -161,7 +166,7 @@ function handleLoginButtonClick() {
     openAuthModal("login");
     return;
   }
-  state.activeView = "student";
+  state.activeView = "account";
   renderApp();
 }
 
@@ -172,7 +177,7 @@ function handleDiscordButtonClick() {
   }
   const connected = Boolean(state.currentUser.discordConnected || state.currentUser.discord_connected || state.currentUser.discordDisplayName || state.currentUser.discord_display_name);
   if (connected) {
-    state.activeView = "student";
+    state.activeView = "account";
     renderApp();
     return;
   }
@@ -388,24 +393,47 @@ function renderAccountPanelMarkup() {
   if (!state.currentUser) return "";
   const user = state.currentUser;
   const nickname = user.displayName || user.nickname || "";
+  const riotId = user.riotId || user.riot_id || "";
   const availableAt = user.nicknameChangeAvailableAt || user.nickname_change_available_at || "";
   const availableText = availableAt ? formatDateTime(availableAt) : "변경 가능";
   const needsNickname = Boolean(user.needsNickname || user.nicknameSetupRequired || user.nickname_setup_required);
+  const roleLabel = isAdminUser() ? "관리자 계정" : (isCoachUser() ? "코치 계정" : "일반 계정");
+  const discordConnected = Boolean(user.discordConnected || user.discord_connected || user.discordDisplayName || user.discord_display_name);
   return `
-    <section class="student-panel account-panel" id="accountPanel">
-      <div class="student-panel-head"><span>내 정보</span><strong>계정 설정</strong></div>
-      ${needsNickname ? `<p class="account-required">서비스 이용을 위해 닉네임을 먼저 설정해주세요.</p>` : ""}
-      <form class="account-form" id="accountNicknameForm">
-        <label>닉네임<input id="accountNickname" name="nickname" required minlength="1" maxlength="12" pattern=".{1,12}" value="${escapeHtml(nickname)}"></label>
-        <button class="secondary" type="submit" id="accountNicknameSaveBtn">닉네임 저장</button>
-        <span class="save-status" id="accountNicknameStatus" aria-live="polite">다음 변경 가능: ${escapeHtml(availableText)}</span>
-      </form>
-      <div class="account-danger">
-        <div><strong>회원탈퇴</strong><small>탈퇴하면 계정과 로그인 세션을 사용할 수 없습니다.</small></div>
-        <button class="danger" type="button" id="accountDeleteBtn">회원탈퇴</button>
+    <section class="account-overview">
+      <div class="account-avatar">${escapeHtml((nickname || "L").slice(0, 1).toUpperCase())}</div>
+      <div class="account-identity">
+        <span class="account-role-badge">${escapeHtml(roleLabel)}</span>
+        <strong>${escapeHtml(nickname || "닉네임 미설정")}</strong>
+        <small>${escapeHtml(user.email || "")}</small>
       </div>
+      ${isCoachUser() ? `<button class="secondary account-coach-link" type="button" id="accountCoachCenterBtn">코치센터</button>` : ""}
     </section>
-    ${isCoachUser() ? renderScheduleSummaryMarkup() : ""}
+    <section class="student-panel account-panel" id="accountPanel">
+      ${needsNickname ? `<p class="account-required">닉네임을 설정해주세요.</p>` : ""}
+      <div class="account-settings-grid">
+        <form class="account-setting-card" id="accountNicknameForm">
+          <div><span>닉네임</span><small>${escapeHtml(availableText)}</small></div>
+          <div class="account-inline-field"><input id="accountNickname" name="nickname" required minlength="1" maxlength="12" pattern=".{1,12}" value="${escapeHtml(nickname)}"><button class="secondary" type="submit" id="accountNicknameSaveBtn">저장</button></div>
+          <span class="save-status" id="accountNicknameStatus" aria-live="polite"></span>
+        </form>
+        <form class="account-setting-card" id="accountRiotForm">
+          <div><span>Riot ID</span><small>게임이름#태그</small></div>
+          <div class="account-inline-field"><input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"><button class="secondary" type="submit" id="accountRiotSaveBtn">저장</button></div>
+          <span class="save-status" id="accountRiotStatus" aria-live="polite"></span>
+        </form>
+      </div>
+      <div class="account-link-row">
+        <span class="account-link-title">계정 연동</span>
+        <button class="account-provider google" type="button" data-account-oauth="google"><img src="assets/google-logo.jpg" alt=""><span>Google</span></button>
+        <button class="account-provider naver" type="button" data-account-oauth="naver"><img src="assets/naver.jpg" alt=""><span>Naver</span></button>
+        <button class="account-provider discord ${discordConnected ? "connected" : ""}" type="button" data-account-oauth="discord"><img src="assets/discord-login.png" alt=""><span>${discordConnected ? "Discord 연결됨" : "Discord 연결"}</span></button>
+      </div>
+      <details class="account-danger-compact">
+        <summary>계정 관리</summary>
+        <div><span>회원탈퇴</span><button class="danger mini" type="button" id="accountDeleteBtn">탈퇴</button></div>
+      </details>
+    </section>
   `;
 }
 
@@ -413,6 +441,9 @@ function mountAccountPanel(container) {
   if (!container || !state.currentUser) return;
   container.insertAdjacentHTML("afterbegin", renderAccountPanelMarkup());
   $("accountNicknameForm")?.addEventListener("submit", saveAccountNickname);
+  $("accountRiotForm")?.addEventListener("submit", saveAccountRiotId);
+  document.querySelectorAll("[data-account-oauth]").forEach((button) => button.addEventListener("click", () => startAccountOAuth(button.dataset.accountOauth)));
+  $("accountCoachCenterBtn")?.addEventListener("click", () => { state.coachSelfKey = getFallbackCoachKey(); state.activeView = "coachSelf"; renderApp(); });
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
 }
 
@@ -445,6 +476,35 @@ async function saveAccountNickname(event) {
       status.textContent = `${getAuthErrorMessage(error.message)}${retryText}`;
       status.className = "save-status error";
     }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function startAccountOAuth(provider) {
+  if (!state.currentUser || !["google", "naver", "discord"].includes(provider)) return;
+  window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${provider}/start`);
+}
+
+async function saveAccountRiotId(event) {
+  event.preventDefault();
+  const input = $("accountRiotId");
+  const status = $("accountRiotStatus");
+  const button = $("accountRiotSaveBtn");
+  const riotId = String(input?.value || "").trim();
+  if (riotId && (!riotId.includes("#") || riotId.startsWith("#") || riotId.endsWith("#"))) {
+    if (status) { status.textContent = "게임이름#태그 형식으로 입력해주세요."; status.className = "save-status error"; }
+    return;
+  }
+  if (button) button.disabled = true;
+  if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
+  try {
+    const user = await updateCurrentUser({ riotId });
+    state.currentUser = user;
+    if (status) { status.textContent = "저장 완료"; status.className = "save-status success"; }
+    renderApp();
+  } catch (error) {
+    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
   } finally {
     if (button) button.disabled = false;
   }
@@ -544,6 +604,7 @@ function getAuthErrorMessage(error) {
     cannot_delete_account: "현재 계정은 회원탈퇴를 처리할 수 없습니다.",
     missing_credentials: "이메일과 비밀번호를 입력해주세요.",
     invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
+    invalid_riot_id: "Riot ID는 게임이름#태그 형식으로 입력해주세요.",
   };
   return messages[error] || "처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
 }

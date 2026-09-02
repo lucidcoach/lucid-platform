@@ -508,7 +508,7 @@ async function loadCoachSchedule() {
 
 function renderScheduleSummaryMarkup() {
   const weekly = state.coachSchedule?.weekly || [];
-  if (!weekly.length) return `<section class="student-panel schedule-summary"><div class="student-panel-head"><span>주간 일정</span><strong>예약 가능 시간</strong></div><p class="schedule-summary-empty">등록된 반복 일정이 없습니다. 내 강의 관리에서 시간을 설정해주세요.</p></section>`;
+  if (!weekly.length) return `<section class="student-panel schedule-summary"><div class="student-panel-head"><span>주간 일정</span><strong>예약 가능 시간</strong></div><p class="schedule-summary-empty">등록된 반복 일정이 없습니다. 코치센터에서 시간을 설정해주세요.</p></section>`;
   const labels = ["월", "화", "수", "목", "금", "토", "일"];
   const chunks = labels.map((label, index) => {
     const entries = weekly.filter((item) => item.weekday === index + 1).sort((a, b) => a.startMinute - b.startMinute);

@@ -18,7 +18,6 @@ function renderStudentHome() {
   if (!container) return;
   if (isCoachUser()) {
     renderCoachDashboard(container);
-    mountAccountPanel(container);
     if (state.coachScheduleLoadState === "idle") loadCoachSchedule();
     return;
   }
@@ -30,12 +29,10 @@ function renderStudentHome() {
   }
   if (state.studentReservationLoadState === "loading" || state.studentReservationLoadState === "idle") {
     container.innerHTML = `<div class="student-empty"><strong>예약 내역을 불러오는 중입니다.</strong></div>`;
-    mountAccountPanel(container);
     return;
   }
   if (state.studentReservationLoadState === "error") {
     container.innerHTML = `<div class="student-empty"><strong>예약 내역을 불러오지 못했습니다.</strong><span>${escapeHtml(state.studentReservationLoadError)}</span></div>`;
-    mountAccountPanel(container);
     return;
   }
   const historyRows = state.bookings;
@@ -46,31 +43,10 @@ function renderStudentHome() {
   const paidAmount = paidRows.reduce((sum, row) => sum + Number(row.payment?.amount || 0), 0);
 
   container.innerHTML = `
-    <section class="student-hero">
-      <article class="student-hero-card">
-        <span>결제 완료</span>
-        <strong>${formatWon(paidAmount)}</strong>
-        <p>토스페이먼츠 승인이 완료된 실제 결제 합계입니다.</p>
-        <em>${paidRows.length}건 결제 완료</em>
-      </article>
-      <article class="student-hero-card highlight">
-        <span>다음 일정</span>
-        <strong>${nextLesson ? escapeHtml(nextLesson.time || "시간 확인 중") : "예약 대기"}</strong>
-        <p>${nextLesson ? escapeHtml(nextLesson.lesson || "예약 강의") : "강의 상세보기에서 신청하면 이곳에 표시됩니다."}</p>
-        <em>${nextLesson ? escapeHtml(nextLesson.status || "접수") : "예약된 강의 없음"}</em>
-      </article>
-      <article class="student-hero-card reward">
-        <span>결제 대기</span>
-        <strong>${payableRows.length}건</strong>
-        <p>운영진이 예약 시간을 확정하면 안전하게 결제할 수 있습니다.</p>
-        <em>현재는 테스트 결제만 가능</em>
-      </article>
-    </section>
-
-    <section class="student-flow">
-      <div><span>1</span><strong>강의 선택</strong><p>목록이나 맞춤 검색에서 코치를 고릅니다.</p></div>
-      <div><span>2</span><strong>일정 확정</strong><p>운영진과 가능한 시간을 먼저 확정합니다.</p></div>
-      <div><span>3</span><strong>안전 결제</strong><p>확정된 예약만 토스 결제창으로 결제합니다.</p></div>
+    <section class="student-summary-strip">
+      <article><span>결제 완료</span><strong>${formatWon(paidAmount)}</strong><em>${paidRows.length}건</em></article>
+      <article class="wide"><span>다음 일정</span><strong>${nextLesson ? escapeHtml(nextLesson.time || "시간 확인 중") : "예약 없음"}</strong><em>${nextLesson ? escapeHtml(nextLesson.lesson || "예약 강의") : ""}</em></article>
+      <article><span>결제 대기</span><strong>${payableRows.length}건</strong><em>${payableRows.length ? "결제 가능 예약 확인" : "없음"}</em></article>
     </section>
 
     <section class="student-main-grid">
@@ -142,7 +118,6 @@ function renderStudentHome() {
       </article>
     </section>
   `;
-  mountAccountPanel(container);
   document.querySelectorAll("[data-pay-reservation]").forEach((button) => {
     button.addEventListener("click", () => startTossPayment(button.dataset.payReservation, button));
   });
@@ -162,15 +137,12 @@ function setStudentHeader(isCoach) {
   if (!head) return;
   const eyebrow = head.querySelector(".eyebrow");
   const title = head.querySelector("h2");
-  const balance = head.querySelector(".student-balance");
   if (isCoach) {
-    if (eyebrow) eyebrow.textContent = "코치 개인 화면";
-    if (title) title.textContent = "내 정보";
-    if (balance) balance.innerHTML = "<span>집계 기준</span><strong>완료 예약</strong>";
+    if (eyebrow) eyebrow.textContent = "코치 계정";
+    if (title) title.textContent = "코치 현황";
   } else {
-    if (eyebrow) eyebrow.textContent = "수강생 화면";
-    if (title) title.textContent = "내 강의 홈";
-    if (balance) balance.innerHTML = "<span>사용 가능 포인트</span><strong>0원</strong>";
+    if (eyebrow) eyebrow.textContent = "예약 · 결제 · 후기";
+    if (title) title.textContent = "내 수강";
   }
 }
 
@@ -209,17 +181,16 @@ function renderCoachDashboard(container) {
 
   container.innerHTML = `
     <section class="coach-summary-grid">
-      <article class="coach-summary-card"><span>판매 시간</span><strong>${totals.hours.toLocaleString("ko-KR")}시간</strong><small>완료된 시간제 강의 기준</small></article>
-      <article class="coach-summary-card"><span>예상 매출</span><strong>${formatWon(totals.revenue)}</strong><small>결제 연동 전 예약 금액 합계</small></article>
-      <article class="coach-summary-card"><span>완료 수강생</span><strong>${students.size.toLocaleString("ko-KR")}명</strong><small>완료 예약의 고유 수강생</small></article>
-      <article class="coach-summary-card"><span>전체 예약</span><strong>${active.length.toLocaleString("ko-KR")}건</strong><small>취소 제외 · 완료 ${completed.length.toLocaleString("ko-KR")}건</small></article>
+      <article class="coach-summary-card"><span>판매 시간</span><strong>${totals.hours.toLocaleString("ko-KR")}시간</strong><small>완료 기준</small></article>
+      <article class="coach-summary-card"><span>예상 매출</span><strong>${formatWon(totals.revenue)}</strong><small>완료 예약 기준</small></article>
+      <article class="coach-summary-card"><span>완료 수강생</span><strong>${students.size.toLocaleString("ko-KR")}명</strong><small>고유 수강생</small></article>
+      <article class="coach-summary-card"><span>전체 예약</span><strong>${active.length.toLocaleString("ko-KR")}건</strong><small>완료 ${completed.length.toLocaleString("ko-KR")}건</small></article>
     </section>
     <section class="student-panel coach-history-panel">
       <div class="student-panel-head">
         <span>예약 내역</span>
         <strong>내 강의 수강생 목록</strong>
       </div>
-      <p class="coach-dashboard-note">매출과 판매 시간은 현재 <b>완료</b> 상태인 예약만 집계합니다. 결제 연동 후 실제 결제 금액으로 교체됩니다.</p>
       <div class="coach-history-list">
         ${history.length ? history.map((booking) => `
           <div class="coach-history-row">

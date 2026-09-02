@@ -446,3 +446,68 @@ td { border-top: 1px solid var(--line); }
   .site-header-tools .theme-toggle { display: none; }
   .site-header-tools .user-action { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+
+/* UI/UX v2: function-first layout */
+.market-compact-head { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:0 0 14px; padding:8px 2px; }
+.market-compact-head > div { display:grid; gap:4px; }
+.market-compact-head h2 { margin:0; font-size:28px; letter-spacing:-.03em; }
+.market-compact-head .secondary { min-height:38px; }
+.catalog-heading p { display:none; }
+
+#accountView { max-width:1040px; margin:0 auto; }
+.account-page { display:grid; gap:14px; }
+.account-overview { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:16px; padding:20px; border:1px solid var(--line); border-radius:16px; background:var(--panel); }
+.account-avatar { width:54px; height:54px; display:grid; place-items:center; border-radius:14px; background:var(--brand-soft); color:var(--brand-dark); font-size:22px; font-weight:900; }
+.account-identity { display:grid; gap:3px; min-width:0; }
+.account-identity strong { font-size:20px; }
+.account-identity small { color:var(--muted); overflow:hidden; text-overflow:ellipsis; }
+.account-role-badge { width:max-content; padding:4px 8px; border:1px solid color-mix(in srgb, var(--brand) 45%, var(--line)); border-radius:999px; color:var(--brand-dark); background:var(--brand-soft); font-size:10px; font-weight:900; }
+.account-panel { padding:18px !important; }
+.account-settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.account-setting-card { display:grid; gap:10px; padding:14px; border:1px solid var(--line); border-radius:13px; background:var(--panel-2); }
+.account-setting-card > div:first-child { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.account-setting-card > div:first-child > span { font-size:12px; font-weight:900; }
+.account-setting-card > div:first-child > small { color:var(--muted); font-size:10px; }
+.account-inline-field { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+.account-inline-field input { min-width:0; }
+.account-link-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+.account-link-title { margin-right:4px; color:var(--muted); font-size:11px; font-weight:900; }
+.account-provider { min-height:32px; display:inline-flex; align-items:center; gap:7px; padding:5px 9px; border:1px solid var(--line); border-radius:9px; background:var(--panel-2); color:var(--text); font-size:11px; font-weight:800; cursor:pointer; }
+.account-provider:hover { border-color:var(--brand); }
+.account-provider.connected { border-color:#2fbf71; }
+.account-provider img { width:18px; height:18px; object-fit:cover; border-radius:4px; }
+.account-danger-compact { margin-top:14px; padding-top:10px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+.account-danger-compact summary { cursor:pointer; width:max-content; }
+.account-danger-compact > div { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
+.account-required { margin:0 0 12px; }
+.account-login-empty { min-height:220px; }
+
+.student-summary-strip { display:grid; grid-template-columns:.8fr 1.4fr .8fr; gap:10px; margin-bottom:12px; }
+.student-summary-strip article { min-height:92px; display:grid; align-content:center; gap:5px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:var(--panel); }
+.student-summary-strip span { color:var(--muted); font-size:11px; font-weight:800; }
+.student-summary-strip strong { font-size:22px; letter-spacing:-.03em; }
+.student-summary-strip em { color:var(--muted); font-size:10px; font-style:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.student-hero, .student-flow { display:none !important; }
+.student-main-grid { margin-top:0 !important; }
+.coach-summary-grid { gap:10px !important; margin-bottom:12px !important; }
+.coach-summary-card { min-height:96px !important; padding:14px 16px !important; }
+.coach-summary-card strong { font-size:22px !important; }
+.coach-summary-card small { margin-top:2px !important; font-size:10px !important; }
+.coach-dashboard-note { display:none !important; }
+.student-head { align-items:end; }
+
+@media (max-width:860px) {
+  .account-settings-grid { grid-template-columns:1fr; }
+  .student-summary-strip { grid-template-columns:1fr 1fr; }
+  .student-summary-strip .wide { grid-column:1 / -1; grid-row:1; }
+}
+@media (max-width:620px) {
+  .market-compact-head { align-items:center; }
+  .market-compact-head h2 { font-size:24px; }
+  .account-overview { grid-template-columns:auto minmax(0,1fr); padding:14px; }
+  .account-coach-link { grid-column:1 / -1; width:100%; }
+  .account-inline-field { grid-template-columns:1fr; }
+  .student-summary-strip { grid-template-columns:1fr; }
+  .student-summary-strip .wide { grid-column:auto; grid-row:auto; }
+}

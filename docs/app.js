@@ -164,7 +164,7 @@ function boot() {
     if (el.tagName === "INPUT") el.placeholder = value;
     else el.textContent = value;
   });
-  $("navStudent").textContent = "내 강의";
+  $("navStudent").textContent = "내 수강";
   $("navCoachSearch").textContent = "코치 찾기";
   $("searchInput").placeholder = text.searchPlaceholder;
   $("coachImagePosition").placeholder = "예: center 8%, 72% 12%";
@@ -356,6 +356,7 @@ function render() {
   renderSidebarCoaches();
   renderMarket();
   renderStudentHome();
+  renderAccountView();
   renderBookings();
   renderAdmin();
   renderUsers();
@@ -363,6 +364,18 @@ function render() {
   renderCoachSelf();
   maybeLoadCoachDashboardReservations();
   maybeLoadStudentReservations();
+}
+
+function renderAccountView() {
+  const container = $("accountViewContent");
+  if (!container) return;
+  container.innerHTML = "";
+  if (!state.currentUser) {
+    container.innerHTML = `<div class="student-empty account-login-empty"><strong>로그인이 필요합니다.</strong><button class="primary" id="accountLoginBtn" type="button">로그인</button></div>`;
+    $("accountLoginBtn")?.addEventListener("click", () => openAuthModal("login"));
+    return;
+  }
+  mountAccountPanel(container);
 }
 
 function renderMetrics() {

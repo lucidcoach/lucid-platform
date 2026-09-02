@@ -22,6 +22,7 @@
           <button class="nav-item" data-action="coachSearch" id="navCoachSearch" type="button">코치 찾기</button>
           <button class="nav-item" data-view="analysis" id="navAnalysis" type="button">게임 분석 <span class="nav-beta">BETA</span></button>
           <button class="nav-item" data-view="student" id="navStudent" type="button"></button>
+          <button class="nav-item" data-view="account" id="navAccount" type="button">내 정보</button>
         </nav>
         <div class="site-header-tools">
           <section class="side-role-menu" id="sideRoleMenu" hidden></section>
@@ -60,29 +61,12 @@
       </section>
 
       <section class="view active" id="marketView">
-        <section class="market-hero" aria-labelledby="marketHeroTitle">
-          <div class="market-hero-copy">
+        <section class="market-compact-head" aria-label="코칭 탐색">
+          <div>
             <span class="market-kicker">LUCID COACH</span>
-            <h2 id="marketHeroTitle">내 플레이에 맞는 코칭을 찾으세요.</h2>
-            <p>라인전 교정부터 리플레이 분석, 팀게임 피드백까지. 코치의 전문 분야와 실제 강의 정보를 비교하고 필요한 수업만 선택할 수 있습니다.</p>
-            <div class="market-hero-actions">
-              <button class="primary" id="heroCoachSearchBtn" type="button">코치 찾기</button>
-              <button class="secondary" data-view-jump="analysis" type="button">게임 분석 보기</button>
-            </div>
-            <div class="market-trust-row" aria-label="서비스 특징">
-              <span><strong>전문 분야</strong>로 빠르게 탐색</span>
-              <span><strong>후기·평점</strong> 확인 후 선택</span>
-              <span><strong>예약 가능 시간</strong> 기반 구매</span>
-            </div>
+            <h2>코칭</h2>
           </div>
-          <aside class="market-guide-card" aria-label="코칭 이용 방법">
-            <span class="market-guide-label">HOW IT WORKS</span>
-            <ol>
-              <li><b>01</b><div><strong>코치를 비교하세요</strong><small>포지션, 목적, 가격과 후기를 확인합니다.</small></div></li>
-              <li><b>02</b><div><strong>강의를 선택하세요</strong><small>상세 설명과 가능한 시간을 확인합니다.</small></div></li>
-              <li><b>03</b><div><strong>게임에 적용하세요</strong><small>피드백을 다음 게임의 연습 과제로 연결합니다.</small></div></li>
-            </ol>
-          </aside>
+          <button class="secondary" id="heroCoachSearchBtn" type="button">코치 빠르게 찾기</button>
         </section>
         <section class="catalog-shell" aria-label="코칭 상품 탐색">
           <div class="catalog-heading">
@@ -156,15 +140,21 @@
       <section class="view" id="studentView">
         <div class="section-head student-head">
           <div>
-            <p class="eyebrow">수강생 화면</p>
-            <h2>내 강의 홈</h2>
-          </div>
-          <div class="student-balance">
-            <span>사용 가능 포인트</span>
-            <strong>0원</strong>
+            <p class="eyebrow">예약 · 결제 · 후기</p>
+            <h2>내 수강</h2>
           </div>
         </div>
         <div class="student-dashboard" id="studentViewContent"></div>
+      </section>
+
+      <section class="view" id="accountView">
+        <div class="section-head account-head">
+          <div>
+            <p class="eyebrow">계정</p>
+            <h2>내 정보</h2>
+          </div>
+        </div>
+        <div class="account-page" id="accountViewContent"></div>
       </section>
 
       <section class="view" id="bookingsView">
@@ -365,8 +355,8 @@
       <section class="view" id="coachSelfView">
         <div class="section-head coach-self-head">
           <div>
-            <p class="eyebrow">코치 개인 화면</p>
-            <h2>내 강의 관리</h2>
+            <p class="eyebrow">코치 전용</p>
+            <h2>코치센터</h2>
           </div>
           <div class="coach-self-tabs" id="coachSelfTabs"></div>
         </div>
