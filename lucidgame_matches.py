@@ -1402,12 +1402,17 @@ def register_match_commands(runtime):
         move_members=True,
         game_state=None,
         include_waiting=False,
+        interaction=None,
     ):
         _sync_runtime()
         category = await get_or_create_match_category(guild)
         created_channels = []
         move_targets = []
+        issue = None
+        failed_moves = 0
         try:
+            if category is None:
+                raise RuntimeError("내전 음성 카테고리를 찾거나 생성하지 못했습니다.")
             for channel_name, users in team_specs:
                 vc = discord.utils.get(guild.voice_channels, name=channel_name)
                 if not vc:
@@ -1436,13 +1441,33 @@ def register_match_commands(runtime):
                     if user and user.voice and user.voice.channel
                 ]
                 for index, (user, vc) in enumerate(connected_targets):
-                    await move_member_to_voice_verified(user, vc)
+                    if not await move_member_to_voice_verified(user, vc):
+                        failed_moves += 1
                     if index + 1 < len(connected_targets):
                         await asyncio.sleep(TEAM_VOICE_MOVE_INTERVAL_SECONDS)
-        except Exception as e:
-            print(f"🔊 팀 음성 채널 제어 예외 스킵 처리: {e}")
+        except discord.Forbidden:
+            issue = "봇에 `채널 관리` 또는 `멤버 이동` 권한이 없습니다."
+            logger.exception("팀 음성 채널 제어 권한 부족: guild_id=%s", getattr(guild, "id", None))
+        except Exception as exc:
+            issue = f"{type(exc).__name__}: {str(exc)[:300]}"
+            logger.exception("팀 음성 채널 제어 실패: guild_id=%s", getattr(guild, "id", None))
+        if failed_moves:
+            issue = f"음성 채널은 생성했지만 참가자 {failed_moves}명을 이동하지 못했습니다. 봇의 `멤버 이동` 권한을 확인해주세요."
         if isinstance(game_state, dict):
+            if issue:
+                game_state["voice_setup_error"] = issue
+            else:
+                game_state.pop("voice_setup_error", None)
             _persist_active_game(getattr(guild, "id", None), game_state)
+        if issue and interaction is not None:
+            message = f"⚠️ 팀 음성방 자동 설정 실패\n{issue}"
+            try:
+                if interaction.response.is_done():
+                    await interaction.followup.send(message, ephemeral=True)
+                else:
+                    await interaction.response.send_message(message, ephemeral=True)
+            except discord.HTTPException:
+                logger.exception("팀 음성 채널 실패 안내 전송 실패: guild_id=%s", getattr(guild, "id", None))
         return created_channels
     
     async def move_members_to_waiting_voice(guild, user_ids, *, waiting_channel_id=None):
@@ -1574,7 +1599,7 @@ def register_match_commands(runtime):
         balanced = [item for item in candidates if item[0] <= min_diff + 100]
 
         player_set = frozenset(uids)
-        previous_partition = None
+        recent_partitions = []
         for record in reversed(bot.user_data.get(gid, {}).get(MATCH_HISTORY_KEY, [])):
             if record.get("cancelled") or record.get("mode") != ARAM_MODE_KEY:
                 continue
@@ -1585,13 +1610,19 @@ def register_match_commands(runtime):
             previous_blue = frozenset(
                 str(player.get("user_id")) for player in record_players if player.get("team") == "blue"
             )
-            previous_partition = frozenset((previous_blue, player_set - previous_blue))
-            break
+            recent_partitions.append(frozenset((previous_blue, player_set - previous_blue)))
+            if len(recent_partitions) >= 3:
+                break
 
         alternatives = [
             item for item in balanced
-            if frozenset((item[1], player_set - item[1])) != previous_partition
+            if frozenset((item[1], player_set - item[1])) not in recent_partitions
         ]
+        if not alternatives and recent_partitions:
+            alternatives = [
+                item for item in balanced
+                if frozenset((item[1], player_set - item[1])) != recent_partitions[0]
+            ]
         chosen_diff, blue_team = random.choice(alternatives or balanced)
         if random.random() < 0.5:
             blue_team = player_set - blue_team
@@ -1697,6 +1728,7 @@ def register_match_commands(runtime):
                 for idx, team in enumerate(teams, 1)
             ],
             game_state=bot.active_games[gid][q_num],
+            interaction=interaction,
         )
     
     async def internal_aram_lineup(interaction: discord.Interaction, q_num):
@@ -1767,6 +1799,7 @@ def register_match_commands(runtime):
             ],
             game_state=game_state,
             include_waiting=True,
+            interaction=interaction,
         )
     
         embed = discord.Embed(
@@ -2989,6 +3022,7 @@ def register_match_commands(runtime):
                 ],
                 move_members=False,
                 game_state=bot.active_games[gid][LEAGUE_SERIES_QUEUE_KEY],
+                interaction=interaction,
             )
         finally:
             bot.finish_admin_operation(operation_key)
@@ -3080,6 +3114,7 @@ def register_match_commands(runtime):
                 ],
                 move_members=False,
                 game_state=bot.active_games[gid][ARAM_LEAGUE_QUEUE_KEY],
+                interaction=interaction,
             )
         finally:
             bot.finish_admin_operation(operation_key)
@@ -3488,6 +3523,7 @@ def register_match_commands(runtime):
                 ],
                 move_members=False,
                 game_state=bot.active_games[gid][LEAGUE_QUEUE_KEY],
+                interaction=interaction,
             )
             await send_or_edit_league_reveal(embed)
         finally:
@@ -4575,6 +4611,7 @@ def register_match_commands(runtime):
                 (red_channel_name, [u for u, _, _, _ in red_team]),
             ],
             game_state=game_state,
+            interaction=interaction,
             **voice_create_kwargs,
         )
     
@@ -5585,10 +5622,16 @@ def register_match_commands(runtime):
                 return no
         return None
     
-    def build_series_match_history_record(gid, game_state, match, winner_team, loser_team):
+    def build_series_match_history_record(gid, game_state, match, winner_team, loser_team, team_nos=None):
         player_records = []
         is_aram_league = game_state.get("mode") == ARAM_LEAGUE_MODE_KEY
-        for team, result in ((winner_team, "win"), (loser_team, "loss")):
+        teams_by_no = {int(team.get("team_no")): team for team in (winner_team, loser_team)}
+        ordered_teams = [teams_by_no[int(no)] for no in team_nos or [] if int(no) in teams_by_no]
+        if len(ordered_teams) != 2:
+            ordered_teams = [winner_team, loser_team]
+        winner_no = int(winner_team.get("team_no"))
+        for side, team in zip(("blue", "red"), ordered_teams):
+            result = "win" if int(team.get("team_no")) == winner_no else "loss"
             roles = team.get("roles", {}) or {}
             scores = team.get("player_scores", {}) or {}
             names = team.get("player_names", {}) or {}
@@ -5602,7 +5645,8 @@ def register_match_commands(runtime):
                 player_records.append({
                     "user_id": uid,
                     "name": names.get(uid, get_member_display_name(None, gid, uid)),
-                    "team": format_league_team_name(team),
+                    "team": side,
+                    "league_team": format_league_team_name(team),
                     "role": role,
                     "result": result,
                     "before_mmr": int(scores.get(uid, 0) or 0),
@@ -5620,12 +5664,28 @@ def register_match_commands(runtime):
             "round_name": match.get("round_name"),
             "winner": format_league_team_name(winner_team),
             "teams": [
-                {"name": format_league_team_name(winner_team), "team_no": winner_team.get("team_no"), "players": winner_team.get("players", [])},
-                {"name": format_league_team_name(loser_team), "team_no": loser_team.get("team_no"), "players": loser_team.get("players", [])},
+                {
+                    "name": format_league_team_name(team),
+                    "team_no": team.get("team_no"),
+                    "players": team.get("players", []),
+                    "side": side,
+                }
+                for side, team in zip(("blue", "red"), ordered_teams)
             ],
             "players": player_records,
             "cancelled": False,
         }
+
+    def validate_series_match_history_record(record):
+        players = record.get("players", []) or []
+        ids = [str(player.get("user_id") or "") for player in players]
+        blue_count = sum(1 for player in players if player.get("team") == "blue")
+        red_count = sum(1 for player in players if player.get("team") == "red")
+        if len(players) != 10 or len(set(ids)) != 10 or "" in ids:
+            return "참가자 10명의 기록이 완전하지 않습니다."
+        if blue_count != 5 or red_count != 5:
+            return f"팀 인원 기록이 올바르지 않습니다. (BLUE {blue_count}명 / RED {red_count}명)"
+        return None
     
     async def process_league_series_win(interaction, gid, match_no, winner_text, game_state):
         is_simulation = bool(game_state.get("simulation"))
@@ -5655,7 +5715,22 @@ def register_match_commands(runtime):
             return await interaction.followup.send("❌ 팀 정보를 찾지 못했습니다.")
     
         bot.user_data.setdefault(gid, {})
-        history_record = build_series_match_history_record(gid, game_state, match, winner_team, loser_team)
+        history_record = build_series_match_history_record(
+            gid, game_state, match, winner_team, loser_team, team_nos=team_nos
+        )
+        history_error = validate_series_match_history_record(history_record)
+        if history_error:
+            logger.error(
+                "리그전 경기기록 무결성 검사 실패: guild_id=%s match_no=%s error=%s",
+                gid,
+                match_no,
+                history_error,
+            )
+            await interaction.followup.send(
+                f"❌ 결과를 저장하지 않았습니다. {history_error}\n운영자는 팀 구성 기록을 확인해주세요.",
+                ephemeral=True,
+            )
+            return None
         playable_before = {
             str(mid)
             for mid in game_state.get("match_order", [])
