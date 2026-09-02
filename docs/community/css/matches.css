@@ -38,3 +38,30 @@
 .score-award{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;border-radius:6px;vertical-align:middle;border:1px solid currentColor}
 .score-award svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.score-award.mvp{color:#ffd35d;background:rgba(104,74,17,.2)}.score-award.ace{color:#a9c5ff;background:rgba(42,67,120,.2)}
 .scoreboard-profile-link{font-weight:800;max-width:calc(100% - 30px);vertical-align:middle}.player-name{display:flex;align-items:center;min-width:0}.player-name .scoreboard-profile-link{flex:0 1 auto}
+
+
+/* v5: awards sit directly beside the nickname instead of floating at the team edge */
+.preview-player{
+  grid-template-columns:24px minmax(0,1fr);
+}
+.preview-name-wrap{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+}
+.preview-name-wrap .player-profile-link{
+  flex:0 1 auto;
+  max-width:calc(100% - 28px);
+}
+.preview-name-wrap .award-mark{
+  flex:0 0 auto;
+  width:19px;
+  height:19px;
+  border-radius:6px;
+  box-shadow:none;
+}
+.preview-name-wrap .award-mark svg{width:13px;height:13px}
+.preview-name-wrap .award-mark.mvp{box-shadow:0 0 9px rgba(255,190,55,.16)}
+.preview-name-wrap .award-mark.ace{box-shadow:0 0 8px rgba(84,126,232,.13)}

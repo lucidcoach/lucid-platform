@@ -10,7 +10,7 @@ function awardMark(player) {
 
 function previewPlayer(player, guildId) {
   const icon = championIcon(player.champion);
-  return `<div class="preview-player">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="preview-icon-empty"></span>`}<button class="player-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>${awardMark(player)}</div>`;
+  return `<div class="preview-player">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="preview-icon-empty"></span>`}<span class="preview-name-wrap"><button class="player-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>${awardMark(player)}</span></div>`;
 }
 
 function renderTeamPreview(match, team) {
