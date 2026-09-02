@@ -577,3 +577,19 @@ td { border-top: 1px solid var(--line); }
 .account-upcoming-list > div:first-child { padding-top:0; border-top:0; }
 .account-upcoming-list strong { font-size:12px; }
 .account-upcoming-list p { margin:0; color:var(--muted); font-size:10px; }
+
+
+/* UI/UX v4: inline coach availability editor in My Account */
+.account-schedule-editor { margin-top:2px; padding:14px; border:1px solid var(--line); border-radius:14px; background:var(--panel-2); }
+.account-schedule-editor[hidden] { display:none !important; }
+.account-schedule-editor-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.account-schedule-editor-head > div { display:grid; gap:2px; }
+.account-schedule-editor-head span { color:var(--muted); font-size:10px; font-weight:800; }
+.account-schedule-editor-head strong { font-size:15px; }
+#accountCoachAvailabilityPanel .availability-panel { margin:0; border:0; padding:0; background:transparent; }
+#accountCoachAvailabilityPanel .availability-head { display:none; }
+#accountCoachAvailabilityPanel .schedule-week-title { margin-top:0; }
+@media (max-width: 760px) {
+  .account-schedule-editor { padding:10px; }
+  .account-schedule-editor-head { align-items:flex-start; }
+}

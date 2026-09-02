@@ -580,7 +580,7 @@ function renderScheduleSummaryMarkup() {
 }
 
 function renderCoachAvailabilityPanel() {
-  const target = $("coachAvailabilityPanel");
+  const target = $("accountCoachAvailabilityPanel") || $("coachAvailabilityPanel");
   if (!target || !isCoachUser()) {
     if (target) target.innerHTML = "";
     return;

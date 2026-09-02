@@ -490,11 +490,18 @@ function renderAccountDashboardMarkup() {
               ` : `<strong>예정된 예약 없음</strong><p>새 예약이 들어오면 여기에 표시됩니다.</p>`}
             </article>
             <article class="account-schedule-card">
-              <div><span>반복 일정</span><button class="text-button" type="button" id="accountScheduleManageBtn">시간표 관리</button></div>
+              <div><span>코칭 가능 시간</span><button class="text-button" type="button" id="accountScheduleEditBtn">시간표 수정</button></div>
               ${state.coachScheduleLoadState === "loaded"
                 ? (renderScheduleSummaryMarkup ? renderScheduleSummaryMarkup() : "")
                 : `<p>주간 시간표를 불러오는 중입니다.</p>`}
             </article>
+          </div>
+          <div class="account-schedule-editor ${state.accountScheduleExpanded ? "open" : ""}" id="accountScheduleEditorWrap" ${state.accountScheduleExpanded ? "" : "hidden"}>
+            <div class="account-schedule-editor-head">
+              <div><span>코칭 가능 시간 설정</span><strong>주간 시간표</strong></div>
+              <button class="secondary mini" type="button" id="accountScheduleCloseBtn">접기</button>
+            </div>
+            <div id="accountCoachAvailabilityPanel"></div>
           </div>
         `}
       </section>
@@ -605,7 +612,17 @@ function mountAccountPanel(container) {
   const openStudentCenter = () => { state.activeView = "student"; renderApp(); };
   $("accountCoachCenterBtn")?.addEventListener("click", openCoachCenter);
   $("accountCoachCenterBtn2")?.addEventListener("click", openCoachCenter);
-  $("accountScheduleManageBtn")?.addEventListener("click", openCoachCenter);
+  const toggleAccountSchedule = (expanded) => {
+    state.accountScheduleExpanded = expanded;
+    const wrap = $("accountScheduleEditorWrap");
+    if (wrap) {
+      wrap.hidden = !expanded;
+      wrap.classList.toggle("open", expanded);
+    }
+    if (expanded) renderCoachAvailabilityPanel();
+  };
+  $("accountScheduleEditBtn")?.addEventListener("click", () => toggleAccountSchedule(true));
+  $("accountScheduleCloseBtn")?.addEventListener("click", () => toggleAccountSchedule(false));
   $("accountCoachDashboardBtn")?.addEventListener("click", openStudentCenter);
   $("accountStudentCenterBtn")?.addEventListener("click", openStudentCenter);
   $("accountStudentQuickBtn")?.addEventListener("click", openStudentCenter);
