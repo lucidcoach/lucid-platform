@@ -7,9 +7,13 @@ export function showStatus(message = "") {
 }
 
 export function switchView(view) {
-  $("recentView").classList.toggle("active", view === "recent");
-  $("searchView").classList.toggle("active", view === "search");
-  $("clearSearchBtn").hidden = view !== "search";
+  $("recentView")?.classList.toggle("active", view === "recent");
+  $("searchView")?.classList.toggle("active", view === "search");
+  $("analysisView")?.classList.toggle("active", view === "analysis");
+  if ($("clearSearchBtn")) $("clearSearchBtn").hidden = view !== "search";
+  document.querySelectorAll(".nav-tab[data-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
 }
 
 export function renderLoading(target, count = 3) {

@@ -9,7 +9,9 @@ function bindEvents() {
   $("clearSearchBtn").addEventListener("click",()=>{ $("playerSearchInput").value=""; switchView("recent"); });
   $("refreshMatchesBtn").addEventListener("click",()=>loadRecent());
   $("loadMoreBtn").addEventListener("click",()=>loadRecent({append:true}));
-  document.querySelectorAll(".nav-tab[data-view='recent']").forEach((button)=>button.addEventListener("click",()=>switchView("recent")));
+  document.querySelectorAll(".nav-tab[data-view]").forEach((button) => {
+    button.addEventListener("click", () => switchView(button.dataset.view));
+  });
 }
 
 bindEvents();

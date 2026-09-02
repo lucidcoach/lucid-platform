@@ -595,3 +595,48 @@ td { border-top: 1px solid var(--line); }
 }
 
 .community-switch-link { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; }
+
+/* 2026-09-03 service switcher: Coach / Community are sibling products. */
+.service-switcher {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  min-width: 154px;
+}
+.service-switch {
+  display: grid;
+  grid-template-columns: 30px auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+.service-switch:hover { background: var(--panel); color: var(--text); border-color: var(--line); }
+.service-switch.active { color: var(--text); background: var(--panel); border-color: color-mix(in srgb, var(--brand) 28%, var(--line)); }
+.service-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--panel-2); color: var(--brand-dark); font-size: 16px; font-weight: 900; overflow: hidden; }
+.service-icon img { width: 100%; height: 100%; object-fit: cover; }
+.community-icon { background: var(--brand-soft); }
+.service-copy { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.service-copy strong { font-size: 13px; letter-spacing: .035em; }
+.service-copy small { color: currentColor; font-size: 11px; font-weight: 900; }
+
+@media (max-width: 980px) {
+  .service-switcher { min-width: 132px; }
+  .service-switch { grid-template-columns: 26px auto; min-height: 30px; padding: 2px 6px 2px 3px; }
+  .service-icon { width: 26px; height: 26px; border-radius: 7px; font-size: 14px; }
+  .service-copy strong { font-size: 11px; }
+  .service-copy small { font-size: 10px; }
+}
+@media (max-width: 620px) {
+  .service-switcher { grid-template-columns: 1fr 1fr; width: 100%; min-width: 0; }
+  .service-switch { justify-content: center; }
+  .site-header-inner { grid-template-columns: 1fr auto; }
+  .service-switcher { grid-column: 1 / -1; }
+}

@@ -1,2 +1,18 @@
 @media (max-width:920px){.header-inner{width:min(100% - 20px,var(--header-content));gap:14px}.community-nav{display:none}.community-main{width:min(100% - 20px,var(--content));padding-top:22px}.match-summary{grid-template-columns:110px minmax(0,1fr) 48px}.teams-preview{grid-template-columns:1fr}.team-preview+.team-preview{border-left:0;border-top:1px solid var(--line-soft)}.scoreboard{min-width:820px}.match-details{overflow-x:auto}.personal-summary{grid-template-columns:82px 50px minmax(110px,1fr) 62px 40px}.personal-summary .personal-items,.personal-summary .roster-mini,.personal-summary .focus-cs{display:none}}
 @media (max-width:620px){.community-brand small{display:none}.community-brand img{width:30px;height:30px}.coach-link{height:34px;padding:0 10px;font-size:11px}.search-strip{display:block}.clear-search{margin-top:10px}.section-heading h1{font-size:23px}.match-summary{grid-template-columns:88px minmax(0,1fr) 40px;min-height:108px}.match-meta{padding:12px 10px}.preview-player{grid-template-columns:16px minmax(0,1fr)}.preview-player .score{display:none}.team-preview{padding:9px 10px}.profile-head{display:block;padding:15px}.profile-stats{display:grid;grid-template-columns:repeat(2,1fr)}.profile-stat{min-width:0}.personal-summary{grid-template-columns:72px 44px minmax(100px,1fr) 54px 36px;gap:5px;padding:8px}.focus-champion img{width:42px;height:42px}}
+
+@media (max-width: 900px) {
+  .header-inner { align-items:flex-start; flex-wrap:wrap; padding:10px 0; }
+  .community-service-switcher { min-width:136px; }
+  .community-nav { order:3; width:100%; min-height:42px; overflow-x:auto; }
+  .analysis-page-head { grid-template-columns:1fr; }
+  .analysis-filters { grid-template-columns:1fr 1fr; }
+  .analysis-search-button { width:100%; }
+}
+@media (max-width: 560px) {
+  .community-service-switcher { grid-template-columns:1fr 1fr; width:100%; min-width:0; }
+  .service-switch { justify-content:center; grid-template-columns:26px auto; }
+  .service-icon { width:26px; height:26px; }
+  .analysis-filters { grid-template-columns:1fr; }
+  .analysis-empty-state { min-height:240px; }
+}
