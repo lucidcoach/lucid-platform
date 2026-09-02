@@ -1,0 +1,455 @@
+/* Canonical stylesheet chunk 7/8; preserve source order. */
+
+body[data-theme="dark"] .student-hero-card,
+body[data-theme="dark"] .student-hero-card.highlight,
+body[data-theme="dark"] .student-hero-card.reward,
+body[data-theme="dark"] .student-review-panel,
+body[data-theme="dark"] .student-row {
+  background: linear-gradient(135deg, #172033 0%, #111827 100%);
+}
+body[data-theme="dark"] .student-hero-card {
+  border-color: #334155;
+}
+body[data-theme="dark"] .student-hero-card.highlight,
+body[data-theme="dark"] .student-hero-card.reward,
+body[data-theme="dark"] .student-review-panel {
+  border-color: #475569;
+}
+body[data-theme="dark"] .student-hero-card > span,
+body[data-theme="dark"] .student-hero-card.reward > span,
+body[data-theme="dark"] .student-hero-card em,
+body[data-theme="dark"] .student-hero-card.reward em {
+  background: #1e293b;
+  color: #dbeafe;
+}
+body[data-theme="dark"] .student-hero-card p {
+  color: #cbd5e1;
+}
+body[data-theme="dark"] .tab,
+body[data-theme="dark"] .purpose-tab,
+body[data-theme="dark"] .explorer-filter {
+  background: #111827;
+  border-color: #334155;
+  color: #e5e7eb;
+}
+body[data-theme="dark"] .search {
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+}
+body[data-theme="dark"] .search:focus-within {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
+}
+body[data-theme="dark"] .search span {
+  color: #93c5fd;
+}
+body[data-theme="dark"] .tab:hover,
+body[data-theme="dark"] .purpose-tab:hover,
+body[data-theme="dark"] .explorer-filter:hover {
+  border-color: #4b637f;
+  background: #172033;
+}
+body[data-theme="dark"] .tab.active,
+body[data-theme="dark"] .purpose-tab.active,
+body[data-theme="dark"] .explorer-filter.active {
+  background: #1e293b;
+  border-color: #60a5fa;
+  color: #dbeafe;
+}
+body[data-theme="dark"] .coach-explorer-dialog .crop-close,
+body[data-theme="dark"] .lesson-detail-dialog .crop-close {
+  color: #e5e7eb;
+}
+body[data-theme="dark"] .explorer-coach-card:hover,
+body[data-theme="dark"] .explorer-coach-card.active {
+  border-color: #60a5fa;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+}
+body[data-theme="dark"] .explorer-card-meta,
+body[data-theme="dark"] .chip,
+body[data-theme="dark"] .explorer-card-foot span span {
+  background: #111827;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+body[data-theme="dark"] .badge.good {
+  background: #10233f;
+  border-color: #3b82f6;
+  color: #bfdbfe;
+}
+body[data-theme="dark"] .badge.recommend {
+  background: #422b04;
+  border-color: #d69e2e;
+  color: #fde68a;
+}
+body[data-theme="dark"] .secondary {
+  background: #253142;
+  color: #e5e7eb;
+}
+body[data-theme="dark"] .discord-status.connected {
+  background: #082f49;
+  color: #bae6fd;
+}
+body[data-theme="dark"] label,
+body[data-theme="dark"] legend {
+  color: #cbd5e1;
+}
+body[data-theme="dark"] .booking-panel {
+  background: #172033;
+  border-color: #334155;
+  border-left-color: #60a5fa;
+}
+body[data-theme="dark"] .detail-body .detail-owner,
+body[data-theme="dark"] .coach-owner,
+body[data-theme="dark"] .purpose-label,
+body[data-theme="dark"] .price {
+  color: #bfdbfe;
+}
+body[data-theme="dark"] .purpose-label {
+  background: #1e293b;
+  border-color: #475569;
+}
+body[data-theme="dark"] .detail-trust em,
+body[data-theme="dark"] .review-preview span {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+body[data-theme="dark"] .detail-summary span,
+body[data-theme="dark"] .lesson-info-grid small {
+  color: #94a3b8;
+}
+body[data-theme="dark"] .detail-summary strong,
+body[data-theme="dark"] .review-preview strong,
+body[data-theme="dark"] .review-preview b {
+  color: #f8fafc;
+}
+body[data-theme="dark"] .booking-panel-head strong,
+body[data-theme="dark"] .booking-panel-head em,
+body[data-theme="dark"] .lesson-info-grid span,
+body[data-theme="dark"] .student-panel-head span {
+  color: #93c5fd;
+}
+body[data-theme="dark"] .booking-panel-head span,
+body[data-theme="dark"] .booking-note {
+  color: #cbd5e1;
+}
+body[data-theme="dark"] .lesson-info-grid ul,
+body[data-theme="dark"] .lesson-info-grid p,
+body[data-theme="dark"] .review p,
+body[data-theme="dark"] .review-preview p,
+body[data-theme="dark"] .explorer-coach-body small {
+  color: #cbd5e1;
+}
+
+@media (max-width: 980px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .main {
+    width: 100%;
+    max-width: none;
+  }
+  .sidebar {
+    position: static;
+    padding: 16px;
+    gap: 14px;
+  }
+  .main { padding: 16px; }
+  .topbar, .toolbar { flex-direction: column; align-items: stretch; }
+  .topbar-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .metrics { grid-template-columns: repeat(3, 1fr); }
+  .admin-menu { justify-self: end; }
+  .layout { grid-template-columns: 1fr; }
+  .detail-panel { position: static; }
+  .booking-tools { grid-template-columns: 1fr; }
+  .booking-detail-grid { grid-template-columns: 1fr; }
+  .student-guide,
+  .student-flow,
+  .student-hero,
+  .student-main-grid,
+  .student-grid,
+  .student-grid.lower,
+  .coach-summary-grid,
+  .coach-history-row,
+  .student-row { grid-template-columns: 1fr; }
+  .student-head { align-items: stretch; }
+  .student-balance { text-align: left; }
+  .coach-self-layout { grid-template-columns: 1fr; }
+  .refund-admin-row { grid-template-columns: 1fr; }
+  .coach-self-profile-grid { grid-template-columns: 1fr; }
+  .coach-self-tabs { justify-content: flex-start; }
+  .image-adjust { grid-template-columns: 1fr; }
+  .image-upload-grid { grid-template-columns: 1fr; }
+  .image-preview { grid-row: auto; }
+  .price-builder { grid-template-columns: 1fr; }
+  .search { min-width: 0; }
+  .coach-card { grid-template-columns: 82px minmax(0, 1fr); }
+  .avatar-frame { height: 82px; }
+  .lesson-info-grid { grid-template-columns: 1fr; }
+  .coach-explorer-head { grid-template-columns: 1fr; }
+  .coach-explorer-grid { grid-template-columns: 1fr; }
+  .coach-explorer-dialog { max-height: 90vh; }
+  .availability-form { grid-template-columns: 1fr; }
+  .account-form { grid-template-columns: 1fr; align-items: stretch; }
+  .schedule-week-title { align-items: flex-start; flex-direction: column; }
+  .schedule-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 640px) {
+  .coach-self-lesson-image { grid-template-columns: 1fr; }
+  .brand img { width: 36px; height: 36px; }
+  .brand strong { font-size: 16px; }
+  .brand span { font-size: 12px; }
+  .nav,
+  .side-role-menu {
+    gap: 6px;
+  }
+  .nav-item,
+  .role-menu-button {
+    padding: 10px;
+  }
+  .main {
+    padding: 12px;
+  }
+  .topbar {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .topbar h1 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  .topbar-actions button,
+  .admin-menu summary {
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+  .market-grid,
+  .featured-grid,
+  .coach-list {
+    grid-template-columns: 1fr;
+  }
+  .coach-card {
+    grid-template-columns: 74px minmax(0, 1fr);
+    padding: 10px;
+  }
+  .avatar-frame {
+    width: 74px;
+    height: 74px;
+  }
+  .coach-main h3,
+  .coach-card h3 {
+    font-size: 17px;
+  }
+  .coach-main p {
+    font-size: 13px;
+  }
+  .auth-modal,
+  .lesson-detail-modal,
+  .coach-explorer-modal {
+    align-items: start;
+    padding: 10px;
+    overflow-y: auto;
+  }
+  .auth-dialog {
+    width: 100%;
+    max-width: none;
+  }
+  .auth-content {
+    padding: 16px;
+    gap: 10px;
+  }
+  .auth-content h2 {
+    font-size: 20px;
+  }
+  .password-field {
+    grid-template-columns: minmax(0, 1fr) 52px;
+  }
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    min-width: 560px;
+  }
+}
+
+
+/* My Info service dashboard */
+.account-section { display: grid; gap: 10px; padding: 14px 0; border-top: 1px solid var(--line); }
+.account-section:first-of-type { border-top: 0; }
+.account-section h3 { margin: 0; font-size: 15px; }
+.account-section-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.account-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
+.account-profile-grid label, .payout-form label { display: grid; gap: 5px; font-weight: 800; font-size: 12px; }
+.account-profile-grid small, .payout-form small { color: var(--muted); font-weight: 500; }
+.account-assets { grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 0; padding-top: 0; }
+.account-stat { display: grid; gap: 5px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.account-stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
+.account-stat strong { font-size: 23px; }
+.account-stat small { color: var(--muted); font-size: 11px; }
+.account-empty { padding: 12px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); font-size: 13px; }
+.coupon-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.coupon-card { display: grid; gap: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); }
+.coupon-card span, .coupon-card small { color: var(--muted); font-size: 12px; }
+.payout-form { display: grid; grid-template-columns: 140px minmax(180px, 1fr) 150px auto; gap: 8px; align-items: end; }
+.payout-form .save-status { grid-column: 1 / -1; }
+.settlement-calendar-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; text-align: center; }
+.settlement-weekdays, .settlement-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.settlement-weekdays span { text-align: center; color: var(--muted); font-size: 11px; font-weight: 800; }
+.settlement-day { min-height: 72px; display: grid; align-content: start; gap: 3px; padding: 7px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-2); }
+.settlement-day.muted { opacity: .35; }
+.settlement-day.has-income { border-color: rgba(16, 185, 129, .45); }
+.settlement-day b { font-size: 12px; }
+.settlement-day span { font-size: 11px; font-weight: 900; color: var(--brand-dark); }
+.settlement-day small { font-size: 9px; color: var(--muted); }
+.mini-schedule-head, .mini-schedule-grid { display: grid; grid-template-columns: 58px repeat(7, minmax(54px, 1fr)); gap: 3px; }
+.mini-schedule-head b { display: grid; text-align: center; font-size: 11px; }
+.mini-schedule-head small { color: var(--muted); font-size: 9px; font-weight: 500; }
+.mini-schedule-time { display: flex; align-items: center; color: var(--muted); font-size: 10px; }
+.mini-schedule-cell { min-height: 30px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); color: var(--muted); font-size: 10px; }
+.mini-schedule-cell.open { background: rgba(16, 185, 129, .12); border-color: rgba(16, 185, 129, .45); color: var(--brand-dark); font-weight: 900; }
+.mini-schedule-cell.booked { background: rgba(59, 130, 246, .12); color: var(--text); font-weight: 900; }
+.account-schedule-actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+.account-danger-bottom { margin-top: 12px; padding-top: 18px; }
+@media (max-width: 760px) {
+  .account-profile-grid, .account-assets, .payout-form, .coupon-list { grid-template-columns: 1fr; }
+  .mini-schedule-head, .mini-schedule-grid { min-width: 650px; }
+  .account-section:has(.mini-schedule-grid) { overflow-x: auto; }
+  .settlement-day { min-height: 58px; padding: 5px; }
+  .settlement-day span { font-size: 9px; }
+}
+
+
+.login-method-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.login-method-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #dfe4ec);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.login-method-info {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.login-method-info img,
+.login-method-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
+  flex: 0 0 30px;
+}
+.password-icon {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: #eef2f7;
+  color: #303846;
+}
+.login-method-info div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.login-method-info small {
+  color: var(--muted, #7b8494);
+  overflow-wrap: anywhere;
+}
+.linked-badge {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e9f8ef;
+  color: #168447;
+  font-weight: 700;
+  font-size: 12px;
+}
+.inline-password-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(120, 135, 160, 0.08);
+}
+.inline-password-panel form {
+  display: grid;
+  gap: 10px;
+}
+.inline-password-panel label {
+  display: grid;
+  gap: 6px;
+}
+.inline-password-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .login-method-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .login-method-row > button,
+  .linked-badge {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
+
+/* Account connection summary: compact in both light and dark themes. */
+.account-connections-section {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.account-simple-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  color: var(--text);
+}
+.account-simple-heading strong {
+  font-size: 17px;
+}
+.account-connection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.account-connection-card {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 11px;
+  min-height: 118px;
+  padding: 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-2);
+  color: var(--text);
+  text-align: center;
+}
+.account-connection-card.connected {
+  border-color: color-mix(in srgb, #16a34a 38%, var(--line));
+}
+.account-connection-brand {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}

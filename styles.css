@@ -1,0 +1,9 @@
+/* Canonical stylesheet assembled in source order. Keep chunk order stable to preserve the existing UI. */
+@import url("./css/base.css");
+@import url("./css/layout.css");
+@import url("./css/components.css");
+@import url("./css/auth.css");
+@import url("./css/coaches.css");
+@import url("./css/reservations.css");
+@import url("./css/dashboard.css");
+@import url("./css/responsive.css");
