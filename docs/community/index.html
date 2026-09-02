@@ -46,12 +46,20 @@
     <section id="statusBanner" class="status-banner" hidden></section>
 
     <section id="recentView" class="content-view active">
-      <div class="section-heading">
+      <div class="section-heading recent-heading">
         <div>
           <p class="section-kicker">MATCH HISTORY</p>
           <h1>최근 내전</h1>
         </div>
-        <button class="ghost-button" id="refreshMatchesBtn" type="button">새로고침</button>
+        <div class="recent-heading-actions">
+          <div class="match-category-tabs" role="tablist" aria-label="내전 유형 필터">
+            <button class="match-category-tab active" type="button" data-match-category="all">전체</button>
+            <button class="match-category-tab" type="button" data-match-category="scrim">내전</button>
+            <button class="match-category-tab" type="button" data-match-category="league">리그전</button>
+            <button class="match-category-tab" type="button" data-match-category="aram">칼바람</button>
+          </div>
+          <button class="ghost-button" id="refreshMatchesBtn" type="button">새로고침</button>
+        </div>
       </div>
       <div id="recentMatches" class="match-feed" aria-live="polite"></div>
       <button class="load-more" id="loadMoreBtn" type="button" hidden>더 보기</button>

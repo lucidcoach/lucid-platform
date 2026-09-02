@@ -28,12 +28,19 @@ export function relativeTime(text) {
   return raw.slice(0,10);
 }
 
-export function normalizeMode(match) {
+export function matchCategory(match) {
   const mode = String(match?.mode || "classic").toLowerCase();
-  if (mode.includes("low")) return "저티어 내전";
-  if (mode.includes("aram")) return "칼바람 내전";
-  if (mode.includes("league")) return "리그전";
-  return "자유랭크";
+  const queue = String(match?.queue || "").toLowerCase();
+  if (mode.includes("aram") || queue.includes("aram")) return "aram";
+  if (mode.includes("league") || queue.includes("league")) return "league";
+  return "scrim";
+}
+
+export function normalizeMode(match) {
+  const category = matchCategory(match);
+  if (category === "aram") return "칼바람";
+  if (category === "league") return "리그전";
+  return "내전";
 }
 
 export const teamLabel = (team) => team === "blue" ? "블루팀" : "레드팀";

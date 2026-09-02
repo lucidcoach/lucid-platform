@@ -13,7 +13,7 @@ export async function loadRecent({ append = false } = {}) {
   const target = $("recentMatches");
   if (!append) { state.recentOffset = 0; renderLoading(target,4); }
   try {
-    const data = await apiGet(`/api/community/matches?limit=${RECENT_PAGE_SIZE}&offset=${state.recentOffset}`);
+    const data = await apiGet(`/api/community/matches?limit=${RECENT_PAGE_SIZE}&offset=${state.recentOffset}&category=${encodeURIComponent(state.recentCategory || "all")}`);
     const html = (data.matches || []).map(matchCard).join("");
     if (append) target.insertAdjacentHTML("beforeend",html); else target.innerHTML = html || `<div class="empty-state"><strong>아직 표시할 내전 기록이 없습니다.</strong><span>Lucid Bot 경기 기록이 쌓이면 여기에 표시됩니다.</span></div>`;
     state.recentOffset += (data.matches || []).length;
