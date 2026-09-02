@@ -3,7 +3,7 @@ import { $ } from "./utils.js";
 import { switchView } from "./view.js";
 import { loadRecent } from "./pages/recentMatches.js";
 import { state } from "./state.js";
-import { searchPlayers } from "./pages/playerSearch.js";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js";
 
 function bindEvents() {
   $("playerSearchForm").addEventListener("submit",(event)=>{ event.preventDefault(); const query=$("playerSearchInput").value.trim(); if(query) searchPlayers(query); });
@@ -19,6 +19,18 @@ function bindEvents() {
   });
   document.querySelectorAll(".nav-tab[data-view]").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.view));
+  });
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-player-profile]");
+    if (!trigger) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const userId = trigger.dataset.userId;
+    const guildId = trigger.dataset.guildId;
+    if (!userId || !guildId) return;
+    const input = $("playerSearchInput");
+    if (input) input.value = trigger.textContent.trim();
+    openPlayer(userId, guildId);
   });
 }
 

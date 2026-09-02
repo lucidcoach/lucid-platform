@@ -3,9 +3,9 @@ import { escapeHtml, focusKda, normalizeMode, relativeTime, scoreClass } from ".
 import { renderItems, renderRuneSpells } from "./loadout.js";
 import { scoreboard } from "./scoreboard.js";
 
-function rosterPlayer(row) {
+function rosterPlayer(row, guildId) {
   const icon = championIcon(row.champion);
-  return `<span class="roster-player" title="${escapeHtml(row.name)}">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="roster-icon-empty"></span>`}<span>${escapeHtml(row.name)}</span></span>`;
+  return `<span class="roster-player" title="${escapeHtml(row.name)}">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="roster-icon-empty"></span>`}<button class="player-profile-link roster-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(row.userId)}" data-guild-id="${escapeHtml(guildId || "")}">${escapeHtml(row.name)}</button></span>`;
 }
 
 export function playerMatchCard(match, userId) {
@@ -27,7 +27,7 @@ export function playerMatchCard(match, userId) {
       <div class="damage-cell"><strong>${Number(player.damage || 0).toLocaleString()}</strong><span>DPM ${Math.round(player.dpm || 0)}</span><div class="damage-track"><i style="width:${damagePct.toFixed(1)}%"></i></div></div>
       <div class="focus-cs"><strong>${Number(player.cs || 0).toLocaleString()} CS</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>
       <div class="personal-items">${renderItems(player,6)}</div>
-      <div class="roster-mini"><div class="roster-team allies">${allies.map(rosterPlayer).join("")}</div><div class="roster-team enemies">${enemies.map(rosterPlayer).join("")}</div></div>
+      <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId)).join("")}</div></div>
       <button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button>
     </div>${scoreboard(match,userId)}</article>`;
 }

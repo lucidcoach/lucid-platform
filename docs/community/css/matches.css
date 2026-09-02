@@ -23,3 +23,18 @@
 .match-summary{grid-template-columns:116px minmax(0,1fr) 42px;min-height:112px}.match-meta{padding:14px 13px}.match-mode{font-size:12px}.teams-preview{gap:0}.team-preview{padding:10px 13px}.team-preview+.team-preview{border-left:1px solid var(--line-soft)}.team-preview.result-win{background:linear-gradient(90deg,rgba(43,89,170,.24),rgba(23,34,55,.18))}.team-preview.result-loss{background:linear-gradient(90deg,rgba(137,48,61,.23),rgba(44,23,30,.15))}.team-head{margin-bottom:6px}.team-preview.result-win .team-head>span{color:#79a5ff}.team-preview.result-loss .team-head>span{color:#ff7f8d}.team-head small{font-size:9px;color:#77869d;font-weight:700}.preview-player{grid-template-columns:24px minmax(0,1fr) 18px;height:22px;gap:7px;margin:2px 0;font-size:11px}.preview-player img,.preview-icon-empty{width:22px;height:22px;border-radius:5px;background:#1a2230;object-fit:cover}.award-mark{display:grid;place-items:center;width:18px;height:18px;font-size:13px;font-weight:900}.award-mark.mvp{color:#ffd86b}.award-mark.ace{color:#9eb8ff}.expand-match{font-size:17px}
 .scoreboard tr.win-row{background:rgba(45,80,147,.13)}.scoreboard tr.loss-row{background:rgba(151,61,70,.13)}.damage-score strong{font-size:12px}.damage-score .damage-track{margin-top:4px}
 .score-award{margin-left:4px}.score-award.mvp{color:#ffd86b}.score-award.ace{color:#9eb8ff}
+
+
+/* v4 award medallions + direct player profile links */
+.player-profile-link{min-width:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.player-profile-link:hover{color:#fff;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(143,120,255,.7)}
+.preview-player .player-profile-link{color:#d2dbea;font-weight:720}
+.award-mark{position:relative;display:grid;place-items:center;width:24px;height:24px;border-radius:8px;border:1px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.award-mark svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.award-mark.mvp{color:#ffd35d;background:radial-gradient(circle at 35% 25%,rgba(255,235,158,.26),rgba(94,66,14,.28));border-color:rgba(255,211,93,.48);box-shadow:0 0 0 1px rgba(255,211,93,.08),0 0 13px rgba(255,190,55,.16)}
+.award-mark.mvp svg path:first-child{fill:rgba(255,211,93,.13)}
+.award-mark.ace{color:#a9c5ff;background:radial-gradient(circle at 35% 25%,rgba(195,216,255,.2),rgba(38,64,119,.26));border-color:rgba(136,174,255,.45);box-shadow:0 0 0 1px rgba(136,174,255,.06),0 0 12px rgba(84,126,232,.14)}
+.award-mark.ace svg path:first-child{fill:rgba(137,175,255,.1)}
+.score-award{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;border-radius:6px;vertical-align:middle;border:1px solid currentColor}
+.score-award svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.score-award.mvp{color:#ffd35d;background:rgba(104,74,17,.2)}.score-award.ace{color:#a9c5ff;background:rgba(42,67,120,.2)}
+.scoreboard-profile-link{font-weight:800;max-width:calc(100% - 30px);vertical-align:middle}.player-name{display:flex;align-items:center;min-width:0}.player-name .scoreboard-profile-link{flex:0 1 auto}
