@@ -170,3 +170,162 @@
   .profile-champions{grid-column:1/-1;border-top:1px solid var(--line-soft)}
   .profile-record:nth-child(3){border-right:0}
 }
+
+
+/* v6 profile: line tiers + champion statistics */
+.profile-overview-clean{
+  grid-template-columns:repeat(3,minmax(0,180px));
+  width:max-content;
+  max-width:100%;
+}
+.profile-overview-clean .profile-record:last-child{border-right:0}
+
+.role-tier-board,.champion-stats-panel{
+  margin:0 0 16px;
+  padding:16px 18px;
+  border:1px solid var(--line-soft);
+  border-radius:11px;
+  background:var(--panel);
+}
+.profile-section-title{
+  display:flex;
+  align-items:baseline;
+  gap:9px;
+  margin-bottom:12px;
+}
+.profile-section-title strong{font-size:15px}
+.profile-section-title span{color:#7d8da5;font-size:9px}
+.role-tier-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:8px;
+}
+.role-tier-card{
+  display:grid;
+  grid-template-columns:auto 48px minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  min-height:70px;
+  padding:9px 10px;
+  border:1px solid #263147;
+  border-radius:9px;
+  background:#0b1018;
+}
+.role-tier-role{
+  align-self:start;
+  min-width:28px;
+  color:#8b9bb2;
+  font-size:10px;
+  font-weight:900;
+}
+.role-tier-card img{
+  width:48px;
+  height:48px;
+  object-fit:contain;
+}
+.role-tier-card strong{display:block;font-size:16px}
+.role-tier-card div span{display:block;margin-top:2px;color:#8090a8;font-size:9px}
+
+.champion-role-tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-bottom:10px;
+}
+.champion-role-tab{
+  min-height:30px;
+  padding:0 11px;
+  border:1px solid #2a3548;
+  border-radius:7px;
+  background:#0b1018;
+  color:#9cabc0;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+.champion-role-tab.active{
+  border-color:#7b61ff;
+  background:#211942;
+  color:#fff;
+}
+.champion-stat-head,.champion-stat-row{
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) 90px 90px 90px;
+  align-items:center;
+  gap:8px;
+}
+.champion-stat-head{
+  padding:6px 10px;
+  color:#71829c;
+  border-bottom:1px solid var(--line-soft);
+  font-size:9px;
+  font-weight:900;
+}
+.champion-stat-row{
+  min-height:48px;
+  padding:6px 10px;
+  border-bottom:1px solid rgba(42,53,72,.55);
+  font-size:11px;
+}
+.champion-stat-row:last-child{border-bottom:0}
+.champion-stat-name{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.champion-stat-name img{
+  width:34px;
+  height:34px;
+  border-radius:6px;
+  object-fit:cover;
+}
+.champion-stat-name strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.champion-stat-row .positive{color:#52d888}
+.champion-stat-empty{
+  padding:22px 10px;
+  color:#76869d;
+  font-size:10px;
+  text-align:center;
+}
+.champion-more-button{
+  display:block;
+  margin:10px auto 0;
+  min-height:31px;
+  padding:0 13px;
+  border:1px solid #2a3548;
+  border-radius:7px;
+  background:#0b1018;
+  color:#b3bfd0;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.match-tier-line{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-bottom:3px;
+  color:#8595ad;
+  font-size:9px;
+}
+.match-tier-badge{
+  padding:2px 5px;
+  border:1px solid #44526a;
+  border-radius:5px;
+  background:#111827;
+  color:#d9e2ef;
+  font-weight:900;
+}
+.focus-loadout:empty,.personal-items:empty{display:none}
+
+@media (max-width:1000px){
+  .role-tier-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .role-tier-card:last-child{grid-column:1/-1}
+  .champion-stat-head,.champion-stat-row{grid-template-columns:minmax(150px,1fr) 62px 62px 62px}
+}
