@@ -44,6 +44,56 @@ export function normalizeMode(match) {
 }
 
 export const teamLabel = (team) => team === "blue" ? "블루팀" : "레드팀";
-export const isWinner = (match, team) => String(match?.winner || "").toLowerCase().includes(team);
+
+export function normalizeRoleKey(value = "") {
+  const raw = String(value || "").trim().toUpperCase().replace(/[\s_-]+/g, "");
+  const aliases = {
+    "탑":"탑", TOP:"탑", TOPLANE:"탑",
+    "정글":"정글", JUNGLE:"정글", JG:"정글",
+    "미드":"미드", MID:"미드", MIDDLE:"미드", MIDLANE:"미드",
+    "원딜":"원딜", ADC:"원딜", BOTTOM:"원딜", BOT:"원딜", CARRY:"원딜",
+    "서폿":"서폿", SUPPORT:"서폿", SUP:"서폿", UTILITY:"서폿",
+  };
+  return aliases[raw] || String(value || "").trim();
+}
+
+export function tierClass(value = "") {
+  const raw = String(value || "").trim().toUpperCase();
+  const compact = raw.replace(/[\s_-]+/g, "");
+  if (!raw || ["-","미배치","언랭","UNRANKED","UNPLACED"].includes(compact)) return "tier-unranked";
+  if (compact.startsWith("CHALLENGER") || compact.startsWith("C")) return "tier-challenger";
+  if (compact.startsWith("GRANDMASTER") || compact.startsWith("GM")) return "tier-grandmaster";
+  if (compact.startsWith("MASTER") || (compact.startsWith("M") && !compact.startsWith("MASTER"))) return "tier-master";
+  if (compact.startsWith("DIAMOND") || compact.startsWith("D")) return "tier-diamond";
+  if (compact.startsWith("EMERALD") || compact.startsWith("E")) return "tier-emerald";
+  if (compact.startsWith("PLATINUM") || compact.startsWith("P")) return "tier-platinum";
+  if (compact.startsWith("GOLD") || compact.startsWith("G")) return "tier-gold";
+  if (compact.startsWith("SILVER") || compact.startsWith("S")) return "tier-silver";
+  if (compact.startsWith("BRONZE") || compact.startsWith("B")) return "tier-bronze";
+  if (compact.startsWith("IRON") || compact.startsWith("I")) return "tier-iron";
+  return "tier-unranked";
+}
+
+export function kdaClass(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n < 2) return "kda-low";
+  if (n < 3) return "kda-green";
+  if (n < 4) return "kda-blue";
+  return "kda-red";
+}
+
+export function isWinner(match, team) {
+  const side = String(team || "").toLowerCase();
+  const rawWinner = String(match?.winner ?? match?.winnerSide ?? match?.winningTeam ?? "").trim().toLowerCase();
+  if (rawWinner.includes("blue") || rawWinner.includes("블루")) return side === "blue";
+  if (rawWinner.includes("red") || rawWinner.includes("레드")) return side === "red";
+
+  const sidePlayers = (match?.players || []).filter((player) => String(player?.team || "").toLowerCase() === side);
+  const wins = sidePlayers.filter((player) => String(player?.result || "").toLowerCase() === "win").length;
+  const losses = sidePlayers.filter((player) => String(player?.result || "").toLowerCase() === "loss").length;
+  if (wins || losses) return wins > losses;
+  return false;
+}
+
 export const focusKda = (player) => player ? `${player.kills || 0} / ${player.deaths || 0} / ${player.assists || 0}` : "-";
 export const scoreClass = (score) => Number(score || 0) < 45 ? "low" : (Number(score || 0) < 58 ? "mid" : "");

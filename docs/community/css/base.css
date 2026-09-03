@@ -5,3 +5,28 @@ button,input { font: inherit; } button,a { -webkit-tap-highlight-color: transpar
 button:focus-visible,a:focus-visible,input:focus-visible { outline: 2px solid #a990ff; outline-offset: 2px; }
 h1 { margin: 0; font-size: 27px; line-height: 1.25; }
 .numeric { font-variant-numeric: tabular-nums; color: #d0d8e6; }
+
+
+/* 2026-09-03 readability pass */
+body{font-size:15px;font-weight:450;line-height:1.45}
+.nav-tab,.coach-link,.community-home-button,.search-control button,.ghost-button,.load-more{font-weight:700}
+.search-control input{font-size:16px}
+.recent-search-chip{font-size:11px;font-weight:650;min-height:32px;padding:0 10px}
+.kda-low{color:#d6dbe4!important}
+.kda-green{color:#39c978!important}
+.kda-blue{color:#4f8fff!important}
+.kda-red{color:#ff5266!important}
+.tier-iron{color:#9c897b!important}
+.tier-bronze{color:#c98555!important}
+.tier-silver{color:#aebdcc!important}
+.tier-gold{color:#e6b84f!important}
+.tier-platinum{color:#4fd0c4!important}
+.tier-emerald{color:#39d582!important}
+.tier-diamond{color:#6f9dff!important}
+.tier-master{color:#b07cff!important}
+.tier-grandmaster{color:#ff5c72!important}
+.tier-challenger{color:#58d9ff!important}
+.tier-unranked{color:#7f8b9d!important}
+
+/* hidden must win over component display rules before JS initializes */
+[hidden]{display:none!important}

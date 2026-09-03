@@ -1,4 +1,4 @@
-import { $ } from "./utils.js";
+import { $ } from "./utils.js?v=20260904a";
 
 export function showStatus(message = "") {
   const banner = $("statusBanner");

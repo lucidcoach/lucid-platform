@@ -1,5 +1,5 @@
-import { DDRAGON_VERSION } from "./config.js";
-import { state } from "./state.js";
+import { DDRAGON_VERSION } from "./config.js?v=20260904a";
+import { state } from "./state.js?v=20260904a";
 
 async function fetchJson(url) {
   const response = await fetch(url);

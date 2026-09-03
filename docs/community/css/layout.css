@@ -162,3 +162,8 @@
     grid-column:1/-1;
   }
 }
+
+
+/* 2026-09-03 search strip */
+.compact-community-search{grid-template-columns:auto minmax(300px,440px) minmax(260px,1fr)}
+.recent-searches{justify-content:flex-start;padding-left:4px}

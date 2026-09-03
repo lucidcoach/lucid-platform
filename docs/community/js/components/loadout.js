@@ -1,8 +1,35 @@
-import { itemIcon, perkIcon, spellIcon } from "../assets.js";
-import { escapeHtml } from "../utils.js";
+import { itemIcon, perkIcon, spellIcon } from "../assets.js?v=20260904a";
+import { escapeHtml } from "../utils.js?v=20260904a";
 
 function image(src, alt = "", className = "") {
   return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy">` : "";
+}
+
+function numericList(...values) {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      const rows = value.map((item) => Number(item?.id ?? item)).filter((item) => Number.isFinite(item) && item > 0);
+      if (rows.length) return rows;
+    }
+  }
+  return [];
+}
+
+function spellIds(player) {
+  const stats = player?.stats || {};
+  const direct = numericList(player?.spells, player?.summonerSpells);
+  if (direct.length) return direct.slice(0,2);
+  return [
+    player?.spell1 ?? player?.summonerSpell1 ?? stats.SUMMON_SPELL1 ?? stats.SUMMON_SPELL_1 ?? stats.SUMMONER_SPELL1 ?? stats.SPELL1 ?? stats.SPELL1_ID,
+    player?.spell2 ?? player?.summonerSpell2 ?? stats.SUMMON_SPELL2 ?? stats.SUMMON_SPELL_2 ?? stats.SUMMONER_SPELL2 ?? stats.SPELL2 ?? stats.SPELL2_ID,
+  ].map(Number).filter((item) => Number.isFinite(item) && item > 0).slice(0,2);
+}
+
+function perkIds(player) {
+  const stats = player?.stats || {};
+  const direct = numericList(player?.perks, player?.runes);
+  if (direct.length) return direct;
+  return [0,1,2,3,4,5].map((index) => Number(stats[`PERK${index}`] ?? player?.[`perk${index}`] ?? 0)).filter((item) => item > 0);
 }
 
 export function renderItems(player, max = 7) {
@@ -12,18 +39,18 @@ export function renderItems(player, max = 7) {
 }
 
 export function renderSpells(player) {
-  const spells = Array.isArray(player?.spells) ? player.spells.slice(0,2) : [];
+  const spells = spellIds(player);
   return spells.length ? `<div class="spell-list">${spells.map((id) => image(spellIcon(id), `소환사 주문 ${id}`, "spell-icon")).join("")}</div>` : "";
 }
 
 export function renderKeystone(player) {
-  const perks = Array.isArray(player?.perks) ? player.perks : [];
+  const perks = perkIds(player);
   const keystone = perks.find((id) => perkIcon(id));
   return keystone ? image(perkIcon(keystone), `핵심 룬 ${keystone}`, "rune-icon") : "";
 }
 
 export function renderRunes(player) {
-  const perks = Array.isArray(player?.perks) ? player.perks : [];
+  const perks = perkIds(player);
   const icons = perks.map((id) => image(perkIcon(id), `룬 ${id}`, "rune-icon")).filter(Boolean);
   return icons.length ? `<div class="rune-list">${icons.join("")}</div>` : "";
 }
@@ -93,12 +120,7 @@ function skillBuild(player) {
 
   const skills = ["Q","W","E","R"];
   const maxLevel = Math.max(18, ...clean.map((row) => row.level));
-  const byLevel = new Map();
-  for (const row of clean) {
-    const picked = byLevel.get(row.level) || new Set();
-    picked.add(row.skill);
-    byLevel.set(row.level, picked);
-  }
+  const byLevel = new Map(clean.map((row) => [row.level, row.skill]));
 
   return `<div class="skill-build-wrap">
     <div class="skill-sequence">${clean.slice(0,18).map((row) =>
@@ -110,8 +132,7 @@ function skillBuild(player) {
         ${Array.from({length:maxLevel},(_,index)=>{
           const level=index+1;
           const picked=byLevel.get(level);
-          const isPicked=Boolean(picked?.has(skill));
-          return `<span class="${isPicked ? `picked skill-${skill.toLowerCase()}` : ""}">${isPicked ? level : ""}</span>`;
+          return `<span class="${picked===skill ? `picked skill-${skill.toLowerCase()}` : ""}">${picked===skill ? level : ""}</span>`;
         }).join("")}
       </div>`).join("")}
     </div>

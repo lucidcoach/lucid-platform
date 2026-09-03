@@ -672,27 +672,3 @@
 .roster-mini{padding-left:14px;align-content:center}.roster-player{font-size:11px}.roster-profile-link{font-weight:550}
 .personal-actions{justify-self:end}
 .personal-expand,.build-toggle{font-size:17px}
-
-
-/* 2026-09-04 profile refresh + OP.GG-style compact personal match priority */
-.profile-name{flex-wrap:wrap}
-.profile-refresh-button{
-  margin-left:2px;height:28px;padding:0 9px;border:1px solid #33415a;border-radius:7px;
-  background:#0c131e;color:#9fb0c9;font-size:11px;font-weight:650;cursor:pointer;
-}
-.profile-refresh-button:hover{color:#fff;border-color:#6652b9;background:#151529}
-.profile-refresh-button:disabled{opacity:.55;cursor:wait}
-
-/* Order is meta → champion/runes → KDA → final items, then secondary stats. */
-.personal-summary{
-  grid-template-columns:78px 68px 116px minmax(184px,220px) 124px 80px 60px minmax(250px,1fr) 40px;
-}
-.personal-items{min-width:0}
-.personal-items .loadout{display:flex;flex-wrap:nowrap;gap:4px}
-.personal-items .loadout img,.personal-items .loadout-placeholder{width:30px;height:30px;border-radius:6px}
-.focus-score{justify-content:center}
-@media (max-width:1050px){
-  .personal-summary{grid-template-columns:74px 64px 110px minmax(180px,1fr) 40px}
-  .damage-cell,.focus-cs,.focus-score,.roster-mini{display:none}
-  .personal-items .loadout img,.personal-items .loadout-placeholder{width:28px;height:28px}
-}

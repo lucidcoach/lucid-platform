@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js";
-import { PLAYER_MATCH_LIMIT } from "../config.js";
-import { championIcon } from "../assets.js";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass } from "../utils.js";
-import { renderLoading, switchView } from "../view.js";
-import { playerMatchCard } from "../components/playerMatchCard.js";
-import { bindExpanders } from "../components/scoreboard.js";
+import { apiGet } from "../api.js?v=20260904a";
+import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904a";
+import { championIcon } from "../assets.js?v=20260904a";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass } from "../utils.js?v=20260904a";
+import { renderLoading, switchView } from "../view.js?v=20260904a";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904a";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904a";
 
 function updateUrl(params, mode = "push") {
   if (mode === "none") return;
@@ -141,7 +141,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
 
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1><button class="profile-refresh-button" type="button" data-profile-refresh title="현재 전적 다시 불러오기">↻ 전적 갱신</button></div>
+        <div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 ${Number(p.winRate || 0).toFixed(1)}%</small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
@@ -155,13 +155,6 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     <div class="match-feed personal-feed">${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
-    target.querySelector("[data-profile-refresh]")?.addEventListener("click", async (event) => {
-      const button = event.currentTarget;
-      if (button.disabled) return;
-      button.disabled = true;
-      button.textContent = "↻ 갱신 중";
-      await openPlayer(userId, guildId, { historyMode:"none" });
-    });
     bindExpanders(target);
   } catch(error) {
     target.innerHTML=`<div class="empty-state"><strong>개인 전적을 불러오지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`;
