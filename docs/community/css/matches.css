@@ -241,3 +241,24 @@
   .scoreboard-teams{grid-template-columns:minmax(760px,860px);overflow-x:auto}
   .score-player-row{grid-template-columns:154px 100px 88px 120px 52px 76px}
 }
+
+
+/* 2026-09-04i compact whole match + neutral stat colors */
+#recentView .match-feed{width:min(100%,940px);max-width:940px}
+#recentView .match-card{width:100%}
+.match-summary{grid-template-columns:92px minmax(0,1fr) 36px;min-height:104px}
+.match-meta{padding:11px 10px}
+.teams-preview{grid-template-columns:1fr 1fr}.team-preview{padding:9px 11px}
+.preview-player{height:25px;margin:2px 0;font-size:13px}.preview-name-wrap .player-profile-link{font-size:13px}
+.scoreboard-teams{grid-template-columns:minmax(0,940px);width:min(100%,940px);max-width:940px;padding:8px}
+.score-player-row{grid-template-columns:148px 96px 48px 88px 120px 72px minmax(126px,1fr);gap:6px;min-height:63px;padding:6px 8px;color:#d5deeb}
+.scoreboard-profile-link{color:#d5deeb!important;max-width:108px;font-size:12.5px;font-weight:680}
+.score-kda-cell>strong,.score-kda-cell>span,.score-cs-cell>strong,.score-cs-cell>span{color:#d5deeb!important}
+.score-kda-cell>span,.score-cs-cell>span{color:#8f9db0!important}
+.score-achievements{display:flex;align-items:center;justify-content:center;gap:3px;min-height:18px;width:100%}
+.score-tag{display:inline-flex;align-items:center;justify-content:center;height:18px;line-height:18px;margin:0;padding:0 5px;vertical-align:middle}
+.score-analysis-placeholder{align-self:stretch;display:grid;place-items:center;min-width:0;border-left:1px solid rgba(42,53,72,.55);color:#58667b;font-size:9px;font-weight:650;letter-spacing:.01em}
+.score-analysis-placeholder span{white-space:nowrap}
+.score-tier-text{box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+.score-tier-text.tier-iron{background:#352f2b!important;border-color:#685c54!important;color:#c7b7aa!important}.score-tier-text.tier-bronze{background:#442b20!important;border-color:#875337!important;color:#e2a477!important}.score-tier-text.tier-silver{background:#303a46!important;border-color:#657789!important;color:#d1dbe5!important}.score-tier-text.tier-gold{background:#493818!important;border-color:#9a762b!important;color:#f0cc69!important}.score-tier-text.tier-platinum{background:#183f3d!important;border-color:#327e78!important;color:#72ddd2!important}.score-tier-text.tier-emerald{background:#173d29!important;border-color:#327b54!important;color:#6be2a2!important}.score-tier-text.tier-diamond{background:#25375f!important;border-color:#4f72bb!important;color:#91b0ff!important}.score-tier-text.tier-master{background:#3b2852!important;border-color:#73509b!important;color:#c9a0ff!important}.score-tier-text.tier-grandmaster{background:#4a232d!important;border-color:#974456!important;color:#ff8a9b!important}.score-tier-text.tier-challenger{background:#173f4d!important;border-color:#317f99!important;color:#83e1ff!important}.score-tier-text.tier-unranked{background:#222a36!important;border-color:#3d485a!important;color:#a4afbf!important}
+@media(max-width:980px){#recentView .match-feed{width:100%;max-width:100%}.scoreboard-teams{grid-template-columns:minmax(880px,940px);overflow-x:auto}}

@@ -1,7 +1,7 @@
-import { championIcon } from "../assets.js?v=20260904g";
-import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904g";
-import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904g";
-import { scoreboard } from "./scoreboard.js?v=20260904h";
+import { championIcon } from "../assets.js?v=20260904i";
+import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904i";
+import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904i";
+import { scoreboard } from "./scoreboard.js?v=20260904i";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
@@ -34,7 +34,7 @@ export function playerMatchCard(match, userId) {
         <div class="focus-champion">${champion ? `<img src="${escapeHtml(champion)}" alt="" loading="lazy">` : ""}${Number(player.level || 0) > 0 ? `<span class="champion-level">${Number(player.level)}</span>` : ""}</div>
         ${runeSpells ? `<div class="focus-loadout-side">${runeSpells}</div>` : `<div class="focus-loadout-side"></div>`}
       </div>
-      <div class="focus-kda"><strong>${focusKda(player)}</strong><span class="${player.deaths === 0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span>${achievements ? `<div class="match-achievements kda-achievements">${achievements}</div>` : ""}</div>
+      <div class="focus-kda"><strong>${focusKda(player)}</strong><span>${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span>${achievements ? `<div class="match-achievements kda-achievements">${achievements}</div>` : ""}</div>
       <div class="personal-inventory">${renderInventoryGrid(player)}</div>
       <div class="focus-score"><small>AI</small>${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}</div>
       <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()}</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>

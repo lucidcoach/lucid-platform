@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904h";
-import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904h";
-import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904h";
+import { championIcon } from "../assets.js?v=20260904i";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904i";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904i";
 
 const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
 
@@ -41,7 +41,7 @@ function playerRow(match, player, focusUserId = "") {
   const focus = String(player.userId) === String(focusUserId) ? " focus-row" : "";
   const runeSpells = renderProfileRuneSpells(player);
   const achievements = achievementLine(player);
-  return `<div class="score-player-row ${tierClass(player.tier)}${focus}">
+  return `<div class="score-player-row${focus}">
     <div class="score-identity">
       <span class="score-tier-text ${tierClass(player.tier)}" title="${escapeHtml(player.tier || "미배치")}">${escapeHtml(tierShortLabel(player.tier))}</span>
       <button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>
@@ -50,10 +50,11 @@ function playerRow(match, player, focusUserId = "") {
       <span class="score-champion-wrap">${champion ? `<img class="champion-icon" src="${escapeHtml(champion)}" alt="" loading="lazy">` : `<span class="champion-icon"></span>`}${Number(player.level || 0)>0 ? `<i class="score-level">${Number(player.level)}</i>` : ""}</span>
       <span class="score-rune-spells">${runeSpells || ""}</span>
     </div>
-    <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span class="${player.deaths===0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
-    <div class="score-inventory">${renderInventoryGrid(player)}</div>
     <div class="score-ai-cell"><small>AI</small>${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}</div>
+    <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
+    <div class="score-inventory">${renderInventoryGrid(player)}</div>
     <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()}</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>
+    <div class="score-analysis-placeholder"><span>상세전적 분석 예정</span></div>
   </div>`;
 }
 
