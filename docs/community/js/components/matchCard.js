@@ -1,7 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904d";
-import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904d";
-import { scoreboard } from "./scoreboard.js?v=20260904d";
-import { renderRuneSpells } from "./loadout.js?v=20260904d";
+import { championIcon } from "../assets.js?v=20260904f";
+import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904f";
+import { scoreboard } from "./scoreboard.js?v=20260904f";
 
 function awardMark(player) {
   if (player.award === "MVP") return `<span class="award-mark mvp" title="MVP" aria-label="MVP"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 8.3 11 12 5l3.7 6L20 7.5l-1.3 9H5.3L4 7.5Z"/><path d="M6.2 18.5h11.6"/></svg></span>`;
@@ -14,7 +13,6 @@ function previewPlayer(player, guildId) {
   return `<div class="preview-player">
     <span class="preview-champion-wrap">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="preview-icon-empty"></span>`}${Number(player.level || 0) > 0 ? `<i class="preview-level">${Number(player.level)}</i>` : ""}</span>
     <span class="preview-name-wrap"><button class="player-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>${awardMark(player)}</span>
-    <span class="preview-loadout">${renderRuneSpells(player)}</span>
   </div>`;
 }
 

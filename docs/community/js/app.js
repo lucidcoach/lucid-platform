@@ -1,9 +1,9 @@
-import { loadGameAssets } from "./assets.js?v=20260904d";
-import { $ } from "./utils.js?v=20260904d";
-import { switchView } from "./view.js?v=20260904d";
-import { loadRecent } from "./pages/recentMatches.js?v=20260904d";
-import { state } from "./state.js?v=20260904d";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904d";
+import { loadGameAssets } from "./assets.js?v=20260904f";
+import { $ } from "./utils.js?v=20260904f";
+import { switchView } from "./view.js?v=20260904f";
+import { loadRecent } from "./pages/recentMatches.js?v=20260904f";
+import { state } from "./state.js?v=20260904f";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904f";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v1";
@@ -22,10 +22,27 @@ function renderRecentSearches() {
   const target = $("recentSearches");
   if (!target) return;
   const rows = readRecentSearches();
-  target.innerHTML = rows.map((row) => `<button class="recent-search-chip" type="button" data-recent-user="${String(row.userId).replaceAll('"','&quot;')}" data-recent-guild="${String(row.guildId).replaceAll('"','&quot;')}" title="${String(row.name).replaceAll('"','&quot;')} 전적 보기">${String(row.name).replace(/[&<>]/g, "")}</button>`).join("");
+  target.innerHTML = rows.map((row) => {
+    const userId = String(row.userId).replaceAll('"','&quot;');
+    const guildId = String(row.guildId).replaceAll('"','&quot;');
+    const name = String(row.name).replace(/[&<>]/g, "");
+    return `<span class="recent-search-chip" data-recent-entry>
+      <button class="recent-search-open" type="button" data-recent-user="${userId}" data-recent-guild="${guildId}" title="${String(row.name).replaceAll('"','&quot;')} 전적 보기">${name}</button>
+      <button class="recent-search-remove" type="button" data-recent-remove="${userId}" data-recent-remove-guild="${guildId}" aria-label="${name} 최근 검색 삭제" title="최근 검색 삭제">×</button>
+    </span>`;
+  }).join("");
   target.hidden = rows.length === 0;
   target.querySelectorAll("[data-recent-user]").forEach((button) => button.addEventListener("click", () => {
     openPlayer(button.dataset.recentUser, button.dataset.recentGuild, { historyMode:"push" });
+  }));
+  target.querySelectorAll("[data-recent-remove]").forEach((button) => button.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const userId = String(button.dataset.recentRemove || "");
+    const guildId = String(button.dataset.recentRemoveGuild || "");
+    const next = readRecentSearches().filter((row) => !(String(row.userId) === userId && String(row.guildId) === guildId));
+    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(next));
+    renderRecentSearches();
   }));
 }
 

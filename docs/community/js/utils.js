@@ -74,6 +74,13 @@ export function tierClass(value = "") {
   return "tier-unranked";
 }
 
+export function winRateClass(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n < 50) return "winrate-low";
+  if (n < 55) return "winrate-blue";
+  return "winrate-red";
+}
+
 export function kdaClass(value) {
   const n = Number(value || 0);
   if (!Number.isFinite(n) || n < 2) return "kda-low";

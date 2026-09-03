@@ -30,3 +30,18 @@ body{font-size:15px;font-weight:450;line-height:1.45}
 
 /* hidden must win over component display rules before JS initializes */
 [hidden]{display:none!important}
+
+/* 2026-09-04f tier backgrounds + win rate colors */
+.winrate-low{color:#d6dbe4!important}
+.winrate-blue{color:#4f8fff!important}
+.winrate-red{color:#ff5266!important}
+.tier-badge.tier-iron,.match-tier-badge.tier-iron{background:rgba(91,75,66,.34)!important;border-color:rgba(156,137,123,.55)!important}
+.tier-badge.tier-bronze,.match-tier-badge.tier-bronze{background:rgba(117,68,39,.34)!important;border-color:rgba(201,133,85,.55)!important}
+.tier-badge.tier-silver,.match-tier-badge.tier-silver{background:rgba(93,111,128,.3)!important;border-color:rgba(174,189,204,.55)!important}
+.tier-badge.tier-gold,.match-tier-badge.tier-gold{background:rgba(125,91,22,.32)!important;border-color:rgba(230,184,79,.58)!important}
+.tier-badge.tier-platinum,.match-tier-badge.tier-platinum{background:rgba(30,104,98,.32)!important;border-color:rgba(79,208,196,.58)!important}
+.tier-badge.tier-emerald,.match-tier-badge.tier-emerald{background:rgba(25,105,62,.32)!important;border-color:rgba(57,213,130,.58)!important}
+.tier-badge.tier-diamond,.match-tier-badge.tier-diamond{background:rgba(50,79,148,.34)!important;border-color:rgba(111,157,255,.6)!important}
+.tier-badge.tier-master,.match-tier-badge.tier-master{background:rgba(89,50,126,.34)!important;border-color:rgba(176,124,255,.6)!important}
+.tier-badge.tier-grandmaster,.match-tier-badge.tier-grandmaster{background:rgba(126,42,55,.35)!important;border-color:rgba(255,92,114,.62)!important}
+.tier-badge.tier-challenger,.match-tier-badge.tier-challenger{background:rgba(32,104,126,.36)!important;border-color:rgba(88,217,255,.62)!important}

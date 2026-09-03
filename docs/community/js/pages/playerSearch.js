@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js?v=20260904d";
-import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904d";
-import { championIcon } from "../assets.js?v=20260904d";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass } from "../utils.js?v=20260904d";
-import { renderLoading, switchView } from "../view.js?v=20260904d";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904d";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904d";
+import { apiGet } from "../api.js?v=20260904f";
+import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904f";
+import { championIcon } from "../assets.js?v=20260904f";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904f";
+import { renderLoading, switchView } from "../view.js?v=20260904f";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904f";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904f";
 
 function updateUrl(params, mode = "push") {
   if (mode === "none") return;
@@ -79,7 +79,7 @@ function championRow(row) {
   return `<div class="champion-stat-row">
     <div class="champion-stat-name">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : ""}<strong>${escapeHtml(row.champion)}</strong></div>
     <span>${Number(row.games || 0)}게임</span>
-    <span class="${Number(row.winRate || 0) >= 50 ? "positive" : ""}">${Number(row.winRate || 0).toFixed(1)}%</span>
+    <span class="${winRateClass(row.winRate)}">${Number(row.winRate || 0).toFixed(1)}%</span>
     <span class="${kdaClass(row.kda)}">${Number(row.kda || 0).toFixed(2)}</span>
   </div>`;
 }
@@ -143,7 +143,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       <div class="profile-summary-panel">
         <div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div>
         <div class="profile-overview profile-overview-compact">
-          <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 ${Number(p.winRate || 0).toFixed(1)}%</small></div>
+          <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
         </div>
         ${roleTierBoard(p.roleTiers || [])}

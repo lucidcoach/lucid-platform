@@ -167,3 +167,11 @@
 /* 2026-09-03 search strip */
 .compact-community-search{grid-template-columns:auto minmax(300px,440px) minmax(260px,1fr)}
 .recent-searches{justify-content:flex-start;padding-left:4px}
+
+/* 2026-09-04f removable recent searches */
+.recent-search-chip{position:relative;display:inline-flex;align-items:center;max-width:160px;padding:0;border:1px solid #2a3548;overflow:visible}
+.recent-search-open{height:32px;max-width:160px;padding:0 24px 0 10px;border:0;background:transparent;color:#9eacc0;font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.recent-search-remove{position:absolute;right:4px;top:50%;transform:translateY(-50%) scale(.85);display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:5px;background:#242c3a;color:#aeb9c9;font-size:14px;line-height:1;opacity:0;pointer-events:none;cursor:pointer;transition:opacity .14s ease,transform .14s ease,background .14s ease}
+.recent-search-chip:hover .recent-search-remove,.recent-search-chip:focus-within .recent-search-remove{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
+.recent-search-remove:hover{background:#8e3e4b;color:#fff}
+.recent-search-chip:hover .recent-search-open{color:#fff}

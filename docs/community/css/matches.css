@@ -135,3 +135,19 @@
   height:14px;
   object-fit:contain;
 }
+
+/* 2026-09-04f recent feed spacing + aligned detail loadouts */
+.preview-player{grid-template-columns:26px minmax(0,1fr);height:27px;gap:8px;margin:3px 0;font-size:13px}
+.preview-champion-wrap>img,.preview-icon-empty{width:25px;height:25px}
+.preview-name-wrap .player-profile-link{max-width:100%;font-size:13px;font-weight:600}
+.preview-loadout{display:none!important}
+.team-preview{padding:12px 16px}
+.team-head{font-size:13px}
+.scoreboard td{padding:9px 10px}
+.player-cell .player-sub{display:grid;grid-template-columns:auto minmax(34px,auto) 50px;align-items:center;justify-content:start;gap:6px;min-height:48px;margin-top:3px}
+.score-rune-spells{display:block;width:50px;min-width:50px;margin-left:2px}
+.score-rune-spells .profile-rune-spells{transform:scale(.88);transform-origin:left center}
+.score-tag{display:inline-flex;align-items:center;height:18px;margin-left:5px;padding:0 5px;border-radius:5px;font-size:8px;font-weight:850;vertical-align:middle}
+
+.score-tag.award.mvp{background:rgba(118,83,19,.3);border:1px solid rgba(255,211,93,.5);color:#ffd35d}
+.score-tag.award.ace{background:rgba(42,67,120,.3);border:1px solid rgba(136,174,255,.48);color:#a9c5ff}
