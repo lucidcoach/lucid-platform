@@ -3,8 +3,35 @@ import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904i";
 import { championIcon } from "../assets.js?v=20260904i";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904i";
 import { renderLoading, switchView } from "../view.js?v=20260904i";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904j";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904j";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904l";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904l";
+
+
+function refreshStorageKey(userId, guildId) {
+  return `lucid-community-player-refresh:${String(guildId || "")}:${String(userId || "")}`;
+}
+
+function readRefreshTime(userId, guildId) {
+  const value = Number(localStorage.getItem(refreshStorageKey(userId, guildId)) || 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function writeRefreshTime(userId, guildId) {
+  const value = Date.now();
+  localStorage.setItem(refreshStorageKey(userId, guildId), String(value));
+  return value;
+}
+
+function refreshRelativeTime(timestamp) {
+  if (!timestamp) return "갱신 기록 없음";
+  const diff = Math.max(0, Date.now() - timestamp);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "방금 전";
+  if (min < 60) return `${min}분 전`;
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return `${hour}시간 전`;
+  return `${Math.floor(hour / 24)}일 전`;
+}
 
 function updateUrl(params, mode = "push") {
   if (mode === "none") return;
@@ -138,10 +165,11 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     const aliases=(p.aliases || []).filter(Boolean);
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
+    const lastRefresh = readRefreshTime(userId, guildId) || writeRefreshTime(userId, guildId);
 
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div>
+        <div class="profile-title-row"><div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div><div class="profile-refresh-wrap"><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button><span class="profile-refresh-time" data-profile-refresh-time>최근 갱신: ${escapeHtml(refreshRelativeTime(lastRefresh))}</span></div></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
@@ -156,6 +184,21 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
 
     bindChampionStats(target, p.championStats || {});
     bindExpanders(target);
+    const refreshButton = target.querySelector("[data-profile-refresh]");
+    refreshButton?.addEventListener("click", async () => {
+      if (refreshButton.disabled) return;
+      refreshButton.disabled = true;
+      refreshButton.textContent = "갱신 중...";
+      try {
+        const stamp = writeRefreshTime(userId, guildId);
+        await openPlayer(userId, guildId, { historyMode:"none" });
+        const timeNode = document.querySelector("[data-profile-refresh-time]");
+        if (timeNode) timeNode.textContent = `최근 갱신: ${refreshRelativeTime(stamp)}`;
+      } catch (_) {
+        refreshButton.disabled = false;
+        refreshButton.textContent = "전적 갱신";
+      }
+    });
   } catch(error) {
     target.innerHTML=`<div class="empty-state"><strong>개인 전적을 불러오지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`;
   }

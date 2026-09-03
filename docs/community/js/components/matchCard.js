@@ -1,6 +1,24 @@
 import { championIcon } from "../assets.js?v=20260904i";
 import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904i";
-import { scoreboard } from "./scoreboard.js?v=20260904j";
+import { scoreboard } from "./scoreboard.js?v=20260904l";
+
+
+function averageTierLabel(players = []) {
+  const values = players.map((player) => Number(player?.mmr || 0)).filter((value) => Number.isFinite(value) && value > 0);
+  if (!values.length) return "-";
+  const value = Math.round(values.reduce((sum, item) => sum + item, 0) / values.length);
+  if (value >= 3600) return "C";
+  if (value >= 3200) return "GM";
+  if (value >= 2800) return "M";
+  const bands = [[2400,"D"],[2000,"E"],[1600,"P"],[1200,"G"],[800,"S"],[400,"B"],[0,"I"]];
+  for (const [base, prefix] of bands) {
+    if (value >= base) {
+      const division = Math.max(1, Math.min(4, 4 - Math.floor((value - base) / 100)));
+      return `${prefix}${division}`;
+    }
+  }
+  return "I4";
+}
 
 function awardMark(player) {
   if (player.award === "MVP") return `<span class="award-mark mvp" title="MVP" aria-label="MVP"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 8.3 11 12 5l3.7 6L20 7.5l-1.3 9H5.3L4 7.5Z"/><path d="M6.2 18.5h11.6"/></svg></span>`;
@@ -24,5 +42,6 @@ function renderTeamPreview(match, team) {
 
 export function matchCard(match) {
   const duration = formatDuration(match.durationSeconds);
-  return `<article class="match-card" data-match-id="${escapeHtml(match.matchId)}"><div class="match-summary"><div class="match-meta"><span class="match-mode">${escapeHtml(normalizeMode(match))}</span><span class="match-time">${escapeHtml(relativeTime(match.time))}</span>${duration ? `<span class="match-duration">${duration}</span>` : ""}</div><div class="teams-preview">${renderTeamPreview(match,"blue")}${renderTeamPreview(match,"red")}</div><button class="expand-match" type="button" aria-label="경기 상세 펼치기">⌄</button></div>${scoreboard(match)}</article>`;
+  const averageTier = averageTierLabel(match.players || []);
+  return `<article class="match-card" data-match-id="${escapeHtml(match.matchId)}"><div class="match-summary"><div class="match-meta"><span class="match-mode">${escapeHtml(normalizeMode(match))}</span><span class="match-time">${escapeHtml(relativeTime(match.time))}</span>${duration ? `<span class="match-duration">${duration}</span>` : ""}<div class="match-average-tier"><small>평균티어</small><span>[${escapeHtml(averageTier)}]</span></div></div><div class="teams-preview">${renderTeamPreview(match,"blue")}${renderTeamPreview(match,"red")}</div><button class="expand-match" type="button" aria-label="경기 상세 펼치기">⌄</button></div>${scoreboard(match)}</article>`;
 }

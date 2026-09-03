@@ -310,3 +310,9 @@
 @media(max-width:820px){
   #recentView .match-feed,#recentView .match-card{width:100%;max-width:none}
 }
+
+
+/* 2026-09-04 average tier in collapsed match meta */
+.match-average-tier{margin-top:auto;display:grid;gap:3px;align-content:end}
+.match-average-tier small{color:#72819a;font-size:9px;font-weight:650}
+.match-average-tier span{display:inline-flex;width:max-content;min-width:32px;height:23px;align-items:center;justify-content:center;padding:0 7px;border:1px solid #40506a;border-radius:6px;background:#111827;color:#dce5f3;font-size:11px;font-weight:800}

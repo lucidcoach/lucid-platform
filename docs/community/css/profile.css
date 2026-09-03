@@ -914,3 +914,13 @@
 .focus-kda>span,.focus-cs>span{color:#8f9db0!important}
 .kda-achievements{display:flex;align-items:center;justify-content:center;gap:3px;width:100%;min-height:20px}
 .kda-achievements .match-achievement{display:inline-flex;align-items:center;justify-content:center;line-height:20px;margin:0}
+
+
+/* 2026-09-04 player profile refresh control */
+.profile-title-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.profile-refresh-wrap{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.profile-refresh-button{height:32px;padding:0 11px;border:1px solid #5947a8;border-radius:7px;background:#201a3b;color:#ded8ff;font-size:11px;font-weight:750;cursor:pointer}
+.profile-refresh-button:hover{background:#2a2250;border-color:#7b61ff}
+.profile-refresh-button:disabled{opacity:.6;cursor:wait}
+.profile-refresh-time{color:#77869d;font-size:10px;font-weight:550;white-space:nowrap}
+@media(max-width:620px){.profile-title-row{align-items:flex-start;flex-direction:column}.profile-refresh-wrap{width:100%;justify-content:flex-start}}
