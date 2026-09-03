@@ -1,0 +1,129 @@
+.match-feed { display:grid; gap:12px; } .match-card { overflow:hidden; border:1px solid var(--line-soft); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow); }
+.match-summary { display:grid; grid-template-columns:150px minmax(0,1fr) 62px; min-height:120px; } .match-meta { padding:17px 16px; border-right:1px solid var(--line-soft); display:flex; flex-direction:column; gap:5px; }
+.match-mode { font-size:13px; font-weight:850; color:#b7aaff; } .match-time { color:var(--muted); font-size:12px; } .match-duration { font-size:12px; color:#d2daea; }
+.match-awards { margin-top:auto; display:flex; flex-wrap:wrap; gap:5px; } .award-chip { display:inline-flex; align-items:center; min-height:22px; padding:0 7px; border-radius:6px; background:#171e2b; color:#c8d3e5; font-size:10px; font-weight:800; }
+.award-chip.mvp { color:var(--yellow); } .award-chip.ace { color:#9bb8ff; } .teams-preview { display:grid; grid-template-columns:1fr 1fr; min-width:0; } .team-preview { padding:12px 14px; min-width:0; }
+.team-preview+.team-preview { border-left:1px solid var(--line-soft); } .team-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; font-size:11px; font-weight:850; }
+.team-preview.blue .team-head { color:#88adff; } .team-preview.red .team-head { color:#ff9fa7; } .team-preview.winner { background:linear-gradient(90deg,rgba(54,94,170,.1),transparent); } .team-preview.red.winner { background:linear-gradient(90deg,rgba(164,66,76,.1),transparent); }
+.preview-player { min-width:0; height:17px; display:grid; grid-template-columns:18px minmax(0,1fr) auto; align-items:center; gap:6px; margin:3px 0; font-size:11px; color:#c9d3e3; }
+.preview-player img { width:18px; height:18px; border-radius:4px; object-fit:cover; background:#1a2230; } .preview-player .name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; } .preview-player .score { color:#8798b2; font-variant-numeric:tabular-nums; }
+.expand-match { border:0; border-left:1px solid var(--line-soft); background:#0c1119; color:#8998b1; font-size:20px; cursor:pointer; } .expand-match:hover { color:#fff; background:#121926; }
+.match-details { display:none; border-top:1px solid var(--line-soft); } .match-card.expanded .match-details,.personal-match.expanded .match-details { display:block; } .match-card.expanded .expand-match { color:#fff; }
+.scoreboard { width:100%; border-collapse:collapse; table-layout:fixed; } .scoreboard th { padding:9px; border-bottom:1px solid var(--line-soft); color:#7f8da4; font-size:10px; text-align:left; font-weight:750; } .scoreboard td { padding:8px 9px; border-bottom:1px solid rgba(38,48,67,.6); font-size:12px; vertical-align:middle; } .scoreboard tr:last-child td { border-bottom:0; }
+.scoreboard tr.blue-row { background:rgba(45,80,147,.11); } .scoreboard tr.red-row { background:rgba(151,61,70,.11); } .player-cell { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:9px; }
+.champion-icon { width:34px; height:34px; border-radius:7px; background:#1b2331; object-fit:cover; } .player-name { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-weight:800; }
+.player-sub { display:flex; gap:6px; margin-top:2px; color:#8492aa; font-size:10px; } .tier-badge { display:inline-flex; min-width:31px; justify-content:center; padding:2px 6px; border:1px solid #3d4960; border-radius:5px; color:#b9c6d9; font-size:10px; font-weight:900; }
+.ai-score { display:inline-flex; justify-content:center; align-items:center; min-width:38px; height:30px; border-radius:7px; background:#2d876f; color:#fff; font-size:15px; font-weight:900; font-variant-numeric:tabular-nums; } .ai-score.low { background:#a94f5b; } .ai-score.mid { background:#397f8b; }
+.kda { font-weight:850; font-variant-numeric:tabular-nums; } .loadout { display:flex; align-items:center; gap:3px; min-height:28px; } .loadout img,.loadout-placeholder { width:26px; height:26px; border-radius:5px; background:#1c2533; object-fit:cover; } .loadout-placeholder { display:inline-block; border:1px solid #2e394d; }
+.focus-row { outline:1px solid rgba(125,92,255,.75); outline-offset:-1px; }
+
+
+/* v3 recent feed: compact match overview, no AI score in collapsed cards */
+#recentView{max-width:1080px}.recent-heading-actions{display:flex;align-items:center;gap:10px}.match-category-tabs{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid var(--line-soft);border-radius:10px;background:#0b1018}.match-category-tab{height:32px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:#8391a8;font-size:11px;font-weight:850;cursor:pointer}.match-category-tab.active{background:#242033;color:#fff;box-shadow:inset 0 0 0 1px rgba(137,111,255,.36)}
+.match-summary{grid-template-columns:116px minmax(0,1fr) 42px;min-height:112px}.match-meta{padding:14px 13px}.match-mode{font-size:12px}.teams-preview{gap:0}.team-preview{padding:10px 13px}.team-preview+.team-preview{border-left:1px solid var(--line-soft)}.team-preview.result-win{background:linear-gradient(90deg,rgba(43,89,170,.24),rgba(23,34,55,.18))}.team-preview.result-loss{background:linear-gradient(90deg,rgba(137,48,61,.23),rgba(44,23,30,.15))}.team-head{margin-bottom:6px}.team-preview.result-win .team-head>span{color:#79a5ff}.team-preview.result-loss .team-head>span{color:#ff7f8d}.team-head small{font-size:9px;color:#77869d;font-weight:700}.preview-player{grid-template-columns:24px minmax(0,1fr) 18px;height:22px;gap:7px;margin:2px 0;font-size:11px}.preview-player img,.preview-icon-empty{width:22px;height:22px;border-radius:5px;background:#1a2230;object-fit:cover}.award-mark{display:grid;place-items:center;width:18px;height:18px;font-size:13px;font-weight:900}.award-mark.mvp{color:#ffd86b}.award-mark.ace{color:#9eb8ff}.expand-match{font-size:17px}
+.scoreboard tr.win-row{background:rgba(45,80,147,.13)}.scoreboard tr.loss-row{background:rgba(151,61,70,.13)}.damage-score strong{font-size:12px}.damage-score .damage-track{margin-top:4px}
+.score-award{margin-left:4px}.score-award.mvp{color:#ffd86b}.score-award.ace{color:#9eb8ff}
+
+
+/* v4 award medallions + direct player profile links */
+.player-profile-link{min-width:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.player-profile-link:hover{color:#fff;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(143,120,255,.7)}
+.preview-player .player-profile-link{color:#d2dbea;font-weight:720}
+.award-mark{position:relative;display:grid;place-items:center;width:24px;height:24px;border-radius:8px;border:1px solid transparent;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.award-mark svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.award-mark.mvp{color:#ffd35d;background:radial-gradient(circle at 35% 25%,rgba(255,235,158,.26),rgba(94,66,14,.28));border-color:rgba(255,211,93,.48);box-shadow:0 0 0 1px rgba(255,211,93,.08),0 0 13px rgba(255,190,55,.16)}
+.award-mark.mvp svg path:first-child{fill:rgba(255,211,93,.13)}
+.award-mark.ace{color:#a9c5ff;background:radial-gradient(circle at 35% 25%,rgba(195,216,255,.2),rgba(38,64,119,.26));border-color:rgba(136,174,255,.45);box-shadow:0 0 0 1px rgba(136,174,255,.06),0 0 12px rgba(84,126,232,.14)}
+.award-mark.ace svg path:first-child{fill:rgba(137,175,255,.1)}
+.score-award{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;border-radius:6px;vertical-align:middle;border:1px solid currentColor}
+.score-award svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.score-award.mvp{color:#ffd35d;background:rgba(104,74,17,.2)}.score-award.ace{color:#a9c5ff;background:rgba(42,67,120,.2)}
+.scoreboard-profile-link{font-weight:800;max-width:calc(100% - 30px);vertical-align:middle}.player-name{display:flex;align-items:center;min-width:0}.player-name .scoreboard-profile-link{flex:0 1 auto}
+
+
+/* v5: awards sit directly beside the nickname instead of floating at the team edge */
+.preview-player{
+  grid-template-columns:24px minmax(0,1fr);
+}
+.preview-name-wrap{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+}
+.preview-name-wrap .player-profile-link{
+  flex:0 1 auto;
+  max-width:calc(100% - 28px);
+}
+.preview-name-wrap .award-mark{
+  flex:0 0 auto;
+  width:19px;
+  height:19px;
+  border-radius:6px;
+  box-shadow:none;
+}
+.preview-name-wrap .award-mark svg{width:13px;height:13px}
+.preview-name-wrap .award-mark.mvp{box-shadow:0 0 9px rgba(255,190,55,.16)}
+.preview-name-wrap .award-mark.ace{box-shadow:0 0 8px rgba(84,126,232,.13)}
+
+
+/* v10 level + rune/spell */
+.preview-player{grid-template-columns:24px minmax(0,1fr) auto;align-items:center;column-gap:6px}
+.preview-champion-wrap,.score-champion-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.preview-champion-wrap>img{width:24px;height:24px;border-radius:5px;object-fit:cover}
+.preview-level,.score-level{position:absolute;right:-2px;bottom:-2px;min-width:13px;height:13px;padding:0 2px;border-radius:4px;background:#080b10;border:1px solid rgba(255,255,255,.25);color:#fff;font-size:8px;font-style:normal;font-weight:900;line-height:11px;text-align:center}
+.preview-loadout{display:inline-flex;align-items:center}
+.preview-loadout .rune-spells,.score-rune-spells .rune-spells{gap:2px}
+.preview-loadout .rune-icon,.preview-loadout .spell-icon,.score-rune-spells .rune-icon,.score-rune-spells .spell-icon{width:16px;height:16px}
+.score-rune-spells{display:inline-flex;margin-left:4px}
+
+
+/* 2026-09-03 match list readability/result clarity */
+.match-meta{font-size:12px}.match-mode{font-size:13px;font-weight:750}.match-time,.match-duration{font-size:11px}
+.team-preview{padding:12px 15px}.team-head{font-size:12px;font-weight:650}.team-result-label{display:inline-flex;align-items:center;min-width:42px;justify-content:center;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.02em}
+.team-preview.result-win .team-result-label{color:#dce9ff;background:rgba(54,116,230,.28);border:1px solid rgba(105,153,255,.45)}
+.team-preview.result-loss .team-result-label{color:#ffdce0;background:rgba(199,62,78,.25);border:1px solid rgba(255,105,122,.4)}
+.preview-player{height:24px;font-size:12px}.preview-name-wrap{font-weight:550}
+.scoreboard th{font-size:11px;font-weight:650}.scoreboard td{font-size:13px}.scoreboard-profile-link{font-weight:650}.player-sub{font-size:11px;font-weight:500}.damage-score strong{font-size:13px;font-weight:650}
+
+
+/* 2026-09-04 rune/spell separation: prevent overlap and use DeepLOL-like stacks */
+.rune-spells{
+  display:grid;
+  grid-template-columns:auto auto;
+  align-items:end;
+  gap:4px;
+}
+.rune-stack,
+.spell-list{
+  display:grid;
+  gap:3px;
+}
+.rune-stack{justify-items:center}
+.rune-spells .rune-icon,
+.rune-spells .spell-icon,
+.rune-spells .loadout-placeholder{
+  width:18px;
+  height:18px;
+  object-fit:cover;
+  background:#1c2533;
+}
+.rune-spells .rune-icon{border-radius:50%}
+.rune-spells .spell-icon,
+.rune-spells .loadout-placeholder{border-radius:5px}
+.preview-loadout,
+.score-rune-spells{display:inline-flex;align-items:center}
+.preview-loadout .rune-spells{gap:2px}
+.preview-loadout .rune-stack,
+.preview-loadout .spell-list{gap:2px}
+.preview-loadout .rune-icon,
+.preview-loadout .spell-icon,
+.preview-loadout .loadout-placeholder{width:15px;height:15px}
+.score-rune-spells{margin-left:6px;vertical-align:middle}
+.score-rune-spells .rune-spells{gap:3px}
+.score-rune-spells .rune-stack,
+.score-rune-spells .spell-list{gap:2px}
+.score-rune-spells .rune-icon,
+.score-rune-spells .spell-icon,
+.score-rune-spells .loadout-placeholder{width:16px;height:16px}
+.player-sub{align-items:center;flex-wrap:wrap;row-gap:4px}

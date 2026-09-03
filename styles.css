@@ -1,9 +1,7 @@
-/* Canonical stylesheet assembled in source order. Keep chunk order stable to preserve the existing UI. */
-@import url("./css/base.css");
-@import url("./css/layout.css");
-@import url("./css/components.css");
-@import url("./css/auth.css");
-@import url("./css/coaches.css");
-@import url("./css/reservations.css");
-@import url("./css/dashboard.css");
-@import url("./css/responsive.css");
+@import url("css/tokens.css?v=20260904b");
+@import url("css/base.css?v=20260904b");
+@import url("css/layout.css?v=20260904b");
+@import url("css/matches.css?v=20260904b");
+@import url("css/profile.css?v=20260904b");
+@import url("css/states.css?v=20260904b");
+@import url("css/responsive.css?v=20260904b");

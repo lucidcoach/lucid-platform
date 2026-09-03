@@ -1,0 +1,4 @@
+.status-banner { margin-bottom:22px; padding:13px 15px; border:1px solid #6f3038; border-radius:10px; background:#251318; color:#ff9da5; font-size:13px; }
+.load-more { display:block; height:42px; margin:18px auto 0; } .loading-card { height:116px; padding:20px; border:1px solid var(--line-soft); border-radius:var(--radius); background:var(--panel); display:grid; align-content:center; gap:8px; }
+.loading-card span { display:block; height:12px; width:70%; border-radius:6px; background:linear-gradient(90deg,#161e2a,#222d3d,#161e2a); background-size:200% 100%; animation:pulse 1.3s linear infinite; } .loading-card span:nth-child(2){width:45%}.loading-card span:nth-child(3){width:82%}
+.empty-state { padding:48px 20px; border:1px dashed var(--line); border-radius:var(--radius); text-align:center; color:var(--muted); } .empty-state strong { display:block; margin-bottom:6px; color:#d8e1ef; } @keyframes pulse { to { background-position:-200% 0; } }

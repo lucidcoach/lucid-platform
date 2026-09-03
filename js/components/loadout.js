@@ -1,0 +1,166 @@
+import { itemIcon, perkIcon, spellIcon } from "../assets.js?v=20260904b";
+import { escapeHtml } from "../utils.js?v=20260904b";
+
+function image(src, alt = "", className = "") {
+  return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy">` : "";
+}
+
+function numericList(...values) {
+  for (const value of values) {
+    if (Array.isArray(value)) {
+      const rows = value.map((item) => Number(item?.id ?? item)).filter((item) => Number.isFinite(item) && item > 0);
+      if (rows.length) return rows;
+    }
+  }
+  return [];
+}
+
+function spellIds(player) {
+  const stats = player?.stats || {};
+  const direct = numericList(player?.spells, player?.summonerSpells);
+  if (direct.length) return direct.slice(0,2);
+  return [
+    player?.spell1 ?? player?.summonerSpell1 ?? stats.SUMMON_SPELL1 ?? stats.SUMMON_SPELL_1 ?? stats.SUMMONER_SPELL1 ?? stats.SPELL1 ?? stats.SPELL1_ID,
+    player?.spell2 ?? player?.summonerSpell2 ?? stats.SUMMON_SPELL2 ?? stats.SUMMON_SPELL_2 ?? stats.SUMMONER_SPELL2 ?? stats.SPELL2 ?? stats.SPELL2_ID,
+  ].map(Number).filter((item) => Number.isFinite(item) && item > 0).slice(0,2);
+}
+
+function perkIds(player) {
+  const stats = player?.stats || {};
+  const direct = numericList(player?.perks, player?.runes);
+  if (direct.length) return direct;
+  return [0,1,2,3,4,5].map((index) => Number(stats[`PERK${index}`] ?? player?.[`perk${index}`] ?? 0)).filter((item) => item > 0);
+}
+
+export function renderItems(player, max = 7) {
+  const items = Array.isArray(player?.items) ? player.items.slice(0,max) : [];
+  if (!items.length) return "";
+  return `<div class="loadout">${items.map((id) => image(itemIcon(id), `아이템 ${id}`)).join("")}</div>`;
+}
+
+export function renderSpells(player) {
+  const spells = spellIds(player);
+  return spells.length ? `<div class="spell-list">${spells.map((id) => image(spellIcon(id), `소환사 주문 ${id}`, "spell-icon")).join("")}</div>` : "";
+}
+
+export function renderKeystone(player) {
+  const perks = perkIds(player);
+  const keystone = perks.find((id) => perkIcon(id));
+  return keystone ? image(perkIcon(keystone), `핵심 룬 ${keystone}`, "rune-icon keystone-icon") : "";
+}
+
+export function renderSecondaryRune(player) {
+  const perks = perkIds(player);
+  const known = perks.filter((id) => perkIcon(id));
+  const secondary = known.length > 1 ? known[1] : 0;
+  return secondary ? image(perkIcon(secondary), `보조 룬 ${secondary}`, "rune-icon secondary-rune-icon") : "";
+}
+
+export function renderRunes(player) {
+  const perks = perkIds(player);
+  const icons = perks.map((id) => image(perkIcon(id), `룬 ${id}`, "rune-icon")).filter(Boolean);
+  return icons.length ? `<div class="rune-list">${icons.join("")}</div>` : "";
+}
+
+export function renderRuneSpells(player) {
+  const keystone = renderKeystone(player);
+  const secondaryRune = renderSecondaryRune(player);
+  const spells = renderSpells(player);
+  if (!keystone && !secondaryRune && !spells) return "";
+  const runeBlock = keystone || secondaryRune
+    ? `<div class="rune-stack">${keystone}${secondaryRune}</div>`
+    : "";
+  return `<div class="rune-spells">${runeBlock}${spells}</div>`;
+}
+
+function minuteLabel(value) {
+  const seconds = Number(value || 0);
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  const minute = Math.floor(seconds / 60);
+  const second = Math.floor(seconds % 60);
+  return second ? `${minute}:${String(second).padStart(2,"0")}` : `${minute}분`;
+}
+
+function itemTimeline(player) {
+  const rows = Array.isArray(player?.itemTimeline) ? player.itemTimeline : [];
+  if (rows.length) {
+    return `<div class="item-build-track timeline-mode">${rows.map((row) => {
+      const itemId = Number(row?.item || row?.itemId || 0);
+      const action = String(row?.action || "BUY").toUpperCase();
+      const time = minuteLabel(row?.time ?? row?.timestamp);
+      const actionLabel = action === "SELL" ? "판매" : action === "UNDO" ? "되돌림" : "";
+      return `<div class="item-build-step ${action.toLowerCase()}">
+        <div class="item-build-icon">${itemId > 0 ? image(itemIcon(itemId), `아이템 ${itemId}`) : ""}</div>
+        <span>${time || "-"}</span>
+        ${actionLabel ? `<small>${actionLabel}</small>` : ""}
+      </div>`;
+    }).join(`<i class="build-arrow" aria-hidden="true">›</i>`)}</div>`;
+  }
+
+  const items = Array.isArray(player?.items) ? player.items.filter((id) => Number(id) > 0) : [];
+  if (!items.length) {
+    return `<div class="build-empty-line">저장된 아이템 정보가 없습니다.</div>`;
+  }
+  return `<div class="final-build-row">
+    <span class="build-sub-label">최종 빌드</span>
+    <div class="item-build-track final-mode">${items.map((id) =>
+      `<div class="item-build-step"><div class="item-build-icon">${image(itemIcon(id), `아이템 ${id}`)}</div></div>`
+    ).join(`<i class="build-arrow" aria-hidden="true">›</i>`)}</div>
+  </div>`;
+}
+
+function skillBuild(player) {
+  const rows = Array.isArray(player?.skillBuild) ? player.skillBuild : [];
+  if (!rows.length) {
+    return `<div class="build-empty-line">
+      스킬 순서 데이터가 저장되지 않은 경기입니다.
+    </div>`;
+  }
+
+  const clean = rows
+    .map((row) => ({
+      level: Number(row?.level || 0),
+      skill: String(row?.skill || "").toUpperCase(),
+    }))
+    .filter((row) => row.level > 0 && ["Q","W","E","R"].includes(row.skill))
+    .sort((a,b) => a.level - b.level);
+
+  if (!clean.length) {
+    return `<div class="build-empty-line">스킬 순서 데이터가 없습니다.</div>`;
+  }
+
+  const skills = ["Q","W","E","R"];
+  const maxLevel = Math.max(18, ...clean.map((row) => row.level));
+  const byLevel = new Map(clean.map((row) => [row.level, row.skill]));
+
+  return `<div class="skill-build-wrap">
+    <div class="skill-sequence">${clean.slice(0,18).map((row) =>
+      `<span class="skill-seq-chip skill-${row.skill.toLowerCase()}"><b>${row.skill}</b><small>Lv.${row.level}</small></span>`
+    ).join(`<i>›</i>`)}</div>
+    <div class="skill-grid" style="--skill-cols:${maxLevel}">
+      ${skills.map((skill) => `<div class="skill-grid-row">
+        <strong>${skill}</strong>
+        ${Array.from({length:maxLevel},(_,index)=>{
+          const level=index+1;
+          const picked=byLevel.get(level);
+          return `<span class="${picked===skill ? `picked skill-${skill.toLowerCase()}` : ""}">${picked===skill ? level : ""}</span>`;
+        }).join("")}
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+export function renderBuildSummary(player) {
+  return `<div class="match-analysis-panel">
+    <section class="analysis-build-section">
+      <div class="analysis-build-title">아이템 빌드</div>
+      ${itemTimeline(player)}
+    </section>
+    <section class="analysis-build-section">
+      <div class="analysis-build-title">스킬 빌드</div>
+      ${skillBuild(player)}
+    </section>
+  </div>`;
+}
+
+export const renderLoadout = renderItems;
