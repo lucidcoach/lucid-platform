@@ -85,3 +85,45 @@
 .team-preview.result-loss .team-result-label{color:#ffdce0;background:rgba(199,62,78,.25);border:1px solid rgba(255,105,122,.4)}
 .preview-player{height:24px;font-size:12px}.preview-name-wrap{font-weight:550}
 .scoreboard th{font-size:11px;font-weight:650}.scoreboard td{font-size:13px}.scoreboard-profile-link{font-weight:650}.player-sub{font-size:11px;font-weight:500}.damage-score strong{font-size:13px;font-weight:650}
+
+
+/* 2026-09-04 rune/spell separation: prevent overlap and use DeepLOL-like stacks */
+.rune-spells{
+  display:grid;
+  grid-template-columns:auto auto;
+  align-items:end;
+  gap:4px;
+}
+.rune-stack,
+.spell-list{
+  display:grid;
+  gap:3px;
+}
+.rune-stack{justify-items:center}
+.rune-spells .rune-icon,
+.rune-spells .spell-icon,
+.rune-spells .loadout-placeholder{
+  width:18px;
+  height:18px;
+  object-fit:cover;
+  background:#1c2533;
+}
+.rune-spells .rune-icon{border-radius:50%}
+.rune-spells .spell-icon,
+.rune-spells .loadout-placeholder{border-radius:5px}
+.preview-loadout,
+.score-rune-spells{display:inline-flex;align-items:center}
+.preview-loadout .rune-spells{gap:2px}
+.preview-loadout .rune-stack,
+.preview-loadout .spell-list{gap:2px}
+.preview-loadout .rune-icon,
+.preview-loadout .spell-icon,
+.preview-loadout .loadout-placeholder{width:15px;height:15px}
+.score-rune-spells{margin-left:6px;vertical-align:middle}
+.score-rune-spells .rune-spells{gap:3px}
+.score-rune-spells .rune-stack,
+.score-rune-spells .spell-list{gap:2px}
+.score-rune-spells .rune-icon,
+.score-rune-spells .spell-icon,
+.score-rune-spells .loadout-placeholder{width:16px;height:16px}
+.player-sub{align-items:center;flex-wrap:wrap;row-gap:4px}

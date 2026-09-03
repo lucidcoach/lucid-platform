@@ -672,3 +672,169 @@
 .roster-mini{padding-left:14px;align-content:center}.roster-player{font-size:11px}.roster-profile-link{font-weight:550}
 .personal-actions{justify-self:end}
 .personal-expand,.build-toggle{font-size:17px}
+
+
+/* 2026-09-04 focus champion loadout layout */
+.focus-champion{
+  position:relative;
+  display:grid;
+  grid-template-columns:54px auto;
+  align-items:center;
+  gap:8px;
+  width:auto;
+}
+.focus-champion > img{
+  width:54px;
+  height:54px;
+  border-radius:8px;
+  object-fit:cover;
+  background:#1b2331;
+}
+.champion-level{
+  position:absolute;
+  left:39px;
+  bottom:-3px;
+  min-width:16px;
+  height:16px;
+  padding:0 3px;
+  border-radius:5px;
+  background:#080b10;
+  border:1px solid rgba(255,255,255,.25);
+  color:#fff;
+  font-size:9px;
+  line-height:14px;
+  text-align:center;
+  font-weight:900;
+}
+.focus-loadout{
+  position:static;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+.focus-loadout .rune-spells{
+  padding:0;
+  border:0;
+  background:transparent;
+  gap:3px;
+}
+.focus-loadout .rune-stack,
+.focus-loadout .spell-list{gap:3px}
+.focus-loadout .rune-icon,
+.focus-loadout .spell-icon,
+.focus-loadout .loadout-placeholder{width:18px;height:18px}
+@media (max-width:620px){
+  .focus-champion{grid-template-columns:46px auto;gap:6px}
+  .focus-champion>img{width:46px;height:46px}
+  .champion-level{left:33px}
+  .focus-loadout .rune-icon,
+  .focus-loadout .spell-icon,
+  .focus-loadout .loadout-placeholder{width:16px;height:16px}
+}
+
+
+/* 2026-09-04c exact profile loadout: champion | spells x2 | main rune | secondary rune */
+.personal-summary{
+  grid-template-columns:72px 138px 108px 56px 120px 72px minmax(150px,190px) minmax(250px,1fr) 34px;
+}
+.focus-champion-loadout{
+  display:grid;
+  grid-template-columns:54px 76px;
+  align-items:center;
+  gap:8px;
+  width:138px;
+  min-width:138px;
+}
+.focus-champion{
+  position:relative;
+  display:block;
+  width:54px;
+  height:54px;
+}
+.focus-champion>img{
+  display:block;
+  width:54px;
+  height:54px;
+  border-radius:8px;
+  object-fit:cover;
+  background:#1b2331;
+}
+.champion-level{
+  position:absolute;
+  right:-2px;
+  bottom:-2px;
+  left:auto;
+  z-index:2;
+  min-width:16px;
+  height:16px;
+  padding:0 3px;
+  border-radius:5px;
+  background:#080b10;
+  border:1px solid rgba(255,255,255,.28);
+  color:#fff;
+  font-size:9px;
+  line-height:14px;
+  text-align:center;
+  font-weight:900;
+}
+.focus-loadout-side{
+  position:static;
+  display:block;
+  width:76px;
+  min-width:76px;
+}
+.profile-rune-spells{
+  display:grid;
+  grid-template-columns:18px 24px 24px;
+  align-items:center;
+  column-gap:5px;
+  width:76px;
+  min-width:76px;
+}
+.profile-spell-stack{
+  display:grid;
+  grid-template-rows:18px 18px;
+  gap:3px;
+  width:18px;
+}
+.profile-spell-icon{
+  display:block;
+  width:18px;
+  height:18px;
+  border-radius:4px;
+  object-fit:cover;
+  background:#1c2533;
+}
+.profile-main-rune,
+.profile-secondary-rune{
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:24px;
+}
+.profile-rune-icon{
+  display:block;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  object-fit:contain;
+}
+@media (max-width:1100px){
+  .personal-summary{grid-template-columns:76px 132px 108px 56px 116px 70px minmax(140px,175px) minmax(200px,1fr) 36px}
+  .focus-champion-loadout{grid-template-columns:52px 72px;width:132px;min-width:132px;gap:7px}
+  .focus-champion,.focus-champion>img{width:52px;height:52px}
+}
+@media (max-width:860px){
+  .personal-summary{grid-template-columns:72px 126px 1fr 54px 112px 36px}
+  .focus-champion-loadout{grid-template-columns:50px 70px;width:126px;min-width:126px;gap:6px}
+  .focus-champion,.focus-champion>img{width:50px;height:50px}
+}
+@media (max-width:620px){
+  .personal-summary{grid-template-columns:65px 118px 1fr 50px 34px}
+  .focus-champion-loadout{grid-template-columns:46px 66px;width:118px;min-width:118px;gap:6px}
+  .focus-champion,.focus-champion>img{width:46px;height:46px}
+  .profile-rune-spells{grid-template-columns:16px 22px 22px;column-gap:3px;width:66px;min-width:66px}
+  .profile-spell-stack{grid-template-rows:16px 16px;width:16px;gap:2px}
+  .profile-spell-icon{width:16px;height:16px}
+  .profile-main-rune,.profile-secondary-rune,.profile-rune-icon{width:22px;height:22px}
+}

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config.js?v=20260904a";
+import { API_BASE_URL } from "./config.js?v=20260904c";
 
 const apiUrl = (path) => `${API_BASE_URL.replace(/\/$/, "")}${path}`;
 

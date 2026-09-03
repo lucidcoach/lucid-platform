@@ -1,7 +1,7 @@
-import { championIcon } from "../assets.js?v=20260904a";
-import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904a";
-import { renderItems, renderRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904a";
-import { scoreboard } from "./scoreboard.js?v=20260904a";
+import { championIcon } from "../assets.js?v=20260904c";
+import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904c";
+import { renderItems, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904c";
+import { scoreboard } from "./scoreboard.js?v=20260904c";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
@@ -18,10 +18,11 @@ export function playerMatchCard(match, userId) {
   const maxDamage = Math.max(1, ...(match.players || []).map((row) => Number(row.damage || 0)));
   const damagePct = Math.max(4, Math.min(100, Number(player.damage || 0) / maxDamage * 100));
   const special = player.award === "MVP" || Number(player.aiScore || 0) >= 100;
+  const runeSpells = renderProfileRuneSpells(player);
   return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}">
     <div class="personal-summary">
       <div class="result-meta"><strong>${won ? "승리" : "패배"}</strong><span>${escapeHtml(relativeTime(match.time))}</span><div>${escapeHtml(normalizeMode(match))}</div></div>
-      <div class="focus-champion">${champion ? `<img src="${escapeHtml(champion)}" alt="" loading="lazy">` : ""}${Number(player.level || 0) > 0 ? `<span class="champion-level">${Number(player.level)}</span>` : ""}${(player.spells?.length || player.perks?.length) ? `<div class="focus-loadout">${renderRuneSpells(player)}</div>` : ""}</div>
+      <div class="focus-champion-loadout"><div class="focus-champion">${champion ? `<img src="${escapeHtml(champion)}" alt="" loading="lazy">` : ""}${Number(player.level || 0) > 0 ? `<span class="champion-level">${Number(player.level)}</span>` : ""}</div>${runeSpells ? `<div class="focus-loadout-side">${runeSpells}</div>` : ""}</div>
       <div class="focus-kda"><div class="match-tier-line"><span class="match-tier-badge ${tierClass(player.tier)}">${escapeHtml(player.tier || "-")}</span><span>${escapeHtml(player.role || "")}</span></div><strong>${focusKda(player)}</strong><span class="${player.deaths === 0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span></div>
       <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${player.award ? `<span class="personal-award ${player.award.toLowerCase()}" title="${escapeHtml(player.award)}" aria-label="${escapeHtml(player.award)}">${player.award === "MVP" ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 8.3 11 12 5l3.7 6L20 7.5l-1.3 9H5.3L4 7.5Z"/><path d="M6.2 18.5h11.6"/></svg>` : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 15 8l5 .8-3.6 3.6.8 5.1-5.2-2.4-5.2 2.4.8-5.1L4 8.8 9 8l3-4.5Z"/></svg>`}</span>` : ""}</div>
       <div class="damage-cell"><strong>${Number(player.damage || 0).toLocaleString()}</strong><span>DPM ${Math.round(player.dpm || 0)}</span><div class="damage-track"><i style="width:${damagePct.toFixed(1)}%"></i></div></div>

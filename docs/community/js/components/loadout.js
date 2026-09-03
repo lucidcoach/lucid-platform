@@ -1,5 +1,5 @@
-import { itemIcon, perkIcon, spellIcon } from "../assets.js?v=20260904a";
-import { escapeHtml } from "../utils.js?v=20260904a";
+import { itemIcon, perkIcon, spellIcon } from "../assets.js?v=20260904c";
+import { escapeHtml } from "../utils.js?v=20260904c";
 
 function image(src, alt = "", className = "") {
   return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy">` : "";
@@ -46,7 +46,14 @@ export function renderSpells(player) {
 export function renderKeystone(player) {
   const perks = perkIds(player);
   const keystone = perks.find((id) => perkIcon(id));
-  return keystone ? image(perkIcon(keystone), `핵심 룬 ${keystone}`, "rune-icon") : "";
+  return keystone ? image(perkIcon(keystone), `핵심 룬 ${keystone}`, "rune-icon keystone-icon") : "";
+}
+
+export function renderSecondaryRune(player) {
+  const perks = perkIds(player);
+  const known = perks.filter((id) => perkIcon(id));
+  const secondary = known.length > 1 ? known[1] : 0;
+  return secondary ? image(perkIcon(secondary), `보조 룬 ${secondary}`, "rune-icon secondary-rune-icon") : "";
 }
 
 export function renderRunes(player) {
@@ -57,9 +64,30 @@ export function renderRunes(player) {
 
 export function renderRuneSpells(player) {
   const keystone = renderKeystone(player);
+  const secondaryRune = renderSecondaryRune(player);
   const spells = renderSpells(player);
-  if (!keystone && !spells) return "";
-  return `<div class="rune-spells">${keystone}${spells}</div>`;
+  if (!keystone && !secondaryRune && !spells) return "";
+  const runeBlock = keystone || secondaryRune
+    ? `<div class="rune-stack">${keystone}${secondaryRune}</div>`
+    : "";
+  return `<div class="rune-spells">${runeBlock}${spells}</div>`;
+}
+
+export function renderProfileRuneSpells(player) {
+  const spells = spellIds(player);
+  const perks = perkIds(player).filter((id) => perkIcon(id));
+  const mainRune = perks[0] || 0;
+  // The compact profile only needs one secondary indicator next to the keystone.
+  // Use the first additional valid rune until a secondary-style icon is persisted separately.
+  const secondaryRune = perks[1] || 0;
+  if (!spells.length && !mainRune && !secondaryRune) return "";
+  return `<div class="profile-rune-spells" aria-label="소환사 주문과 룬">
+    <div class="profile-spell-stack">
+      ${spells.slice(0,2).map((id) => image(spellIcon(id), `소환사 주문 ${id}`, "profile-spell-icon")).join("")}
+    </div>
+    <div class="profile-main-rune">${mainRune ? image(perkIcon(mainRune), `메인 핵심 룬 ${mainRune}`, "profile-rune-icon profile-keystone-icon") : ""}</div>
+    <div class="profile-secondary-rune">${secondaryRune ? image(perkIcon(secondaryRune), `보조 핵심 룬 ${secondaryRune}`, "profile-rune-icon profile-secondary-icon") : ""}</div>
+  </div>`;
 }
 
 function minuteLabel(value) {
