@@ -1,7 +1,7 @@
-import { championIcon } from "../assets.js?v=20260904c";
-import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904c";
-import { scoreboard } from "./scoreboard.js?v=20260904c";
-import { renderRuneSpells } from "./loadout.js?v=20260904c";
+import { championIcon } from "../assets.js?v=20260904d";
+import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904d";
+import { scoreboard } from "./scoreboard.js?v=20260904d";
+import { renderRuneSpells } from "./loadout.js?v=20260904d";
 
 function awardMark(player) {
   if (player.award === "MVP") return `<span class="award-mark mvp" title="MVP" aria-label="MVP"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 8.3 11 12 5l3.7 6L20 7.5l-1.3 9H5.3L4 7.5Z"/><path d="M6.2 18.5h11.6"/></svg></span>`;

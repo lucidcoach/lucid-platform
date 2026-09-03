@@ -1,9 +1,9 @@
-import { loadGameAssets } from "./assets.js?v=20260904c";
-import { $ } from "./utils.js?v=20260904c";
-import { switchView } from "./view.js?v=20260904c";
-import { loadRecent } from "./pages/recentMatches.js?v=20260904c";
-import { state } from "./state.js?v=20260904c";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904c";
+import { loadGameAssets } from "./assets.js?v=20260904d";
+import { $ } from "./utils.js?v=20260904d";
+import { switchView } from "./view.js?v=20260904d";
+import { loadRecent } from "./pages/recentMatches.js?v=20260904d";
+import { state } from "./state.js?v=20260904d";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904d";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v1";

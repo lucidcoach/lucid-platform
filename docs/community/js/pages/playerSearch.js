@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js?v=20260904c";
-import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904c";
-import { championIcon } from "../assets.js?v=20260904c";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass } from "../utils.js?v=20260904c";
-import { renderLoading, switchView } from "../view.js?v=20260904c";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904c";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904c";
+import { apiGet } from "../api.js?v=20260904d";
+import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904d";
+import { championIcon } from "../assets.js?v=20260904d";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass } from "../utils.js?v=20260904d";
+import { renderLoading, switchView } from "../view.js?v=20260904d";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904d";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904d";
 
 function updateUrl(params, mode = "push") {
   if (mode === "none") return;

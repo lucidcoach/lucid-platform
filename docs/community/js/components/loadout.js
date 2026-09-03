@@ -1,5 +1,5 @@
-import { itemIcon, perkIcon, spellIcon } from "../assets.js?v=20260904c";
-import { escapeHtml } from "../utils.js?v=20260904c";
+import { itemIcon, perkIcon, perkStyleIcon, perkTreeInfo, spellIcon } from "../assets.js?v=20260904d";
+import { escapeHtml } from "../utils.js?v=20260904d";
 
 function image(src, alt = "", className = "") {
   return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy">` : "";
@@ -32,6 +32,34 @@ function perkIds(player) {
   return [0,1,2,3,4,5].map((index) => Number(stats[`PERK${index}`] ?? player?.[`perk${index}`] ?? 0)).filter((item) => item > 0);
 }
 
+function secondaryStyleId(player) {
+  const stats = player?.stats || {};
+  const directCandidates = [
+    player?.subStyle,
+    player?.secondaryStyle,
+    player?.subPerkStyle,
+    player?.perkSubStyle,
+    player?.subRuneStyle,
+    player?.secondaryRuneStyle,
+    stats.PERK_SUB_STYLE,
+    stats.PERK_SUBSTYLE,
+    stats.SUB_STYLE,
+    stats.SUBSTYLE,
+    stats.PERK_STYLE_SUB,
+    stats.PERK_SECONDARY_STYLE,
+  ].map(Number).filter((value) => Number.isFinite(value) && value > 0);
+  if (directCandidates.length) return directCandidates[0];
+
+  const perks = perkIds(player).filter((id) => perkIcon(id));
+  if (!perks.length) return 0;
+  const primaryTree = perkTreeInfo(perks[0])?.treeId || 0;
+  const secondaryPerk = perks.find((id) => {
+    const treeId = perkTreeInfo(id)?.treeId || 0;
+    return treeId > 0 && treeId !== primaryTree;
+  });
+  return perkTreeInfo(secondaryPerk)?.treeId || 0;
+}
+
 export function renderItems(player, max = 7) {
   const items = Array.isArray(player?.items) ? player.items.slice(0,max) : [];
   if (!items.length) return "";
@@ -50,10 +78,9 @@ export function renderKeystone(player) {
 }
 
 export function renderSecondaryRune(player) {
-  const perks = perkIds(player);
-  const known = perks.filter((id) => perkIcon(id));
-  const secondary = known.length > 1 ? known[1] : 0;
-  return secondary ? image(perkIcon(secondary), `보조 룬 ${secondary}`, "rune-icon secondary-rune-icon") : "";
+  const styleId = secondaryStyleId(player);
+  const icon = perkStyleIcon(styleId);
+  return icon ? image(icon, `보조 룬 계열 ${styleId}`, "rune-icon secondary-rune-icon secondary-style-icon") : "";
 }
 
 export function renderRunes(player) {
@@ -77,16 +104,16 @@ export function renderProfileRuneSpells(player) {
   const spells = spellIds(player);
   const perks = perkIds(player).filter((id) => perkIcon(id));
   const mainRune = perks[0] || 0;
-  // The compact profile only needs one secondary indicator next to the keystone.
-  // Use the first additional valid rune until a secondary-style icon is persisted separately.
-  const secondaryRune = perks[1] || 0;
+  const secondaryRune = renderSecondaryRune(player);
   if (!spells.length && !mainRune && !secondaryRune) return "";
   return `<div class="profile-rune-spells" aria-label="소환사 주문과 룬">
     <div class="profile-spell-stack">
       ${spells.slice(0,2).map((id) => image(spellIcon(id), `소환사 주문 ${id}`, "profile-spell-icon")).join("")}
     </div>
-    <div class="profile-main-rune">${mainRune ? image(perkIcon(mainRune), `메인 핵심 룬 ${mainRune}`, "profile-rune-icon profile-keystone-icon") : ""}</div>
-    <div class="profile-secondary-rune">${secondaryRune ? image(perkIcon(secondaryRune), `보조 핵심 룬 ${secondaryRune}`, "profile-rune-icon profile-secondary-icon") : ""}</div>
+    <div class="profile-rune-stack">
+      <div class="profile-main-rune">${mainRune ? image(perkIcon(mainRune), `메인 핵심 룬 ${mainRune}`, "profile-rune-icon profile-keystone-icon") : ""}</div>
+      <div class="profile-secondary-rune">${secondaryRune || ""}</div>
+    </div>
   </div>`;
 }
 

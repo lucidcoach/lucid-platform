@@ -1,4 +1,4 @@
-import { API_BASE_URL as COACH_API_BASE_URL } from "../../js/config.js?v=20260904c";
+import { API_BASE_URL as COACH_API_BASE_URL } from "../../js/config.js?v=20260904d";
 
 export const API_BASE_URL = COACH_API_BASE_URL;
 export const DDRAGON_VERSION = "16.17.1";

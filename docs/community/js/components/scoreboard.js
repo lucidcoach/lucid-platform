@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904c";
-import { escapeHtml, focusKda, kdaClass, scoreClass, tierClass } from "../utils.js?v=20260904c";
-import { renderLoadout, renderRuneSpells } from "./loadout.js?v=20260904c";
+import { championIcon } from "../assets.js?v=20260904d";
+import { escapeHtml, focusKda, kdaClass, scoreClass, tierClass } from "../utils.js?v=20260904d";
+import { renderLoadout, renderRuneSpells } from "./loadout.js?v=20260904d";
 
 export function renderScoreboardRows(match, focusUserId = "") {
   const order = [...(match?.players || [])].sort((a,b) => a.team === b.team ? 0 : (a.team === "blue" ? -1 : 1));
