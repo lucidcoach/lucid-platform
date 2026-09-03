@@ -54,7 +54,6 @@ function playerRow(match, player, focusUserId = "") {
     <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
     <div class="score-inventory">${renderInventoryGrid(player)}</div>
     <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()}</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>
-    <div class="score-analysis-placeholder"><span>상세전적 분석 예정</span></div>
   </div>`;
 }
 
@@ -69,7 +68,11 @@ export function renderScoreboardRows(match, focusUserId = "") {
 }
 
 export function scoreboard(match, focusUserId = "") {
-  return `<div class="match-details"><div class="scoreboard-teams">${renderScoreboardRows(match, focusUserId)}</div></div>`;
+  const hasPersonalAnalysis = Boolean(String(focusUserId || "").trim());
+  const analysisPanel = hasPersonalAnalysis
+    ? `<aside class="personal-analysis-panel"><div><strong>상세전적 분석 예정</strong><span>검색한 플레이어의 상세 분석과 피드백이 표시될 영역입니다.</span></div></aside>`
+    : "";
+  return `<div class="match-details"><div class="scoreboard-layout${hasPersonalAnalysis ? " has-personal-analysis" : ""}"><div class="scoreboard-teams">${renderScoreboardRows(match, focusUserId)}</div>${analysisPanel}</div></div>`;
 }
 
 export function bindExpanders(root = document) {
