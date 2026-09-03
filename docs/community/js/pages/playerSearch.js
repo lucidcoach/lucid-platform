@@ -1,7 +1,7 @@
 import { apiGet } from "../api.js";
 import { PLAYER_MATCH_LIMIT } from "../config.js";
 import { championIcon } from "../assets.js";
-import { $, escapeHtml } from "../utils.js";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass } from "../utils.js";
 import { renderLoading, switchView } from "../view.js";
 import { playerMatchCard } from "../components/playerMatchCard.js";
 import { bindExpanders } from "../components/scoreboard.js";
@@ -45,23 +45,29 @@ function tierIcon(tier = "") {
 
 function roleTierBoard(rows = []) {
   const roles = ["탑", "정글", "미드", "원딜", "서폿"];
-  const byRole = new Map(rows.map((row) => [row.role, row]));
+  const list = Array.isArray(rows)
+    ? rows
+    : Object.entries(rows || {}).map(([role, value]) => ({ role, ...(value && typeof value === "object" ? value : { tier:value }) }));
+  const byRole = new Map(list.map((row) => [normalizeRoleKey(row?.role || row?.position || row?.lane), row]));
   return `<section class="role-tier-board role-tier-compact" aria-label="라인별 내전 티어">
     <div class="profile-section-title"><strong>라인별 내전 티어</strong></div>
     <div class="role-tier-list">${roles.map((role) => {
-      const row = byRole.get(role) || { role, tier: "미배치", placed: false, wins: 0, losses: 0 };
-      if (!row.placed || row.tier === "미배치") {
+      const row = byRole.get(role) || { role, tier: "미배치", wins: 0, losses: 0 };
+      const tier = String(row?.tier || row?.tierName || row?.rank || "").trim();
+      const compactTier = tier.toUpperCase().replace(/[\s_-]+/g, "");
+      const hasTier = Boolean(tier) && !["-","미배치","언랭","UNRANKED","UNPLACED","NONE","NULL"].includes(compactTier);
+      if (!hasTier) {
         return `<div class="role-tier-line unplaced">
           <span class="role-tier-role">${escapeHtml(role)}</span>
           <span class="role-tier-unplaced">미배치</span>
         </div>`;
       }
-      return `<div class="role-tier-line">
+      return `<div class="role-tier-line ${tierClass(tier)}">
         <span class="role-tier-role">${escapeHtml(role)}</span>
         <span class="role-tier-main">
-          <img src="${escapeHtml(tierIcon(row.tier))}" alt="" loading="lazy">
-          <strong>${escapeHtml(row.tier)}</strong>
-          <span class="role-tier-record"><em>${Number(row.wins || 0)}승</em><b>${Number(row.losses || 0)}패</b></span>
+          <img src="${escapeHtml(tierIcon(tier))}" alt="" loading="lazy">
+          <strong class="tier-text ${tierClass(tier)}">${escapeHtml(tier)}</strong>
+          <span class="role-tier-record"><em>${Number(row.wins || row.win || 0)}승</em><b>${Number(row.losses || row.loss || 0)}패</b></span>
         </span>
       </div>`;
     }).join("")}</div>
@@ -74,7 +80,7 @@ function championRow(row) {
     <div class="champion-stat-name">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : ""}<strong>${escapeHtml(row.champion)}</strong></div>
     <span>${Number(row.games || 0)}게임</span>
     <span class="${Number(row.winRate || 0) >= 50 ? "positive" : ""}">${Number(row.winRate || 0).toFixed(1)}%</span>
-    <span>${Number(row.kda || 0).toFixed(2)}</span>
+    <span class="${kdaClass(row.kda)}">${Number(row.kda || 0).toFixed(2)}</span>
   </div>`;
 }
 
@@ -131,12 +137,14 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
 
+    window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
+
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-name"><span class="tier-badge">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div>
+        <div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1><button class="profile-refresh-button" type="button" data-profile-refresh title="현재 전적 다시 불러오기">↻ 전적 갱신</button></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 ${Number(p.winRate || 0).toFixed(1)}%</small></div>
-          <div class="profile-record"><span>평균 KDA</span><strong>${Number(p.averageKda || 0).toFixed(2)}</strong></div>
+          <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
         </div>
         ${roleTierBoard(p.roleTiers || [])}
       </div>
@@ -147,6 +155,13 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     <div class="match-feed personal-feed">${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
+    target.querySelector("[data-profile-refresh]")?.addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      button.disabled = true;
+      button.textContent = "↻ 갱신 중";
+      await openPlayer(userId, guildId, { historyMode:"none" });
+    });
     bindExpanders(target);
   } catch(error) {
     target.innerHTML=`<div class="empty-state"><strong>개인 전적을 불러오지 못했습니다.</strong><span>${escapeHtml(error.message)}</span></div>`;

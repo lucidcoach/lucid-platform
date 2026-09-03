@@ -645,3 +645,54 @@
   .final-build-row{align-items:flex-start}
   .skill-grid{min-width:620px}
 }
+
+
+/* 2026-09-03 profile/card readability + balance */
+.profile-name h1{font-weight:700}
+.profile-name .tier-badge{font-size:13px;font-weight:750}
+.profile-record span{font-size:12px;font-weight:600}
+.profile-record strong{font-weight:700}
+.profile-section-title strong{font-size:16px;font-weight:700}
+.role-tier-line{min-height:38px;padding:5px 9px;grid-template-columns:50px minmax(0,1fr)}
+.role-tier-main{display:grid;grid-template-columns:30px minmax(54px,auto) minmax(92px,1fr);align-items:center;gap:8px;min-width:0}
+.role-tier-line strong{font-size:14px;font-weight:750}
+.role-tier-role{font-size:12px;font-weight:650;color:#aab6c7}
+.role-tier-record{font-size:11px;font-weight:650}
+.role-tier-record em,.role-tier-record b{font-weight:700}
+.role-tier-unplaced{font-size:12px;font-weight:600}
+.champion-stat-head{font-size:11px}
+.champion-stat-row{font-size:13px}
+.champion-stat-name strong{font-weight:650}
+.personal-summary{grid-template-columns:78px 68px 116px 60px 128px 80px minmax(160px,205px) minmax(285px,1fr) 40px;gap:11px;padding:11px 14px}
+.result-meta{font-size:12px;line-height:1.5}.result-meta strong{font-size:14px;font-weight:750;margin-bottom:2px}.result-meta div{font-weight:550;color:#aab7c9}
+.focus-kda{display:grid;align-content:center;text-align:center;justify-items:center}.focus-kda strong{font-size:17px;font-weight:700}.focus-kda span{font-size:11px;font-weight:650}
+.match-tier-line{justify-content:center}.match-tier-badge{font-size:11px;font-weight:750}
+.damage-cell strong{font-size:15px;font-weight:650}.damage-cell>span{font-size:10px}
+.personal-match:not(.expanded) .personal-summary .damage-track{display:none}
+.roster-mini{padding-left:14px;align-content:center}.roster-player{font-size:11px}.roster-profile-link{font-weight:550}
+.personal-actions{justify-self:end}
+.personal-expand,.build-toggle{font-size:17px}
+
+
+/* 2026-09-04 profile refresh + OP.GG-style compact personal match priority */
+.profile-name{flex-wrap:wrap}
+.profile-refresh-button{
+  margin-left:2px;height:28px;padding:0 9px;border:1px solid #33415a;border-radius:7px;
+  background:#0c131e;color:#9fb0c9;font-size:11px;font-weight:650;cursor:pointer;
+}
+.profile-refresh-button:hover{color:#fff;border-color:#6652b9;background:#151529}
+.profile-refresh-button:disabled{opacity:.55;cursor:wait}
+
+/* Order is meta → champion/runes → KDA → final items, then secondary stats. */
+.personal-summary{
+  grid-template-columns:78px 68px 116px minmax(184px,220px) 124px 80px 60px minmax(250px,1fr) 40px;
+}
+.personal-items{min-width:0}
+.personal-items .loadout{display:flex;flex-wrap:nowrap;gap:4px}
+.personal-items .loadout img,.personal-items .loadout-placeholder{width:30px;height:30px;border-radius:6px}
+.focus-score{justify-content:center}
+@media (max-width:1050px){
+  .personal-summary{grid-template-columns:74px 64px 110px minmax(180px,1fr) 40px}
+  .damage-cell,.focus-cs,.focus-score,.roster-mini{display:none}
+  .personal-items .loadout img,.personal-items .loadout-placeholder{width:28px;height:28px}
+}
