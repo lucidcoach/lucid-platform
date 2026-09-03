@@ -127,3 +127,11 @@
 .score-rune-spells .spell-icon,
 .score-rune-spells .loadout-placeholder{width:16px;height:16px}
 .player-sub{align-items:center;flex-wrap:wrap;row-gap:4px}
+
+/* 2026-09-04e secondary rune style icon visual size fix */
+
+.secondary-style-icon{
+  width:14px;
+  height:14px;
+  object-fit:contain;
+}
