@@ -93,7 +93,12 @@ function skillBuild(player) {
 
   const skills = ["Q","W","E","R"];
   const maxLevel = Math.max(18, ...clean.map((row) => row.level));
-  const byLevel = new Map(clean.map((row) => [row.level, row.skill]));
+  const byLevel = new Map();
+  for (const row of clean) {
+    const picked = byLevel.get(row.level) || new Set();
+    picked.add(row.skill);
+    byLevel.set(row.level, picked);
+  }
 
   return `<div class="skill-build-wrap">
     <div class="skill-sequence">${clean.slice(0,18).map((row) =>
@@ -105,7 +110,8 @@ function skillBuild(player) {
         ${Array.from({length:maxLevel},(_,index)=>{
           const level=index+1;
           const picked=byLevel.get(level);
-          return `<span class="${picked===skill ? `picked skill-${skill.toLowerCase()}` : ""}">${picked===skill ? level : ""}</span>`;
+          const isPicked=Boolean(picked?.has(skill));
+          return `<span class="${isPicked ? `picked skill-${skill.toLowerCase()}` : ""}">${isPicked ? level : ""}</span>`;
         }).join("")}
       </div>`).join("")}
     </div>
