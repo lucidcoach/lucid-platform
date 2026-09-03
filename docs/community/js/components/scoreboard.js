@@ -1,25 +1,28 @@
-import { championIcon } from "../assets.js?v=20260904g";
-import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904g";
-import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904g";
+import { championIcon } from "../assets.js?v=20260904h";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904h";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904h";
 
 const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
-const TIER_ICON = { C:"challenger.png", GM:"grandmaster.png", M:"master.png", D:"diamond.png", E:"emerald.png", P:"platinum.png", G:"gold.png", S:"silver.png", B:"bronze.png", I:"iron.png" };
 
-function tierIcon(tier = "") {
-  const compact = String(tier || "").trim().toUpperCase().replace(/[\s_-]+/g, "");
-  let key = "I";
-  if (compact.startsWith("CHALLENGER") || compact.startsWith("C")) key="C";
-  else if (compact.startsWith("GRANDMASTER") || compact.startsWith("GM")) key="GM";
-  else if (compact.startsWith("MASTER") || compact.startsWith("M")) key="M";
-  else if (compact.startsWith("DIAMOND") || compact.startsWith("D")) key="D";
-  else if (compact.startsWith("EMERALD") || compact.startsWith("E")) key="E";
-  else if (compact.startsWith("PLATINUM") || compact.startsWith("P")) key="P";
-  else if (compact.startsWith("GOLD") || compact.startsWith("G")) key="G";
-  else if (compact.startsWith("SILVER") || compact.startsWith("S")) key="S";
-  else if (compact.startsWith("BRONZE") || compact.startsWith("B")) key="B";
-  return `assets/tiers/${TIER_ICON[key]}`;
+
+function tierShortLabel(tier = "") {
+  const raw = String(tier || "").trim();
+  if (!raw || ["-","미배치","언랭","UNRANKED","UNPLACED"].includes(raw.toUpperCase())) return "U";
+  const compact = raw.toUpperCase().replace(/[\s_-]+/g, "");
+  const divisionMatch = compact.match(/([1-4])$/);
+  const division = divisionMatch ? divisionMatch[1] : "";
+  if (compact.startsWith("CHALLENGER") || raw.includes("챌린저")) return "C";
+  if (compact.startsWith("GRANDMASTER") || compact.startsWith("GM") || raw.includes("그랜드마스터")) return "GM";
+  if (compact.startsWith("MASTER") || raw.includes("마스터")) return "M";
+  if (compact.startsWith("DIAMOND") || compact.startsWith("D") || raw.includes("다이아")) return `D${division}`;
+  if (compact.startsWith("EMERALD") || compact.startsWith("E") || raw.includes("에메랄드")) return `E${division}`;
+  if (compact.startsWith("PLATINUM") || compact.startsWith("P") || raw.includes("플래티넘") || raw.includes("플레티넘")) return `P${division}`;
+  if (compact.startsWith("GOLD") || compact.startsWith("G") || raw.includes("골드")) return `G${division}`;
+  if (compact.startsWith("SILVER") || compact.startsWith("S") || raw.includes("실버")) return `S${division}`;
+  if (compact.startsWith("BRONZE") || compact.startsWith("B") || raw.includes("브론즈")) return `B${division}`;
+  if (compact.startsWith("IRON") || compact.startsWith("I") || raw.includes("아이언")) return `I${division}`;
+  return raw.slice(0,3).toUpperCase();
 }
-
 function achievementLine(player) {
   const tags=[];
   if (Number(player?.pentaKills || 0)>0) tags.push(`<span class="score-tag penta">펜타킬</span>`);
@@ -40,7 +43,7 @@ function playerRow(match, player, focusUserId = "") {
   const achievements = achievementLine(player);
   return `<div class="score-player-row ${tierClass(player.tier)}${focus}">
     <div class="score-identity">
-      <img class="score-tier-icon" src="${escapeHtml(tierIcon(player.tier))}" alt="${escapeHtml(player.tier || "")}" loading="lazy">
+      <span class="score-tier-text ${tierClass(player.tier)}" title="${escapeHtml(player.tier || "미배치")}">${escapeHtml(tierShortLabel(player.tier))}</span>
       <button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>
     </div>
     <div class="score-combat-loadout">
