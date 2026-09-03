@@ -1,5 +1,5 @@
-import { itemIcon, perkIcon, perkStyleIcon, perkTreeInfo, spellIcon } from "../assets.js?v=20260904d";
-import { escapeHtml } from "../utils.js?v=20260904d";
+import { itemIcon, perkIcon, perkStyleIcon, perkTreeInfo, spellIcon } from "../assets.js?v=20260904f";
+import { escapeHtml } from "../utils.js?v=20260904f";
 
 function image(src, alt = "", className = "") {
   return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy">` : "";
@@ -58,6 +58,52 @@ function secondaryStyleId(player) {
     return treeId > 0 && treeId !== primaryTree;
   });
   return perkTreeInfo(secondaryPerk)?.treeId || 0;
+}
+
+
+const TRINKET_ITEM_IDS = new Set([3330, 3340, 3348, 3363, 3364, 3513]);
+
+function questItemId(player, normalItems = []) {
+  const stats = player?.stats || {};
+  const direct = [
+    player?.questItem, player?.questItemId, player?.roleQuestItem, player?.roleQuestItemId,
+    stats.QUEST_ITEM, stats.QUEST_ITEM_ID, stats.ROLE_QUEST_ITEM, stats.ROLE_QUEST_ITEM_ID,
+  ].map(Number).find((value) => Number.isFinite(value) && value > 0);
+  if (direct) return direct;
+  // 2026 support quest slot can hold a control ward. If it is present in the
+  // saved final inventory, render it in the dedicated quest slot instead.
+  if (normalItems.includes(2055)) return 2055;
+  return 0;
+}
+
+function inventoryParts(player) {
+  const source = Array.isArray(player?.items)
+    ? player.items.map(Number).filter((id) => Number.isFinite(id) && id > 0)
+    : [];
+  const trinket = source.find((id) => TRINKET_ITEM_IDS.has(id)) || 0;
+  let normal = source.filter((id) => id !== trinket);
+  const quest = questItemId(player, normal);
+  if (quest) {
+    const idx = normal.indexOf(quest);
+    if (idx >= 0) normal.splice(idx, 1);
+  }
+  return { normal: normal.slice(0, 6), trinket, quest };
+}
+
+function inventorySlot(itemId, className = "", label = "") {
+  if (Number(itemId) > 0) {
+    return `<span class="inventory-slot ${className}" title="${escapeHtml(label)}">${image(itemIcon(itemId), label || `아이템 ${itemId}`, "inventory-item-icon")}</span>`;
+  }
+  return `<span class="inventory-slot empty ${className}" title="${escapeHtml(label)}"></span>`;
+}
+
+export function renderInventoryGrid(player) {
+  const { normal, trinket, quest } = inventoryParts(player);
+  const slots = Array.from({length:6}, (_, index) => normal[index] || 0);
+  return `<div class="inventory-grid" aria-label="최종 아이템">
+    ${inventorySlot(slots[0], "item-1")}${inventorySlot(slots[1], "item-2")}${inventorySlot(slots[2], "item-3")}${inventorySlot(trinket, "trinket-slot", "장신구")}
+    ${inventorySlot(slots[3], "item-4")}${inventorySlot(slots[4], "item-5")}${inventorySlot(slots[5], "item-6")}${quest ? inventorySlot(quest, "quest-slot", "퀘스트 슬롯") : `<span class="inventory-slot empty quest-slot" title="퀘스트 슬롯"><i>✦</i></span>`}
+  </div>`;
 }
 
 export function renderItems(player, max = 7) {

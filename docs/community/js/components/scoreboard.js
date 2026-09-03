@@ -1,34 +1,71 @@
-import { championIcon } from "../assets.js?v=20260904f";
-import { escapeHtml, focusKda, kdaClass, scoreClass, tierClass } from "../utils.js?v=20260904f";
-import { renderLoadout, renderProfileRuneSpells } from "./loadout.js?v=20260904f";
+import { championIcon } from "../assets.js?v=20260904g";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904g";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904g";
+
+const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
+const TIER_ICON = { C:"challenger.png", GM:"grandmaster.png", M:"master.png", D:"diamond.png", E:"emerald.png", P:"platinum.png", G:"gold.png", S:"silver.png", B:"bronze.png", I:"iron.png" };
+
+function tierIcon(tier = "") {
+  const compact = String(tier || "").trim().toUpperCase().replace(/[\s_-]+/g, "");
+  let key = "I";
+  if (compact.startsWith("CHALLENGER") || compact.startsWith("C")) key="C";
+  else if (compact.startsWith("GRANDMASTER") || compact.startsWith("GM")) key="GM";
+  else if (compact.startsWith("MASTER") || compact.startsWith("M")) key="M";
+  else if (compact.startsWith("DIAMOND") || compact.startsWith("D")) key="D";
+  else if (compact.startsWith("EMERALD") || compact.startsWith("E")) key="E";
+  else if (compact.startsWith("PLATINUM") || compact.startsWith("P")) key="P";
+  else if (compact.startsWith("GOLD") || compact.startsWith("G")) key="G";
+  else if (compact.startsWith("SILVER") || compact.startsWith("S")) key="S";
+  else if (compact.startsWith("BRONZE") || compact.startsWith("B")) key="B";
+  return `assets/tiers/${TIER_ICON[key]}`;
+}
+
+function achievementLine(player) {
+  const tags=[];
+  if (Number(player?.pentaKills || 0)>0) tags.push(`<span class="score-tag penta">펜타킬</span>`);
+  else if (Number(player?.quadraKills || 0)>0) tags.push(`<span class="score-tag quadra">쿼드라킬</span>`);
+  if (player?.award === "MVP") tags.push(`<span class="score-tag award mvp">MVP</span>`);
+  else if (player?.award === "ACE") tags.push(`<span class="score-tag award ace">ACE</span>`);
+  return tags.join("");
+}
+
+function sortTeam(players = []) {
+  return [...players].sort((a,b) => (ROLE_ORDER.get(normalizeRoleKey(a?.role)) ?? 99) - (ROLE_ORDER.get(normalizeRoleKey(b?.role)) ?? 99));
+}
+
+function playerRow(match, player, focusUserId = "") {
+  const champion = championIcon(player.champion);
+  const focus = String(player.userId) === String(focusUserId) ? " focus-row" : "";
+  const runeSpells = renderProfileRuneSpells(player);
+  const achievements = achievementLine(player);
+  return `<div class="score-player-row ${tierClass(player.tier)}${focus}">
+    <div class="score-identity">
+      <img class="score-tier-icon" src="${escapeHtml(tierIcon(player.tier))}" alt="${escapeHtml(player.tier || "")}" loading="lazy">
+      <button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>
+    </div>
+    <div class="score-combat-loadout">
+      <span class="score-champion-wrap">${champion ? `<img class="champion-icon" src="${escapeHtml(champion)}" alt="" loading="lazy">` : `<span class="champion-icon"></span>`}${Number(player.level || 0)>0 ? `<i class="score-level">${Number(player.level)}</i>` : ""}</span>
+      <span class="score-rune-spells">${runeSpells || ""}</span>
+    </div>
+    <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span class="${player.deaths===0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
+    <div class="score-inventory">${renderInventoryGrid(player)}</div>
+    <div class="score-ai-cell"><small>AI</small>${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}</div>
+    <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()}</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>
+  </div>`;
+}
+
+function teamPanel(match, team, focusUserId = "") {
+  const players = sortTeam((match?.players || []).filter((player) => String(player.team || "").toLowerCase() === team));
+  const label = team === "blue" ? "블루팀" : "레드팀";
+  return `<section class="score-team-panel ${team}"><div class="score-team-head">${label}</div><div class="score-team-players">${players.map((player)=>playerRow(match,player,focusUserId)).join("")}</div></section>`;
+}
 
 export function renderScoreboardRows(match, focusUserId = "") {
-  const order = [...(match?.players || [])].sort((a,b) => a.team === b.team ? 0 : (a.team === "blue" ? -1 : 1));
-  const maxDamage = Math.max(1, ...order.map((row) => Number(row.damage || 0)));
-  return order.map((player) => {
-    const champion = championIcon(player.champion);
-    const focus = String(player.userId) === String(focusUserId) ? " focus-row" : "";
-    const damagePct = Math.max(4, Math.min(100, Number(player.damage || 0) / maxDamage * 100));
-    const award = player.award === "MVP" ? `<span class="score-tag award mvp">MVP</span>` : (player.award === "ACE" ? `<span class="score-tag award ace">ACE</span>` : "");
-    const runeSpells = renderProfileRuneSpells(player);
-    const multikill = Number(player.pentaKills || 0) > 0 ? `<span class="score-tag penta">펜타킬</span>` : (Number(player.quadraKills || 0) > 0 ? `<span class="score-tag quadra">쿼드라킬</span>` : "");
-    return `<tr class="${player.result === "win" ? "win-row" : "loss-row"}${focus}">
-      <td><div class="player-cell"><span class="score-champion-wrap">${champion ? `<img class="champion-icon" src="${escapeHtml(champion)}" alt="" loading="lazy">` : `<span class="champion-icon"></span>`}${Number(player.level || 0) > 0 ? `<i class="score-level">${Number(player.level)}</i>` : ""}</span><span><span class="player-name"><button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>${award}${multikill}</span><span class="player-sub"><span class="tier-badge ${tierClass(player.tier)}">${escapeHtml(player.tier || "-")}</span><span class="score-role">${escapeHtml(player.role || "")}</span><span class="score-rune-spells">${runeSpells || ""}</span></span></span></div></td>
-      <td>${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}</td>
-      <td><span class="kda">${focusKda(player)}</span><div class="player-sub ${player.deaths === 0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</div></td>
-      <td class="damage-score"><strong>${Number(player.damage || 0).toLocaleString()}</strong><div class="damage-track"><i style="width:${damagePct.toFixed(1)}%"></i></div><div class="player-sub">DPM ${Math.round(player.dpm || 0)}</div></td>
-      <td class="numeric">${Number(player.cs || 0).toLocaleString()}<div class="player-sub">${Number(player.csm || 0).toFixed(1)}/분</div></td>
-      <td>${renderLoadout(player)}</td>
-    </tr>`;
-  }).join("");
+  return `${teamPanel(match,"blue",focusUserId)}${teamPanel(match,"red",focusUserId)}`;
 }
 
 export function scoreboard(match, focusUserId = "") {
-  return `<div class="match-details"><table class="scoreboard">
-    <colgroup><col style="width:30%"><col style="width:10%"><col style="width:16%"><col style="width:15%"><col style="width:11%"><col style="width:18%"></colgroup>
-    <thead><tr><th>플레이어</th><th>AI-Score</th><th>KDA</th><th>피해량</th><th>CS</th><th>아이템</th></tr></thead>
-    <tbody>${renderScoreboardRows(match, focusUserId)}</tbody>
-  </table></div>`;
+  return `<div class="match-details"><div class="scoreboard-teams">${renderScoreboardRows(match, focusUserId)}</div></div>`;
 }
 
 export function bindExpanders(root = document) {

@@ -151,3 +151,40 @@
 
 .score-tag.award.mvp{background:rgba(118,83,19,.3);border:1px solid rgba(255,211,93,.5);color:#ffd35d}
 .score-tag.award.ace{background:rgba(42,67,120,.3);border:1px solid rgba(136,174,255,.48);color:#a9c5ff}
+
+
+/* 2026-09-04g expanded scoreboard: blue-left/red-right compact layout */
+.scoreboard-teams{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;background:#080d14}
+.score-team-panel{min-width:0;border:1px solid var(--line-soft);border-radius:9px;overflow:hidden;background:#0d131d}
+.score-team-panel.blue{border-color:rgba(91,139,235,.28)}
+.score-team-panel.red{border-color:rgba(225,91,105,.28)}
+.score-team-head{height:27px;display:flex;align-items:center;padding:0 9px;font-size:11px;font-weight:850}
+.score-team-panel.blue .score-team-head{color:#91b2ff;background:rgba(45,80,147,.14)}
+.score-team-panel.red .score-team-head{color:#ff9ba5;background:rgba(151,61,70,.14)}
+.score-team-players{display:grid}
+.score-player-row{display:grid;grid-template-columns:minmax(116px,1.15fr) 96px 82px 114px 48px 68px;align-items:center;gap:7px;min-height:64px;padding:6px 8px;border-bottom:1px solid rgba(38,48,67,.62);font-size:11px}
+.score-player-row:last-child{border-bottom:0}
+.score-player-row.focus-row{outline:1px solid rgba(125,92,255,.9);outline-offset:-1px;background:rgba(125,92,255,.08)}
+.score-identity{display:grid;grid-template-columns:26px minmax(0,1fr);align-items:center;gap:6px;min-width:0}
+.score-tier-icon{width:26px;height:26px;object-fit:contain}
+.scoreboard-profile-link{min-width:0;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-combat-loadout{display:grid;grid-template-columns:42px 48px;align-items:center;gap:5px}
+.score-combat-loadout .champion-icon{width:42px;height:42px;border-radius:6px}
+.score-rune-spells{width:48px;min-width:48px;margin:0}
+.score-rune-spells .profile-rune-spells{width:48px;min-width:48px;transform:none}
+.score-kda-cell{display:grid;justify-items:center;align-content:center;gap:2px;text-align:center}
+.score-kda-cell>strong{font-size:12px;font-weight:750;white-space:nowrap}
+.score-kda-cell>span{font-size:9px;font-weight:700}
+.score-achievements{display:flex;justify-content:center;gap:3px;flex-wrap:wrap;min-height:17px}
+.score-achievements:empty{min-height:0}
+.score-inventory{display:grid;place-items:center}
+.inventory-grid{display:grid;grid-template-columns:repeat(4,24px);grid-template-rows:repeat(2,24px);gap:2px;width:max-content}
+.inventory-slot{display:grid;place-items:center;width:24px;height:24px;border-radius:4px;background:#141c28;border:1px solid #293448;overflow:hidden}
+.inventory-item-icon{width:100%;height:100%;object-fit:cover}
+.inventory-slot.empty{background:#0b111a;border-color:#202a3b}
+.inventory-slot.quest-slot{border-color:rgba(133,102,255,.35);background:rgba(92,65,157,.1)}
+.inventory-slot.quest-slot>i{color:#7662b4;font-size:11px;font-style:normal}
+.score-ai-cell{display:grid;place-items:center;gap:2px}.score-ai-cell>small{font-size:8px;color:#8998ae;font-weight:850;letter-spacing:.06em}.score-ai-cell .ai-score{min-width:36px;height:27px;font-size:13px}
+.score-cs-cell{display:grid;place-items:center;text-align:center;gap:2px}.score-cs-cell strong{font-size:10px;white-space:nowrap}.score-cs-cell span{font-size:9px;color:#8d9bb1}
+@media(max-width:1180px){.scoreboard-teams{grid-template-columns:1fr}.score-team-panel.blue{order:1}.score-team-panel.red{order:2}.score-player-row{grid-template-columns:minmax(130px,1.2fr) 100px 90px 118px 54px 72px}}
+@media(max-width:720px){.score-player-row{grid-template-columns:minmax(110px,1fr) 92px 78px 106px 44px;gap:5px}.score-cs-cell{display:none}.scoreboard-teams{padding:7px;gap:8px}}
