@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904i";
-import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904i";
-import { scoreboard } from "./scoreboard.js?v=20260904l";
+import { championIcon } from "../assets.js?v=20260904m";
+import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260904m";
+import { scoreboard } from "./scoreboard.js?v=20260904m";
 
 
 function averageTierLabel(players = []) {

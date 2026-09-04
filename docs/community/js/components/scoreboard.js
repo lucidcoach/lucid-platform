@@ -36,11 +36,20 @@ function sortTeam(players = []) {
   return [...players].sort((a,b) => (ROLE_ORDER.get(normalizeRoleKey(a?.role)) ?? 99) - (ROLE_ORDER.get(normalizeRoleKey(b?.role)) ?? 99));
 }
 
+function teamMaxDamage(match, team) {
+  return Math.max(1, ...(match?.players || [])
+    .filter((row) => String(row?.team || "").toLowerCase() === String(team || "").toLowerCase())
+    .map((row) => Number(row?.damage || 0)));
+}
+
 function playerRow(match, player, focusUserId = "") {
   const champion = championIcon(player.champion);
   const focus = String(player.userId) === String(focusUserId) ? " focus-row" : "";
   const runeSpells = renderProfileRuneSpells(player);
   const achievements = achievementLine(player);
+  const damage = Math.max(0, Number(player?.damage || 0));
+  const maxDamage = teamMaxDamage(match, player?.team);
+  const damagePct = Math.max(3, Math.min(100, Math.round((damage / maxDamage) * 100)));
   return `<div class="score-player-row${focus}">
     <div class="score-identity">
       <span class="score-tier-text ${tierClass(player.tier)}" title="${escapeHtml(player.tier || "미배치")}">${escapeHtml(tierShortLabel(player.tier))}</span>
@@ -53,7 +62,8 @@ function playerRow(match, player, focusUserId = "") {
     <div class="score-ai-cell"><small>AI</small>${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}</div>
     <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
     <div class="score-inventory">${renderInventoryGrid(player)}</div>
-    <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()}</strong><span>${Number(player.csm || 0).toFixed(1)}/분</span></div>
+    <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
+    <div class="score-damage-cell" title="챔피언 피해량 ${damage.toLocaleString()}"><strong>${damage.toLocaleString()}</strong><span class="score-damage-track"><i style="width:${damagePct}%"></i></span></div>
   </div>`;
 }
 

@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js?v=20260904i";
-import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904i";
-import { championIcon } from "../assets.js?v=20260904i";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904i";
-import { renderLoading, switchView } from "../view.js?v=20260904i";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904l";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904l";
+import { apiGet } from "../api.js?v=20260904m";
+import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904m";
+import { championIcon } from "../assets.js?v=20260904m";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904m";
+import { renderLoading, switchView } from "../view.js?v=20260904m";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904m";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904m";
 
 
 function refreshStorageKey(userId, guildId) {
