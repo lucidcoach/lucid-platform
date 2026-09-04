@@ -3,7 +3,7 @@ import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260904r";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904v";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904z";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
