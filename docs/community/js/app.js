@@ -4,7 +4,8 @@ import { switchView } from "./view.js?v=20260904r";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ab";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch } from "./pages/gameAnalysis.js?v=20260905ad";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ae";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, isCommunityAdmin } from "./auth.js?v=20260905ae";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -143,14 +144,34 @@ function bindEvents() {
     });
   });
   document.addEventListener("click", (event) => {
+    const fullAnalysisTrigger = event.target.closest("[data-open-full-analysis]");
+    if (fullAnalysisTrigger) {
+      event.preventDefault(); event.stopPropagation();
+      openAnalysisFromMatch({
+        userId: fullAnalysisTrigger.dataset.userId, guildId: fullAnalysisTrigger.dataset.guildId,
+        matchId: fullAnalysisTrigger.dataset.matchId, champion: fullAnalysisTrigger.dataset.champion, role: fullAnalysisTrigger.dataset.role,
+      });
+      return;
+    }
     const analysisTrigger = event.target.closest("[data-game-analysis]");
     if (analysisTrigger) {
-      event.preventDefault();
-      event.stopPropagation();
-      openAnalysisFromMatch({
+      event.preventDefault(); event.stopPropagation();
+      const detail={
         userId: analysisTrigger.dataset.userId, guildId: analysisTrigger.dataset.guildId,
         matchId: analysisTrigger.dataset.matchId, champion: analysisTrigger.dataset.champion, role: analysisTrigger.dataset.role,
-      });
+      };
+      if (!canAnalyzePlayer(detail.userId, detail.guildId)) {
+        const message = getCurrentUser()
+          ? "일반 계정은 등록한 본인 내전만 분석할 수 있습니다. 오른쪽 위 ‘내 ID 등록’을 먼저 눌러주세요."
+          : "게임 분석은 로그인 후 사용할 수 있습니다. 오른쪽 위에서 로그인하거나 Discord로 연결해주세요.";
+        window.alert(message);
+        return;
+      }
+      const card=analysisTrigger.closest(".personal-match");
+      card?.classList.add("expanded");
+      const expander=card?.querySelector(".personal-expand"); if(expander) expander.textContent="⌃";
+      const target=card?.querySelector("[data-compact-analysis]");
+      renderCompactMatchAnalysis(detail,target);
       return;
     }
     const trigger = event.target.closest("[data-player-profile]");
@@ -170,6 +191,7 @@ function bindEvents() {
 bindEvents();
 bindAnalysisPage();
 renderSearchMemory();
+await initCommunityAuth();
 await loadGameAssets();
 await loadRecent();
 applyRoute();

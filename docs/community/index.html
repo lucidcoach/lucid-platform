@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260905ad">
+  <link rel="stylesheet" href="styles.css?v=20260905ae">
 </head>
 <body>
   <header class="community-header">
@@ -26,6 +26,11 @@
         <button class="nav-tab" type="button" data-view="analysis">게임 분석 <span class="nav-beta">BETA</span></button>
         <button class="nav-tab" type="button" disabled title="후속 버전에서 추가">랭킹</button>
       </nav>
+      <div class="community-auth-actions" aria-label="계정">
+        <button id="communityLoginBtn" class="community-auth-button" type="button">로그인</button>
+        <button id="communityLinkBtn" class="community-auth-button discord" type="button">Discord로 연결</button>
+        <button id="communityRegisterIdBtn" class="community-auth-button subtle" type="button" hidden>내 ID 등록</button>
+      </div>
 
     </div>
   </header>
@@ -94,10 +99,24 @@
 
   </main>
 
+  <div id="communityAuthModal" class="community-auth-modal" hidden>
+    <div class="community-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="communityAuthTitle">
+      <button id="communityAuthClose" class="community-auth-close" type="button" aria-label="닫기">×</button>
+      <h2 id="communityAuthTitle">로그인</h2>
+      <p>강의 사이트와 같은 계정을 사용합니다.</p>
+      <form id="communityAuthForm">
+        <label>이메일<input name="email" type="email" autocomplete="email" required></label>
+        <label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label>
+        <button type="submit">로그인</button>
+        <span id="communityAuthStatus"></span>
+      </form>
+    </div>
+  </div>
+
   <template id="loadingTemplate">
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app.js?v=20260905ad"></script>
+  <script type="module" src="js/app.js?v=20260905ae"></script>
 </body>
 </html>

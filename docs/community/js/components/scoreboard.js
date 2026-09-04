@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904y";
-import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904y";
-import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904y";
+import { championIcon } from "../assets.js?v=20260905ae";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260905ae";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260905ae";
 
 const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
 
@@ -92,7 +92,7 @@ export function renderScoreboardRows(match, focusUserId = "") {
 export function scoreboard(match, focusUserId = "") {
   const hasPersonalAnalysis = Boolean(String(focusUserId || "").trim());
   const analysisPanel = hasPersonalAnalysis
-    ? `<aside class="personal-analysis-panel"><div><strong>상세전적 분석 예정</strong><span>검색한 플레이어의 상세 분석과 피드백이 표시될 영역입니다.</span></div></aside>`
+    ? `<aside class="personal-analysis-panel" data-compact-analysis><div class="compact-analysis-empty"><strong>간단 분석</strong><span>위의 ‘분석’ 버튼을 누르면 티어 평균과 이번 경기 수치를 비교합니다.</span></div></aside>`
     : "";
   return `<div class="match-details"><div class="scoreboard-layout${hasPersonalAnalysis ? " has-personal-analysis" : ""}"><div class="scoreboard-teams">${renderScoreboardRows(match, focusUserId)}</div>${analysisPanel}</div></div>`;
 }

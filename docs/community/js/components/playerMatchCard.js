@@ -1,7 +1,7 @@
 import { championIcon } from "../assets.js?v=20260905ab";
 import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260905ab";
 import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260905ab";
-import { scoreboard } from "./scoreboard.js?v=20260905ab";
+import { scoreboard } from "./scoreboard.js?v=20260905ae";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);

@@ -674,3 +674,8 @@
   box-sizing:border-box!important;
 }
 .scoreboard-layout .scoreboard-profile-link{max-width:188px!important}
+
+/* 2026-09-05ae: use the remaining detail-card width for compact analysis only. */
+.scoreboard-layout.has-personal-analysis{grid-template-columns:850px minmax(0,298px)!important;width:1160px!important;min-width:1160px!important;max-width:1160px!important;column-gap:12px!important}
+.personal-analysis-panel{width:298px!important;min-width:298px!important;max-width:298px!important;overflow:hidden!important;border-left:1px solid rgba(42,53,72,.62)!important;background:#090f18!important}
+@media(max-width:1180px){.scoreboard-layout.has-personal-analysis{grid-template-columns:850px 298px!important;width:1160px!important;min-width:1160px!important;max-width:1160px!important}.personal-match.expanded .match-details{overflow-x:auto!important}}
