@@ -51,6 +51,6 @@ export function playerMatchCard(match, userId) {
         <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
       </div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
-      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
+      <div class="personal-actions"><button class="analysis-match-button" type="button" data-game-analysis data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" data-match-id="${escapeHtml(match.matchId || "")}" data-champion="${escapeHtml(player.champion || "")}" data-role="${escapeHtml(player.role || "")}" aria-label="이 경기 게임 분석" title="게임 분석">분석</button><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
     </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,userId)}</article>`;
 }

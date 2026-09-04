@@ -4,6 +4,7 @@ import { switchView } from "./view.js?v=20260904r";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ab";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch } from "./pages/gameAnalysis.js?v=20260905ad";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -87,10 +88,15 @@ function recentUrl() {
 
 function applyRoute({ fromPop = false } = {}) {
   const params = new URLSearchParams(window.location.search);
+  const view = params.get("view");
   const player = params.get("player");
   const guild = params.get("guild");
   const query = params.get("q");
 
+  if (view === "analysis") {
+    applyAnalysisRoute(params);
+    return;
+  }
   if (player && guild) {
     openPlayer(player, guild, { historyMode: "none" });
     return;
@@ -137,6 +143,16 @@ function bindEvents() {
     });
   });
   document.addEventListener("click", (event) => {
+    const analysisTrigger = event.target.closest("[data-game-analysis]");
+    if (analysisTrigger) {
+      event.preventDefault();
+      event.stopPropagation();
+      openAnalysisFromMatch({
+        userId: analysisTrigger.dataset.userId, guildId: analysisTrigger.dataset.guildId,
+        matchId: analysisTrigger.dataset.matchId, champion: analysisTrigger.dataset.champion, role: analysisTrigger.dataset.role,
+      });
+      return;
+    }
     const trigger = event.target.closest("[data-player-profile]");
     if (!trigger) return;
     event.preventDefault();
@@ -152,6 +168,7 @@ function bindEvents() {
 }
 
 bindEvents();
+bindAnalysisPage();
 renderSearchMemory();
 await loadGameAssets();
 await loadRecent();
