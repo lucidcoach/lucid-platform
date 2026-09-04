@@ -617,3 +617,60 @@
 #recentView{width:min(100%,1160px)!important;max-width:1160px!important}
 #recentView .match-feed{width:min(100%,1160px)!important;max-width:1160px!important}
 #recentView .match-card{width:100%!important;max-width:1160px!important}
+
+
+/* 2026-09-04y: expansion must not reflow the collapsed match summary */
+#recentView .match-card .match-summary,
+#recentView .match-card.expanded .match-summary{
+  width:100%!important;
+  min-width:0!important;
+  grid-template-columns:82px minmax(0,1fr) 36px!important;
+  min-height:100px!important;
+}
+#recentView .match-card .teams-preview,
+#recentView .match-card.expanded .teams-preview{
+  width:100%!important;
+  min-width:0!important;
+  grid-template-columns:1fr 1fr!important;
+}
+#recentView .match-card .team-preview,
+#recentView .match-card.expanded .team-preview{
+  min-width:0!important;
+  padding-left:9px!important;
+  padding-right:9px!important;
+}
+#recentView .match-card .expand-match,
+#recentView .match-card.expanded .expand-match{
+  width:36px!important;
+  min-width:36px!important;
+  max-width:36px!important;
+  padding:0!important;
+  font-size:17px!important;
+}
+#recentView .match-card,
+#recentView .match-card.expanded{
+  overflow:hidden!important;
+}
+#recentView .match-card .match-details{
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+/* Opening a card only reveals the detail section; the summary above stays identical. */
+#recentView .match-card.expanded .match-details{display:block!important}
+
+/* Move tier + nickname a touch right so it breathes away from rune/spell icons. */
+.scoreboard-layout .score-player-row{
+  grid-template-columns:72px 234px 54px 94px 104px 90px 96px!important;
+  column-gap:8px!important;
+}
+.scoreboard-layout .score-combat-loadout{
+  width:66px!important;
+  min-width:66px!important;
+}
+.scoreboard-layout .score-identity{
+  width:234px!important;
+  min-width:234px!important;
+  padding-left:5px!important;
+  box-sizing:border-box!important;
+}
+.scoreboard-layout .scoreboard-profile-link{max-width:188px!important}

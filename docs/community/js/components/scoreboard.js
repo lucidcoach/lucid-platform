@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904v";
-import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904v";
-import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904v";
+import { championIcon } from "../assets.js?v=20260904y";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904y";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904y";
 
 const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
 
