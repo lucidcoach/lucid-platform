@@ -1343,3 +1343,21 @@
   .damage-cell{width:min(190px,100%)!important;max-width:190px!important}
   .damage-cell .damage-track{max-width:190px!important}
 }
+
+
+/* 2026-09-04v personal-match preview: AI before inventory, preserve 10-player roster width */
+.personal-match .personal-summary{
+  grid-template-columns:90px 82px 102px 58px 112px 96px minmax(330px,1fr) 46px!important;
+}
+.personal-match .focus-score{grid-column:4!important}
+.personal-match .personal-inventory{grid-column:5!important}
+.personal-match .focus-cs{grid-column:6!important}
+.personal-match .roster-mini{grid-column:7!important}
+.personal-match .personal-actions{grid-column:8!important}
+.personal-match.expanded .personal-summary{
+  grid-template-columns:90px 82px 102px 58px 112px 96px minmax(330px,1fr) 46px!important;
+}
+.personal-match.expanded .roster-mini{
+  min-width:330px!important;
+  grid-template-columns:minmax(158px,1fr) minmax(158px,1fr)!important;
+}

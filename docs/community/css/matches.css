@@ -410,3 +410,117 @@
   .personal-match.expanded{overflow-x:auto!important;overflow-y:visible!important}
   .scoreboard-layout.has-personal-analysis{min-width:1360px!important}
 }
+
+
+/* 2026-09-04v: restore horizontal breathing room, reorder detail lead, halve damage bar */
+#recentView{
+  width:min(100%,1180px)!important;
+  max-width:1180px!important;
+}
+#recentView .match-feed{
+  width:min(100%,1120px)!important;
+  max-width:1120px!important;
+}
+#recentView .match-card{
+  width:100%!important;
+  max-width:1120px!important;
+}
+
+/* Expanded scoreboard: combat visual first, then identity, then existing metrics. */
+.scoreboard-layout .scoreboard-teams{
+  width:1040px!important;
+  max-width:1040px!important;
+  grid-template-columns:1040px!important;
+}
+.scoreboard-layout .score-player-row{
+  grid-template-columns:76px minmax(220px,1.55fr) 54px 94px 104px 88px 128px!important;
+  gap:9px!important;
+  padding-left:10px!important;
+  padding-right:10px!important;
+}
+.score-combat-loadout{
+  grid-column:1!important;
+  justify-self:start!important;
+  grid-template-columns:34px 36px!important;
+  gap:3px!important;
+}
+.score-identity{
+  grid-column:2!important;
+  grid-template-columns:36px minmax(0,1fr)!important;
+  gap:7px!important;
+}
+.scoreboard-profile-link{
+  overflow:visible!important;
+  text-overflow:clip!important;
+  white-space:nowrap!important;
+}
+
+/* Requested compact damage graph: about half the prior visual width. */
+.score-damage-cell{
+  min-width:0!important;
+  width:118px!important;
+  max-width:118px!important;
+  justify-self:center!important;
+  padding:0 4px!important;
+}
+.score-damage-track{
+  width:112px!important;
+  min-width:112px!important;
+  max-width:112px!important;
+  height:6px!important;
+}
+.score-damage-cell>strong{
+  width:112px!important;
+  text-align:center!important;
+}
+
+/* Leave the future analysis area farther to the right without squeezing the board. */
+.scoreboard-layout.has-personal-analysis{
+  grid-template-columns:1040px 250px!important;
+  width:1300px!important;
+  min-width:1300px!important;
+  max-width:none!important;
+  column-gap:10px!important;
+}
+.personal-analysis-panel{
+  width:250px!important;
+  min-width:250px!important;
+}
+
+/* Never collapse the roster/summary merely because the detail section is open. */
+.personal-match .personal-summary,
+.personal-match.expanded .personal-summary{
+  grid-template-columns:90px 82px 102px 58px 112px 96px minmax(330px,1fr) 46px!important;
+  column-gap:11px!important;
+  min-width:1040px!important;
+}
+.personal-match .roster-mini,
+.personal-match.expanded .roster-mini{
+  min-width:330px!important;
+  grid-template-columns:minmax(158px,1fr) minmax(158px,1fr)!important;
+  gap:2px 10px!important;
+}
+.personal-match .roster-player,
+.personal-match.expanded .roster-player{
+  min-width:0!important;
+}
+.personal-match .roster-profile-link,
+.personal-match.expanded .roster-profile-link{
+  display:block!important;
+  min-width:0!important;
+  width:100%!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  text-overflow:ellipsis!important;
+}
+.personal-match.expanded{
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+}
+.personal-match.expanded .match-details{
+  min-width:1300px!important;
+}
+
+@media(max-width:1160px){
+  #recentView .match-feed,#recentView .match-card{max-width:none!important}
+}

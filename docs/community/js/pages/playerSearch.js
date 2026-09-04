@@ -3,8 +3,8 @@ import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904r";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904r";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904r";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904v";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904v";
 
 
 function refreshStorageKey(userId, guildId) {
