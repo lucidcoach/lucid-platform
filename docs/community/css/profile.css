@@ -1622,3 +1622,47 @@
   .personal-match .roster-mini,
   .personal-match.expanded .roster-mini{min-width:300px!important;}
 }
+
+/* 2026-09-05ac: collapsed/expanded preview header must be pixel-identical.
+   A legacy :not(.expanded) rule had higher specificity and overrode the new
+   independent combat-group grid only while collapsed, causing the pile-up.
+   Keep the same five-column header in both states; expansion only reveals
+   the detail panel below. */
+.personal-match:not(.expanded) .personal-summary,
+.personal-match.expanded .personal-summary{
+  display:grid!important;
+  grid-template-columns:82px 104px 434px minmax(330px,1fr) 44px!important;
+  column-gap:12px!important;
+  align-items:center!important;
+  min-width:1042px!important;
+  min-height:92px!important;
+  padding:10px 12px!important;
+  overflow:visible!important;
+}
+.personal-match:not(.expanded) .roster-mini,
+.personal-match.expanded .roster-mini{
+  grid-column:4!important;
+  width:100%!important;
+  min-width:330px!important;
+  grid-template-columns:minmax(158px,1fr) minmax(158px,1fr)!important;
+  gap:2px 10px!important;
+  padding-left:0!important;
+}
+.personal-match:not(.expanded) .personal-actions,
+.personal-match.expanded .personal-actions{
+  grid-column:5!important;
+  width:44px!important;
+  min-width:44px!important;
+  justify-self:end!important;
+}
+@media(max-width:1100px){
+  .personal-match:not(.expanded) .personal-summary,
+  .personal-match.expanded .personal-summary{
+    grid-template-columns:78px 104px 410px minmax(300px,1fr) 42px!important;
+    min-width:970px!important;
+    column-gap:10px!important;
+    overflow-x:auto!important;
+  }
+  .personal-match:not(.expanded) .roster-mini,
+  .personal-match.expanded .roster-mini{min-width:300px!important;}
+}
