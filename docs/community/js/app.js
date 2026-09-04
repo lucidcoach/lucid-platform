@@ -4,8 +4,8 @@ import { switchView } from "./view.js?v=20260904r";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ab";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ae";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, isCommunityAdmin } from "./auth.js?v=20260905ae";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ag";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -94,6 +94,10 @@ function applyRoute({ fromPop = false } = {}) {
   const guild = params.get("guild");
   const query = params.get("q");
 
+  if (view === "account") {
+    openCommunityAccount({push:false});
+    return;
+  }
   if (view === "analysis") {
     applyAnalysisRoute(params);
     return;
@@ -116,6 +120,59 @@ function goRecent({ push = true } = {}) {
   if (push) history.pushState({ view: "recent" }, "", recentUrl());
   $("playerSearchInput").value = "";
   switchView("recent");
+}
+
+function renderCommunityAccount() {
+  const target = $("communityAccountContent");
+  if (!target) return;
+  const user = getCurrentUser();
+  if (!user) {
+    target.innerHTML = `<div class="community-account-card"><h2>로그인이 필요합니다.</h2><p class="riot-account-help">오른쪽 위 로그인 또는 Discord로 연결을 이용해주세요.</p></div>`;
+    return;
+  }
+  const accounts = getRiotAccounts();
+  const slots = Array.from({length:5}, (_,i) => accounts[i] || "");
+  const discordName = user.discordDisplayName || user.discord_display_name || "";
+  target.innerHTML = `<div class="community-account-shell">
+    <section class="community-account-card">
+      <h2>내 계정</h2>
+      <div class="community-account-summary">
+        <div class="row"><small>닉네임</small><strong>${esc(user.displayName || "-")}</strong></div>
+        <div class="row"><small>이메일</small><strong>${esc(user.email || "-")}</strong></div>
+        <div class="row"><small>Discord</small><strong class="${discordName ? "connected" : ""}">${esc(discordName || "연결 안 됨")}</strong></div>
+        <div class="row"><small>권한</small><strong>${isCommunityAdmin() ? "관리자 · 모든 유저 분석 가능" : isCommunityCoach() ? "코치 · 모든 유저 분석 가능" : "일반 · 등록 계정 분석 가능"}</strong></div>
+      </div>
+    </section>
+    <section class="community-account-card">
+      <h2>내 Riot ID</h2>
+      <form id="riotAccountForm" class="riot-account-form">
+        ${slots.map((value,i)=>`<label class="riot-account-row"><span>${i===0 ? "본계정" : `부계정 ${i}`}</span><input name="riotAccount${i}" value="${esc(value)}" placeholder="닉네임#태그" autocomplete="off" maxlength="49"></label>`).join("")}
+        <p class="riot-account-help">본계정 1개 + 부계정 4개까지 등록할 수 있습니다. 등록된 Riot ID와 일치하는 내전 기록은 게임 분석에서 모두 열립니다.</p>
+        <div class="riot-account-actions"><button class="riot-account-save" type="submit">저장</button><span id="riotAccountStatus" class="riot-account-status"></span></div>
+      </form>
+    </section>
+  </div>`;
+  $("riotAccountForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = $("riotAccountStatus");
+    const button = form.querySelector("button[type=submit]");
+    const values = Array.from({length:5}, (_,i) => form.elements[`riotAccount${i}`]?.value || "");
+    try {
+      button.disabled = true;
+      if(status){ status.textContent="저장 중..."; status.className="riot-account-status"; }
+      await saveRiotAccounts(values);
+      if(status){ status.textContent="저장되었습니다."; status.className="riot-account-status ok"; }
+    } catch(error) {
+      if(status){ status.textContent=error.message || "저장에 실패했습니다."; status.className="riot-account-status error"; }
+    } finally { button.disabled = false; }
+  });
+}
+
+function openCommunityAccount({push=true}={}) {
+  if(push){ const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","account"); history.pushState({view:"account"},"",`${url.pathname}${url.search}`); }
+  switchView("account");
+  renderCommunityAccount();
 }
 
 function bindEvents() {
@@ -162,7 +219,7 @@ function bindEvents() {
       };
       if (!canAnalyzePlayer(detail.userId, detail.guildId)) {
         const message = getCurrentUser()
-          ? "일반 계정은 등록한 본인 내전만 분석할 수 있습니다. 오른쪽 위 ‘내 ID 등록’을 먼저 눌러주세요."
+          ? "내 정보에 등록한 Riot ID의 경기만 분석할 수 있습니다. 코치 권한 이상은 모든 유저를 분석할 수 있습니다."
           : "게임 분석은 로그인 후 사용할 수 있습니다. 오른쪽 위에서 로그인하거나 Discord로 연결해주세요.";
         window.alert(message);
         return;
@@ -183,6 +240,9 @@ function bindEvents() {
     if (!userId || !guildId) return;
     openPlayer(userId, guildId, { historyMode: "push" });
   });
+  window.addEventListener("lucid:open-account", () => openCommunityAccount());
+  window.addEventListener("lucid:auth-changed", () => { if(document.getElementById("accountView")?.classList.contains("active")) renderCommunityAccount(); });
+  window.addEventListener("lucid:logged-out", () => goRecent());
   window.addEventListener("popstate", () => applyRoute({ fromPop: true }));
   window.addEventListener("lucid:player-opened", (event) => rememberRecentSearch(event.detail));
   window.addEventListener("lucid:favorite-toggle", (event) => toggleFavorite(event.detail));

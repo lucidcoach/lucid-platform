@@ -1,51 +1,77 @@
 import { API_BASE_URL } from "./config.js";
 import { apiGet } from "./api.js";
 
-const LINK_KEY = "lucid-community-analysis-link-v1";
 let currentUser = null;
+let riotAccounts = [];
+let resolvedPlayers = [];
 
 function apiUrl(path){ return `${API_BASE_URL.replace(/\/$/, "")}${path}`; }
-function accountKey(user=currentUser){ return String(user?.id || user?.email || user?.displayName || "").trim(); }
-function readLinks(){ try { const v=JSON.parse(localStorage.getItem(LINK_KEY)||"{}"); return v&&typeof v==="object"?v:{}; } catch(_){ return {}; } }
-function writeLinks(v){ localStorage.setItem(LINK_KEY, JSON.stringify(v)); }
+function normalizeRiotId(value){ return String(value || "").trim().replace(/＃/g, "#"); }
+function validRiotId(value){
+  const text = normalizeRiotId(value);
+  const split = text.lastIndexOf("#");
+  if(split <= 0 || split >= text.length - 1) return false;
+  const gameName = text.slice(0, split).trim();
+  const tagLine = text.slice(split + 1).trim();
+  return Boolean(gameName && tagLine && gameName.length <= 32 && tagLine.length <= 16);
+}
 
 export function getCurrentUser(){ return currentUser; }
 export function isCommunityAdmin(){ return String(currentUser?.role||"").toLowerCase()==="admin" || Boolean(currentUser?.isAdmin || currentUser?.is_admin); }
-export function getAnalysisIdentity(){
-  const key=accountKey(); if(!key) return null;
-  const row=readLinks()[key];
-  return row?.userId && row?.guildId ? row : null;
-}
+export function isCommunityCoach(){ return String(currentUser?.role||"").toLowerCase()==="coach" || Boolean(currentUser?.isCoach || currentUser?.is_coach); }
+export function canAnalyzeAllPlayers(){ return isCommunityAdmin() || isCommunityCoach(); }
+export function getRiotAccounts(){ return [...riotAccounts]; }
+export function getResolvedAnalysisPlayers(){ return [...resolvedPlayers]; }
+export function getAnalysisIdentity(){ return resolvedPlayers[0] || null; }
 export function canAnalyzePlayer(userId,guildId){
-  if(isCommunityAdmin()) return true;
+  if(canAnalyzeAllPlayers()) return true;
   if(!currentUser) return false;
-  const own=getAnalysisIdentity();
-  return Boolean(own && String(own.userId)===String(userId) && String(own.guildId)===String(guildId));
+  return resolvedPlayers.some(row => String(row.userId)===String(userId) && String(row.guildId)===String(guildId));
+}
+
+async function resolveRegisteredPlayers(){
+  if(!currentUser || !riotAccounts.length){ resolvedPlayers=[]; return resolvedPlayers; }
+  const found=[];
+  const seen=new Set();
+  await Promise.all(riotAccounts.map(async (riotId) => {
+    try{
+      const data=await apiGet(`/api/community/search?q=${encodeURIComponent(riotId)}&limit=20`);
+      for(const row of (data.players||[])){
+        const names=[row.name,row.matchedName].map(x=>normalizeRiotId(x).toLowerCase());
+        if(!names.includes(normalizeRiotId(riotId).toLowerCase())) continue;
+        const key=`${row.guildId}:${row.userId}`;
+        if(seen.has(key)) continue;
+        seen.add(key);
+        found.push({userId:String(row.userId),guildId:String(row.guildId),name:String(row.name||riotId),riotId});
+      }
+    }catch(_){ }
+  }));
+  resolvedPlayers=found;
+  return resolvedPlayers;
 }
 
 function renderAuthActions(){
   const login=document.getElementById("communityLoginBtn");
   const discord=document.getElementById("communityLinkBtn");
-  const reg=document.getElementById("communityRegisterIdBtn");
+  const logoutBtn=document.getElementById("communityLogoutBtn");
   if(!login||!discord) return;
   if(currentUser){
-    login.textContent=currentUser.displayName || currentUser.email || "내 계정";
+    login.textContent=currentUser.displayName || currentUser.email || "내 정보";
     login.classList.add("active-user");
+    login.title="커뮤니티 내 정보";
     const connected=Boolean(currentUser.discordConnected||currentUser.discord_connected||currentUser.discordDisplayName||currentUser.discord_display_name);
     discord.textContent=connected?`Discord · ${currentUser.discordDisplayName||currentUser.discord_display_name||"연결됨"}`:"Discord 연결";
     discord.classList.toggle("active-user",connected);
-    if(reg){
-      reg.hidden=isCommunityAdmin();
-      const own=getAnalysisIdentity();
-      reg.textContent=own?`내 ID · ${own.name}`:"내 ID 등록";
-      reg.classList.toggle("active-user",Boolean(own));
-    }
+    if(logoutBtn) logoutBtn.hidden=false;
   }else{
-    login.textContent="로그인"; login.classList.remove("active-user");
-    discord.textContent="Discord로 연결"; discord.classList.remove("active-user");
-    if(reg) reg.hidden=true;
+    login.textContent="로그인";
+    login.classList.remove("active-user");
+    login.title="로그인";
+    discord.textContent="Discord로 연결";
+    discord.classList.remove("active-user");
+    if(logoutBtn) logoutBtn.hidden=true;
   }
-  window.dispatchEvent(new CustomEvent("lucid:auth-changed",{detail:{user:currentUser,admin:isCommunityAdmin(),identity:getAnalysisIdentity()}}));
+  window.dispatchEvent(new CustomEvent("lucid:auth-changed",{detail:{user:currentUser,admin:isCommunityAdmin(),coach:isCommunityCoach(),analyzeAll:canAnalyzeAllPlayers(),riotAccounts:getRiotAccounts(),players:getResolvedAnalysisPlayers()}}));
 }
 
 async function loadCurrentUser(){
@@ -54,6 +80,8 @@ async function loadCurrentUser(){
     const data=await res.json().catch(()=>({}));
     currentUser=res.ok&&data.ok?data.user:null;
   }catch(_){ currentUser=null; }
+  riotAccounts=Array.isArray(currentUser?.riotAccounts) ? currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean).slice(0,5) : [];
+  await resolveRegisteredPlayers();
   renderAuthActions();
   return currentUser;
 }
@@ -65,41 +93,48 @@ async function login(email,password){
   const res=await fetch(apiUrl("/api/auth/login"),{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
   const data=await res.json().catch(()=>({}));
   if(!res.ok||!data.ok) throw new Error(data.error||"로그인에 실패했습니다.");
-  currentUser=data.user||null; renderAuthActions(); return currentUser;
+  currentUser=data.user||null;
+  riotAccounts=Array.isArray(currentUser?.riotAccounts) ? currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean).slice(0,5) : [];
+  await resolveRegisteredPlayers();
+  renderAuthActions();
+  return currentUser;
 }
 
-async function logout(){
+export async function logoutCommunityUser(){
   try{ await fetch(apiUrl("/api/auth/logout"),{method:"POST",credentials:"include"}); }catch(_){ }
-  currentUser=null; renderAuthActions();
+  currentUser=null; riotAccounts=[]; resolvedPlayers=[]; renderAuthActions();
 }
 
-async function registerOwnId(){
-  if(!currentUser){ openModal(); return; }
-  const input=window.prompt("내전에서 사용하는 Riot ID를 입력하세요. 예: its not you#shst");
-  const q=String(input||"").trim(); if(!q) return;
-  try{
-    const data=await apiGet(`/api/community/search?q=${encodeURIComponent(q)}&limit=12`);
-    const rows=data.players||[];
-    const exact=rows.find(r=>String(r.name||"").toLowerCase()===q.toLowerCase() || String(r.matchedName||"").toLowerCase()===q.toLowerCase());
-    const picked=exact || (rows.length===1?rows[0]:null);
-    if(!picked){ window.alert("정확히 한 명을 찾지 못했습니다. Riot ID를 태그까지 입력해주세요."); return; }
-    const key=accountKey(); const links=readLinks();
-    links[key]={userId:String(picked.userId),guildId:String(picked.guildId),name:String(picked.name||q)};
-    writeLinks(links); renderAuthActions();
-    window.alert(`${picked.name} 계정을 내 분석 ID로 등록했습니다.`);
-  }catch(e){ window.alert(e.message||"ID 등록에 실패했습니다."); }
+export async function saveRiotAccounts(values=[]){
+  if(!currentUser) throw new Error("로그인이 필요합니다.");
+  const clean=[];
+  for(const raw of values.slice(0,5)){
+    const value=normalizeRiotId(raw);
+    if(!value) continue;
+    if(!validRiotId(value)) throw new Error(`Riot ID는 닉네임#태그 형식으로 입력해주세요: ${value}`);
+    if(clean.some(x=>x.toLowerCase()===value.toLowerCase())) throw new Error("같은 Riot ID를 중복 등록할 수 없습니다.");
+    clean.push(value);
+  }
+  const res=await fetch(apiUrl("/api/auth/riot-accounts"),{method:"PUT",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({accounts:clean})});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok) throw new Error(data.error==="invalid_riot_id"?"Riot ID 형식을 확인해주세요.":data.error||"Riot ID 저장에 실패했습니다.");
+  currentUser=data.user||currentUser;
+  riotAccounts=Array.isArray(currentUser?.riotAccounts)?currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean).slice(0,5):clean;
+  await resolveRegisteredPlayers();
+  renderAuthActions();
+  return getRiotAccounts();
 }
 
 export async function initCommunityAuth(){
   const loginBtn=document.getElementById("communityLoginBtn");
   const discordBtn=document.getElementById("communityLinkBtn");
-  const registerBtn=document.getElementById("communityRegisterIdBtn");
+  const logoutBtn=document.getElementById("communityLogoutBtn");
   const form=document.getElementById("communityAuthForm");
   document.getElementById("communityAuthClose")?.addEventListener("click",closeModal);
   document.getElementById("communityAuthModal")?.addEventListener("click",e=>{ if(e.target?.id==="communityAuthModal") closeModal(); });
-  loginBtn?.addEventListener("click",()=>{ if(currentUser){ if(window.confirm("로그아웃할까요?")) logout(); } else openModal(); });
+  loginBtn?.addEventListener("click",()=>{ if(currentUser) window.dispatchEvent(new CustomEvent("lucid:open-account")); else openModal(); });
   discordBtn?.addEventListener("click",()=>window.location.assign(apiUrl("/api/auth/oauth/discord/start")));
-  registerBtn?.addEventListener("click",registerOwnId);
+  logoutBtn?.addEventListener("click",async()=>{ await logoutCommunityUser(); window.dispatchEvent(new CustomEvent("lucid:logged-out")); });
   form?.addEventListener("submit",async e=>{
     e.preventDefault(); const status=document.getElementById("communityAuthStatus");
     const data=new FormData(form); const btn=form.querySelector("button[type=submit]");
