@@ -1,6 +1,6 @@
 import { championIcon } from "../assets.js?v=20260904i";
 import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904i";
-import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904i";
+import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904k";
 import { scoreboard } from "./scoreboard.js?v=20260904j";
 
 function rosterPlayer(row, guildId, focusUserId) {

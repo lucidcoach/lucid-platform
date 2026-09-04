@@ -1,5 +1,5 @@
-import { itemIcon, perkIcon, perkStyleIcon, perkTreeInfo, spellIcon } from "../assets.js?v=20260904f";
-import { escapeHtml } from "../utils.js?v=20260904f";
+import { itemIcon, perkIcon, perkStyleIcon, perkTreeInfo, spellIcon } from "../assets.js?v=20260904k";
+import { escapeHtml } from "../utils.js?v=20260904k";
 
 function image(src, alt = "", className = "") {
   return src ? `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy">` : "";
@@ -66,8 +66,9 @@ const TRINKET_ITEM_IDS = new Set([3330, 3340, 3348, 3363, 3364, 3513]);
 function questItemId(player, normalItems = []) {
   const stats = player?.stats || {};
   const direct = [
+    player?.roleBoundItem, player?.role_bound_item,
     player?.questItem, player?.questItemId, player?.roleQuestItem, player?.roleQuestItemId,
-    stats.QUEST_ITEM, stats.QUEST_ITEM_ID, stats.ROLE_QUEST_ITEM, stats.ROLE_QUEST_ITEM_ID,
+    stats.ROLE_BOUND_ITEM, stats.QUEST_ITEM, stats.QUEST_ITEM_ID, stats.ROLE_QUEST_ITEM, stats.ROLE_QUEST_ITEM_ID,
   ].map(Number).find((value) => Number.isFinite(value) && value > 0);
   if (direct) return direct;
   // 2026 support quest slot can hold a control ward. If it is present in the
