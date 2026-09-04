@@ -578,3 +578,42 @@
 .score-damage-cell,.damage-cell{width:88px !important;max-width:88px !important;min-width:88px !important;justify-self:center !important;padding:0 2px !important;}
 .score-damage-track,.damage-track{width:84px !important;min-width:84px !important;max-width:84px !important;height:6px !important;}
 .score-damage-cell>strong,.damage-cell>strong{width:84px !important;text-align:center !important;}
+
+
+/* 2026-09-04x authoritative detailed-scoreboard compact columns */
+.scoreboard-layout .scoreboard-teams{
+  width:850px!important;
+  max-width:850px!important;
+  grid-template-columns:850px!important;
+}
+.scoreboard-layout .score-player-row{
+  grid-template-columns:66px 240px 54px 94px 104px 90px 96px!important;
+  column-gap:8px!important;
+  min-width:0!important;
+  padding-left:10px!important;
+  padding-right:10px!important;
+}
+.scoreboard-layout .score-combat-loadout{grid-column:1!important;width:66px!important;min-width:66px!important}
+.scoreboard-layout .score-identity{grid-column:2!important;width:240px!important;min-width:240px!important}
+.scoreboard-layout .score-ai-cell{grid-column:3!important;width:54px!important;min-width:54px!important}
+.scoreboard-layout .score-kda-cell{grid-column:4!important;width:94px!important;min-width:94px!important}
+.scoreboard-layout .score-inventory{grid-column:5!important;width:104px!important;min-width:104px!important}
+.scoreboard-layout .score-cs-cell{grid-column:6!important;width:90px!important;min-width:90px!important}
+.scoreboard-layout .score-damage-cell{grid-column:7!important;width:92px!important;min-width:92px!important;max-width:92px!important;padding:0 2px!important}
+.scoreboard-layout .score-damage-track{width:88px!important;min-width:88px!important;max-width:88px!important}
+.scoreboard-layout .score-damage-cell>strong{width:88px!important;text-align:center!important}
+.scoreboard-layout .scoreboard-profile-link{width:auto!important;max-width:198px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+.scoreboard-layout.has-personal-analysis{
+  grid-template-columns:850px 255px!important;
+  width:1117px!important;
+  min-width:1117px!important;
+  max-width:none!important;
+  column-gap:12px!important;
+}
+.personal-analysis-panel{width:255px!important;min-width:255px!important}
+
+/* Whole-match cards keep their comfortable width without stretching inner stats. */
+#recentView{width:min(100%,1160px)!important;max-width:1160px!important}
+#recentView .match-feed{width:min(100%,1160px)!important;max-width:1160px!important}
+#recentView .match-card{width:100%!important;max-width:1160px!important}
