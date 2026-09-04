@@ -1,7 +1,7 @@
-import { championIcon } from "../assets.js?v=20260904n";
-import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904n";
-import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904n";
-import { scoreboard } from "./scoreboard.js?v=20260904n";
+import { championIcon } from "../assets.js?v=20260904p";
+import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260904p";
+import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260904p";
+import { scoreboard } from "./scoreboard.js?v=20260904p";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
@@ -36,9 +36,6 @@ export function playerMatchCard(match, userId) {
   const special = player.award === "MVP" || Number(player.aiScore || 0) >= 100;
   const runeSpells = renderProfileRuneSpells(player);
   const achievements = achievementBadges(player);
-  const damage = Math.max(0, Number(player?.damage || 0));
-  const teamMaxDamage = Math.max(1, ...allies.map((row) => Number(row?.damage || 0)));
-  const damagePct = Math.max(3, Math.min(100, Math.round((damage / teamMaxDamage) * 100)));
   const rank = aiRank(match, player);
   return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}">
     <div class="personal-summary">
@@ -47,11 +44,10 @@ export function playerMatchCard(match, userId) {
         <div class="focus-champion">${champion ? `<img src="${escapeHtml(champion)}" alt="" loading="lazy">` : ""}${Number(player.level || 0) > 0 ? `<span class="champion-level">${Number(player.level)}</span>` : ""}</div>
         ${runeSpells ? `<div class="focus-loadout-side">${runeSpells}</div>` : `<div class="focus-loadout-side"></div>`}
       </div>
-      <div class="focus-kda"><strong>${focusKda(player)}</strong><span>${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span>${achievements ? `<div class="match-achievements kda-achievements">${achievements}</div>` : ""}</div>
+      <div class="focus-kda"><strong>${focusKda(player)}</strong><span class="${player.deaths === 0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span>${achievements ? `<div class="match-achievements kda-achievements">${achievements}</div>` : ""}</div>
       <div class="personal-inventory">${renderInventoryGrid(player)}</div>
-      <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.total}명 중 ${rank.rank}위</small>` : ""}</div>
+      <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
       <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
-      <div class="focus-damage" title="챔피언 피해량 ${damage.toLocaleString()}"><strong>딜 ${damage.toLocaleString()}</strong></div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
       <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
     </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,userId)}</article>`;

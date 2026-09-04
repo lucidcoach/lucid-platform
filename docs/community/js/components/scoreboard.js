@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904n";
-import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904n";
-import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904n";
+import { championIcon } from "../assets.js?v=20260904p";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904p";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904p";
 
 const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
 
@@ -68,7 +68,7 @@ function playerRow(match, player, focusUserId = "") {
       <span class="score-champion-wrap">${champion ? `<img class="champion-icon" src="${escapeHtml(champion)}" alt="" loading="lazy">` : `<span class="champion-icon"></span>`}${Number(player.level || 0)>0 ? `<i class="score-level">${Number(player.level)}</i>` : ""}</span>
       <span class="score-rune-spells">${runeSpells || ""}</span>
     </div>
-    <div class="score-ai-cell">${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.total}명 중 ${rank.rank}위</small>` : ""}</div>
+    <div class="score-ai-cell">${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
     <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
     <div class="score-inventory">${renderInventoryGrid(player)}</div>
     <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>

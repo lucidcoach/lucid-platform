@@ -1,9 +1,9 @@
-import { loadGameAssets } from "./assets.js?v=20260904n";
-import { $ } from "./utils.js?v=20260904n";
-import { switchView } from "./view.js?v=20260904n";
-import { loadRecent } from "./pages/recentMatches.js?v=20260904n";
-import { state } from "./state.js?v=20260904n";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904n";
+import { loadGameAssets } from "./assets.js?v=20260904p";
+import { $ } from "./utils.js?v=20260904p";
+import { switchView } from "./view.js?v=20260904p";
+import { loadRecent } from "./pages/recentMatches.js?v=20260904p";
+import { state } from "./state.js?v=20260904p";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904p";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -50,7 +50,7 @@ function renderSearchMemory() {
     bindSearchMemory(recentTarget);
   }
   if (favoriteTarget) {
-    favoriteTarget.innerHTML = favorites.length ? favorites.map((row)=>searchMemoryRow(row,{favorite:true})).join("") : `<div class="search-memory-empty">별표를 누르면 여기에 고정됩니다.</div>`;
+    favoriteTarget.innerHTML = favorites.length ? favorites.map((row)=>searchMemoryRow(row,{favorite:true})).join("") : `<div class="search-memory-empty">즐겨찾기 없음</div>`;
     favoriteTarget.querySelectorAll("[data-favorite-remove]").forEach((button)=>button.addEventListener("click",()=>{
       localStorage.setItem(FAVORITE_SEARCH_KEY, JSON.stringify(readFavoriteSearches().filter((row)=>!samePlayer(row,button.dataset.memoryUser,button.dataset.memoryGuild))));
       renderSearchMemory();
