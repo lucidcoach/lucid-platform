@@ -1328,3 +1328,18 @@
   .profile-refresh-above-name .profile-refresh-time{flex-basis:100%!important}
   .profile-name-main h1{font-size:16px!important}
 }
+
+/* 2026-09-04u: detailed scoreboard damage bar width trim */
+.damage-cell{
+  width:min(220px,100%)!important;
+  max-width:220px!important;
+  justify-self:center!important;
+}
+.damage-cell .damage-track{
+  width:100%!important;
+  max-width:220px!important;
+}
+@media(max-width:1180px){
+  .damage-cell{width:min(190px,100%)!important;max-width:190px!important}
+  .damage-cell .damage-track{max-width:190px!important}
+}
