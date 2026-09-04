@@ -1533,3 +1533,92 @@
 .personal-match .result-meta{grid-column:1!important;}
 /* Explicitly neutralize the broken cluster wrapper if a stale JS module is ever present. */
 .personal-combat-cluster{display:contents!important;}
+
+
+/* 2026-09-05ab: personal preview combat information is one independent fixed-rhythm group.
+   Desired visual rhythm: rune/spell -> KDA -> AI -> items -> CS, with equal edge gaps.
+   Roster remains a separate grid column so nickname width cannot stretch the combat spacing. */
+.personal-match .personal-summary,
+.personal-match.expanded .personal-summary{
+  display:grid!important;
+  grid-template-columns:82px 104px 434px minmax(330px,1fr) 44px!important;
+  column-gap:12px!important;
+  align-items:center!important;
+  min-width:1042px!important;
+}
+.personal-match .result-meta{grid-column:1!important;}
+.personal-match .focus-visual{
+  grid-column:2!important;
+  width:104px!important;
+  min-width:104px!important;
+  justify-self:start!important;
+}
+.personal-match .personal-combat-group{
+  grid-column:3!important;
+  display:grid!important;
+  grid-template-columns:100px 60px 112px 96px!important;
+  column-gap:22px!important;
+  align-items:center!important;
+  justify-content:start!important;
+  width:434px!important;
+  min-width:434px!important;
+  max-width:434px!important;
+  margin:0!important;
+  padding:0!important;
+}
+.personal-match .personal-combat-group .focus-kda,
+.personal-match .personal-combat-group .focus-score,
+.personal-match .personal-combat-group .personal-inventory,
+.personal-match .personal-combat-group .focus-cs{
+  grid-column:auto!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  justify-self:stretch!important;
+  align-self:center!important;
+}
+.personal-match .personal-combat-group .focus-kda,
+.personal-match .personal-combat-group .focus-score,
+.personal-match .personal-combat-group .focus-cs{
+  display:grid!important;
+  justify-items:center!important;
+  text-align:center!important;
+}
+.personal-match .personal-combat-group .personal-inventory{
+  display:grid!important;
+  place-items:center!important;
+}
+.personal-match .roster-mini,
+.personal-match.expanded .roster-mini{
+  grid-column:4!important;
+  min-width:330px!important;
+  grid-template-columns:minmax(158px,1fr) minmax(158px,1fr)!important;
+  padding-left:0!important;
+}
+.personal-match .personal-actions,
+.personal-match.expanded .personal-actions{
+  grid-column:5!important;
+  width:44px!important;
+}
+/* Old failed wrapper name stays inert if an old cached module appears briefly. */
+.personal-match .personal-combat-cluster{display:contents!important;}
+
+@media(max-width:1100px){
+  .personal-match .personal-summary,
+  .personal-match.expanded .personal-summary{
+    grid-template-columns:78px 104px 410px minmax(300px,1fr) 42px!important;
+    min-width:970px!important;
+    column-gap:10px!important;
+    overflow-x:auto!important;
+  }
+  .personal-match .personal-combat-group{
+    grid-template-columns:94px 56px 108px 92px!important;
+    column-gap:20px!important;
+    width:410px!important;
+    min-width:410px!important;
+    max-width:410px!important;
+  }
+  .personal-match .roster-mini,
+  .personal-match.expanded .roster-mini{min-width:300px!important;}
+}
