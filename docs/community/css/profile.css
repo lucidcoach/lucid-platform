@@ -1478,36 +1478,58 @@
 .personal-match .personal-inventory .inventory-slot{width:24px!important;height:24px!important}
 
 
-/* 2026-09-04z: lock personal preview combat info into one compact cluster */
+/* 2026-09-04y: even rhythm for KDA -> AI -> inventory -> CS */
+.personal-match .personal-summary,
+.personal-match.expanded .personal-summary{
+  grid-template-columns:82px 108px 84px 52px 100px 82px minmax(330px,1fr) 44px!important;
+  column-gap:8px!important;
+  min-width:1010px!important;
+}
+.personal-match .focus-visual{width:104px!important;min-width:104px!important}
+.personal-match .focus-kda{
+  width:84px!important;
+  min-width:84px!important;
+  justify-self:center!important;
+}
+.personal-match .focus-score{
+  width:52px!important;
+  min-width:52px!important;
+  justify-self:center!important;
+}
+.personal-match .personal-inventory{
+  width:100px!important;
+  min-width:100px!important;
+  justify-self:center!important;
+}
+.personal-match .focus-cs{
+  width:82px!important;
+  min-width:82px!important;
+  justify-self:center!important;
+}
+.personal-match .roster-mini,
+.personal-match.expanded .roster-mini{
+  min-width:330px!important;
+}
+
+
+/* 2026-09-04aa emergency repair: never merge combat info and roster into one grid cell */
 .personal-match .personal-summary,
 .personal-match.expanded .personal-summary{
   display:grid!important;
-  grid-template-columns:82px 456px minmax(330px,1fr) 44px!important;
-  column-gap:10px!important;
-  min-width:940px!important;
-  align-items:center!important;
-}
-.personal-combat-cluster{
-  display:grid!important;
-  grid-template-columns:108px 84px 52px 100px 82px!important;
+  grid-template-columns:82px 104px 82px 50px 98px 82px minmax(330px,1fr) 44px!important;
   column-gap:8px!important;
   align-items:center!important;
-  justify-content:start!important;
-  width:456px!important;
-  min-width:456px!important;
+  min-width:1010px!important;
 }
-.personal-combat-cluster .focus-visual{grid-column:1!important;width:108px!important;min-width:108px!important;}
-.personal-combat-cluster .focus-kda{grid-column:2!important;width:84px!important;min-width:84px!important;justify-self:center!important;}
-.personal-combat-cluster .focus-score{grid-column:3!important;width:52px!important;min-width:52px!important;justify-self:center!important;}
-.personal-combat-cluster .personal-inventory{grid-column:4!important;width:100px!important;min-width:100px!important;justify-self:center!important;}
-.personal-combat-cluster .focus-cs{grid-column:5!important;width:82px!important;min-width:82px!important;justify-self:center!important;}
+.personal-match .focus-visual{grid-column:2!important;width:104px!important;min-width:104px!important;}
+.personal-match .focus-kda{grid-column:3!important;width:82px!important;min-width:82px!important;justify-self:center!important;}
+.personal-match .focus-score{grid-column:4!important;width:50px!important;min-width:50px!important;justify-self:center!important;}
+.personal-match .personal-inventory{grid-column:5!important;width:98px!important;min-width:98px!important;justify-self:center!important;}
+.personal-match .focus-cs{grid-column:6!important;width:82px!important;min-width:82px!important;justify-self:center!important;}
 .personal-match .roster-mini,
-.personal-match.expanded .roster-mini{grid-column:3!important;min-width:330px!important;}
+.personal-match.expanded .roster-mini{grid-column:7!important;min-width:330px!important;grid-template-columns:minmax(158px,1fr) minmax(158px,1fr)!important;}
 .personal-match .personal-actions,
-.personal-match.expanded .personal-actions{grid-column:4!important;}
-/* The requested visual rhythm: rune/spell → KDA → AI → items → CS all use the same 8px gap. */
-@media(max-width:1040px){
-  .personal-match{overflow-x:auto!important;}
-  .personal-match .personal-summary,
-  .personal-match.expanded .personal-summary{min-width:940px!important;}
-}
+.personal-match.expanded .personal-actions{grid-column:8!important;}
+.personal-match .result-meta{grid-column:1!important;}
+/* Explicitly neutralize the broken cluster wrapper if a stale JS module is ever present. */
+.personal-combat-cluster{display:contents!important;}
