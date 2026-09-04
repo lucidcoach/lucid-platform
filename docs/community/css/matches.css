@@ -374,3 +374,39 @@
 .score-team-panel.loser-team .score-team-head b{color:#ff8b9d;background:rgba(156,48,69,.14);border:1px solid rgba(222,80,103,.3)}
 @media(max-width:960px){.scoreboard-layout,.scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(900px,900px)}}
 \n\n/* 2026-09-04p requested detailed-scoreboard corrections */\n.scoreboard-layout .scoreboard-teams{max-width:1000px!important;grid-template-columns:minmax(0,1000px)!important}\n.scoreboard-layout .score-player-row{\n  grid-template-columns:minmax(210px,1.5fr) 72px 54px 92px 104px 86px minmax(150px,1.08fr)!important;\n  gap:8px!important;\n}\n.score-damage-cell{padding-left:4px;padding-right:4px}\n.score-damage-track{min-width:116px!important;width:100%!important;height:7px!important}\n.score-damage-cell>strong{font-size:11px!important;margin-top:1px}\n.score-ai-cell>small{font-size:9px!important}\n.score-team-head{justify-content:flex-start!important;gap:6px!important}\n.score-team-head b{margin-left:0!important}\n.scoreboard-layout.has-personal-analysis{grid-template-columns:minmax(0,1000px) minmax(220px,300px)!important;width:min(100%,1310px)!important;max-width:1310px!important}\n@media(max-width:1180px){.scoreboard-layout.has-personal-analysis{grid-template-columns:minmax(0,1000px)!important;width:100%!important;max-width:1000px!important}.personal-analysis-panel{border-left:0;border-top:1px solid rgba(42,53,72,.7)}}\n@media(max-width:1020px){.scoreboard-layout,.scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(980px,980px)!important;overflow-x:auto}}\n
+
+/* 2026-09-04r authoritative detailed scoreboard width repair */
+.personal-match.expanded{overflow:visible!important}
+.scoreboard-layout.has-personal-analysis{
+  grid-template-columns:1080px 270px!important;
+  width:1360px!important;
+  max-width:none!important;
+  column-gap:10px!important;
+  justify-content:start!important;
+  overflow:visible!important;
+}
+.scoreboard-layout .scoreboard-teams{
+  width:1080px!important;
+  max-width:1080px!important;
+  grid-template-columns:1080px!important;
+  overflow:visible!important;
+}
+.scoreboard-layout .score-player-row{
+  grid-template-columns:minmax(220px,1.35fr) 72px 54px 94px 104px 88px minmax(190px,1.2fr)!important;
+  gap:8px!important;
+  min-height:45px!important;
+}
+.score-damage-cell{min-width:190px!important;padding:0 8px!important;gap:4px!important}
+.score-damage-track{min-width:180px!important;width:100%!important;height:7px!important}
+.score-damage-cell>strong{font-size:11px!important;line-height:1.1!important}
+.personal-analysis-panel{width:270px!important;min-width:270px!important;padding:18px 20px!important}
+.score-team-head{justify-content:flex-start!important;gap:6px!important}
+.score-team-head>b{margin:0!important;position:static!important}
+.scoreboard-profile-link{max-width:none!important;width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+/* Keep the wide detail canvas scrollable instead of crushing columns at desktop widths. */
+.personal-match.expanded .scoreboard-layout{overflow-x:visible!important}
+@media(max-width:1380px){
+  .personal-match.expanded{overflow-x:auto!important;overflow-y:visible!important}
+  .scoreboard-layout.has-personal-analysis{min-width:1360px!important}
+}

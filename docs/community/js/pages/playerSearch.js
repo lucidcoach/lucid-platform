@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js?v=20260904p";
-import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904p";
-import { championIcon } from "../assets.js?v=20260904p";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904p";
-import { renderLoading, switchView } from "../view.js?v=20260904p";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904p";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904p";
+import { apiGet } from "../api.js?v=20260904r";
+import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
+import { championIcon } from "../assets.js?v=20260904r";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904r";
+import { renderLoading, switchView } from "../view.js?v=20260904r";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904r";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904r";
 
 
 function refreshStorageKey(userId, guildId) {
@@ -97,8 +97,8 @@ function tierLeaguePoints(tier = "", rawScore = 0) {
   const score = Math.max(0, Math.round(Number(rawScore || 0)));
   const compact = String(tier || "").trim().toUpperCase().replace(/[\s_-]+/g, "");
   if (!score) return 0;
-  if (compact.startsWith("CHALLENGER") || compact === "C") return Math.max(0, score - 3600);
-  if (compact.startsWith("GRANDMASTER") || compact === "GM") return Math.max(0, score - 3200);
+  if (compact.startsWith("CHALLENGER") || compact === "C") return Math.max(0, score - 2800);
+  if (compact.startsWith("GRANDMASTER") || compact === "GM") return Math.max(0, score - 2800);
   if (compact.startsWith("MASTER") || compact === "M") return Math.max(0, score - 2800);
   const division = Number((compact.match(/([1-4])$/) || [])[1] || 4);
   const majorBase = compact.startsWith("DIAMOND") || compact.startsWith("D") ? 2400
@@ -212,7 +212,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
 
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-icon placeholder" aria-label="소환사 아이콘 자리"></span><div class="profile-name-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button></div><span class="summoner-level-text placeholder">Lv --</span></div></div><div class="profile-refresh-wrap"><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button><span class="profile-refresh-time" data-profile-refresh-time>최근 갱신: ${escapeHtml(refreshRelativeTime(lastRefresh))}</span></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack"><span class="summoner-level-text placeholder">Lv --</span><span class="summoner-profile-icon placeholder" aria-label="소환사 아이콘 자리"></span></span><div class="profile-name-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button></div></div></div><div class="profile-refresh-wrap"><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button><span class="profile-refresh-time" data-profile-refresh-time>최근 갱신: ${escapeHtml(refreshRelativeTime(lastRefresh))}</span></div></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
