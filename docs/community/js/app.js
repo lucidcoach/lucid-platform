@@ -1,59 +1,80 @@
-import { loadGameAssets } from "./assets.js?v=20260904m";
-import { $ } from "./utils.js?v=20260904m";
-import { switchView } from "./view.js?v=20260904m";
-import { loadRecent } from "./pages/recentMatches.js?v=20260904m";
-import { state } from "./state.js?v=20260904m";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904m";
+import { loadGameAssets } from "./assets.js?v=20260904n";
+import { $ } from "./utils.js?v=20260904n";
+import { switchView } from "./view.js?v=20260904n";
+import { loadRecent } from "./pages/recentMatches.js?v=20260904n";
+import { state } from "./state.js?v=20260904n";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260904n";
 
 
-const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v1";
-const RECENT_SEARCH_LIMIT = 5;
+const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
+const FAVORITE_SEARCH_KEY = "lucid-community-favorite-searches-v1";
+const RECENT_SEARCH_LIMIT = 8;
+const FAVORITE_SEARCH_LIMIT = 12;
 
-function readRecentSearches() {
+function safeRows(key, limit) {
   try {
-    const rows = JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || "[]");
-    return Array.isArray(rows) ? rows.filter((row) => row?.name && row?.userId && row?.guildId).slice(0,RECENT_SEARCH_LIMIT) : [];
-  } catch (_) {
-    return [];
+    const rows = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(rows) ? rows.filter((row) => row?.name && row?.userId && row?.guildId).slice(0,limit) : [];
+  } catch (_) { return []; }
+}
+function readRecentSearches() { return safeRows(RECENT_SEARCH_KEY, RECENT_SEARCH_LIMIT); }
+function readFavoriteSearches() { return safeRows(FAVORITE_SEARCH_KEY, FAVORITE_SEARCH_LIMIT); }
+function esc(value) { return String(value ?? "").replace(/[&<>"']/g, (ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch])); }
+function samePlayer(row, userId, guildId) { return String(row.userId) === String(userId) && String(row.guildId) === String(guildId); }
+
+function searchMemoryRow(row, {favorite=false} = {}) {
+  const isFavorite = readFavoriteSearches().some((item) => samePlayer(item,row.userId,row.guildId));
+  return `<div class="search-memory-row">
+    <button class="search-memory-open" type="button" data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}" title="${esc(row.name)} 전적 보기"><span>${esc(row.name)}</span></button>
+    <button class="search-memory-star${isFavorite ? " active" : ""}" type="button" data-memory-star data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}" data-memory-name="${esc(row.name)}" aria-label="즐겨찾기">${isFavorite ? "★" : "☆"}</button>
+    ${favorite ? `<button class="search-memory-remove" type="button" data-favorite-remove data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}" aria-label="즐겨찾기 삭제">×</button>` : `<button class="search-memory-remove" type="button" data-recent-remove data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}" aria-label="최근 검색 삭제">×</button>`}
+  </div>`;
+}
+
+function bindSearchMemory(target) {
+  target?.querySelectorAll("[data-memory-user].search-memory-open").forEach((button) => button.addEventListener("click", () => openPlayer(button.dataset.memoryUser, button.dataset.memoryGuild, { historyMode:"push" })));
+  target?.querySelectorAll("[data-memory-star]").forEach((button) => button.addEventListener("click", () => toggleFavorite({name:button.dataset.memoryName,userId:button.dataset.memoryUser,guildId:button.dataset.memoryGuild})));
+}
+
+function renderSearchMemory() {
+  const recentTarget = $("recentSearches");
+  const favoriteTarget = $("favoriteSearches");
+  const recent = readRecentSearches();
+  const favorites = readFavoriteSearches();
+  if (recentTarget) {
+    recentTarget.innerHTML = recent.length ? recent.map((row)=>searchMemoryRow(row)).join("") : `<div class="search-memory-empty">검색 기록이 없습니다.</div>`;
+    recentTarget.querySelectorAll("[data-recent-remove]").forEach((button)=>button.addEventListener("click",()=>{
+      localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(readRecentSearches().filter((row)=>!samePlayer(row,button.dataset.memoryUser,button.dataset.memoryGuild))));
+      renderSearchMemory();
+    }));
+    bindSearchMemory(recentTarget);
+  }
+  if (favoriteTarget) {
+    favoriteTarget.innerHTML = favorites.length ? favorites.map((row)=>searchMemoryRow(row,{favorite:true})).join("") : `<div class="search-memory-empty">별표를 누르면 여기에 고정됩니다.</div>`;
+    favoriteTarget.querySelectorAll("[data-favorite-remove]").forEach((button)=>button.addEventListener("click",()=>{
+      localStorage.setItem(FAVORITE_SEARCH_KEY, JSON.stringify(readFavoriteSearches().filter((row)=>!samePlayer(row,button.dataset.memoryUser,button.dataset.memoryGuild))));
+      renderSearchMemory();
+    }));
+    bindSearchMemory(favoriteTarget);
   }
 }
 
-function renderRecentSearches() {
-  const target = $("recentSearches");
-  if (!target) return;
-  const rows = readRecentSearches();
-  target.innerHTML = rows.map((row) => {
-    const userId = String(row.userId).replaceAll('"','&quot;');
-    const guildId = String(row.guildId).replaceAll('"','&quot;');
-    const name = String(row.name).replace(/[&<>]/g, "");
-    return `<span class="recent-search-chip" data-recent-entry>
-      <button class="recent-search-open" type="button" data-recent-user="${userId}" data-recent-guild="${guildId}" title="${String(row.name).replaceAll('"','&quot;')} 전적 보기">${name}</button>
-      <button class="recent-search-remove" type="button" data-recent-remove="${userId}" data-recent-remove-guild="${guildId}" aria-label="${name} 최근 검색 삭제" title="최근 검색 삭제">×</button>
-    </span>`;
-  }).join("");
-  target.hidden = rows.length === 0;
-  target.querySelectorAll("[data-recent-user]").forEach((button) => button.addEventListener("click", () => {
-    openPlayer(button.dataset.recentUser, button.dataset.recentGuild, { historyMode:"push" });
-  }));
-  target.querySelectorAll("[data-recent-remove]").forEach((button) => button.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const userId = String(button.dataset.recentRemove || "");
-    const guildId = String(button.dataset.recentRemoveGuild || "");
-    const next = readRecentSearches().filter((row) => !(String(row.userId) === userId && String(row.guildId) === guildId));
-    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(next));
-    renderRecentSearches();
-  }));
+function rememberRecentSearch(detail = {}) {
+  const name = String(detail.name || "").trim(), userId = String(detail.userId || "").trim(), guildId = String(detail.guildId || "").trim();
+  if (!name || !userId || !guildId) return;
+  const next = [{name,userId,guildId}, ...readRecentSearches().filter((row)=>!samePlayer(row,userId,guildId))].slice(0,RECENT_SEARCH_LIMIT);
+  localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(next));
+  renderSearchMemory();
 }
 
-function rememberRecentSearch(detail = {}) {
-  const name = String(detail.name || "").trim();
-  const userId = String(detail.userId || "").trim();
-  const guildId = String(detail.guildId || "").trim();
+function toggleFavorite(detail = {}) {
+  const name = String(detail.name || "").trim(), userId = String(detail.userId || "").trim(), guildId = String(detail.guildId || "").trim();
   if (!name || !userId || !guildId) return;
-  const next = [{name,userId,guildId}, ...readRecentSearches().filter((row) => !(String(row.userId) === userId && String(row.guildId) === guildId))].slice(0,RECENT_SEARCH_LIMIT);
-  localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(next));
-  renderRecentSearches();
+  const rows = readFavoriteSearches();
+  const exists = rows.some((row)=>samePlayer(row,userId,guildId));
+  const next = exists ? rows.filter((row)=>!samePlayer(row,userId,guildId)) : [{name,userId,guildId}, ...rows].slice(0,FAVORITE_SEARCH_LIMIT);
+  localStorage.setItem(FAVORITE_SEARCH_KEY, JSON.stringify(next));
+  renderSearchMemory();
 }
 
 function communityBaseUrl() {
@@ -127,10 +148,11 @@ function bindEvents() {
   });
   window.addEventListener("popstate", () => applyRoute({ fromPop: true }));
   window.addEventListener("lucid:player-opened", (event) => rememberRecentSearch(event.detail));
+  window.addEventListener("lucid:favorite-toggle", (event) => toggleFavorite(event.detail));
 }
 
 bindEvents();
-renderRecentSearches();
+renderSearchMemory();
 await loadGameAssets();
 await loadRecent();
 applyRoute();

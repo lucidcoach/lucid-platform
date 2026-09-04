@@ -1,6 +1,6 @@
-import { championIcon } from "../assets.js?v=20260904i";
-import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904i";
-import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904k";
+import { championIcon } from "../assets.js?v=20260904n";
+import { escapeHtml, focusKda, kdaClass, normalizeRoleKey, scoreClass, tierClass } from "../utils.js?v=20260904n";
+import { renderInventoryGrid, renderProfileRuneSpells } from "./loadout.js?v=20260904n";
 
 const ROLE_ORDER = new Map([["탑",0],["정글",1],["미드",2],["원딜",3],["서폿",4]]);
 
@@ -42,6 +42,14 @@ function teamMaxDamage(match, team) {
     .map((row) => Number(row?.damage || 0)));
 }
 
+function aiRank(match, player) {
+  const score = Number(player?.aiScore);
+  const rows = (match?.players || []).filter((row) => Number.isFinite(Number(row?.aiScore)));
+  if (!Number.isFinite(score) || !rows.length) return null;
+  const rank = 1 + rows.filter((row) => Number(row.aiScore) > score).length;
+  return { rank, total: rows.length };
+}
+
 function playerRow(match, player, focusUserId = "") {
   const champion = championIcon(player.champion);
   const focus = String(player.userId) === String(focusUserId) ? " focus-row" : "";
@@ -50,6 +58,7 @@ function playerRow(match, player, focusUserId = "") {
   const damage = Math.max(0, Number(player?.damage || 0));
   const maxDamage = teamMaxDamage(match, player?.team);
   const damagePct = Math.max(3, Math.min(100, Math.round((damage / maxDamage) * 100)));
+  const rank = aiRank(match, player);
   return `<div class="score-player-row${focus}">
     <div class="score-identity">
       <span class="score-tier-text ${tierClass(player.tier)}" title="${escapeHtml(player.tier || "미배치")}">${escapeHtml(tierShortLabel(player.tier))}</span>
@@ -59,18 +68,21 @@ function playerRow(match, player, focusUserId = "") {
       <span class="score-champion-wrap">${champion ? `<img class="champion-icon" src="${escapeHtml(champion)}" alt="" loading="lazy">` : `<span class="champion-icon"></span>`}${Number(player.level || 0)>0 ? `<i class="score-level">${Number(player.level)}</i>` : ""}</span>
       <span class="score-rune-spells">${runeSpells || ""}</span>
     </div>
-    <div class="score-ai-cell"><small>AI</small>${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}</div>
+    <div class="score-ai-cell">${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.total}명 중 ${rank.rank}위</small>` : ""}</div>
     <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>
     <div class="score-inventory">${renderInventoryGrid(player)}</div>
     <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
-    <div class="score-damage-cell" title="챔피언 피해량 ${damage.toLocaleString()}"><strong>${damage.toLocaleString()}</strong><span class="score-damage-track"><i style="width:${damagePct}%"></i></span></div>
+    <div class="score-damage-cell" title="챔피언 피해량 ${damage.toLocaleString()}"><span class="score-damage-track"><i style="width:${damagePct}%"></i></span><strong>${damage.toLocaleString()}</strong></div>
   </div>`;
 }
 
 function teamPanel(match, team, focusUserId = "") {
   const players = sortTeam((match?.players || []).filter((player) => String(player.team || "").toLowerCase() === team));
   const label = team === "blue" ? "블루팀" : "레드팀";
-  return `<section class="score-team-panel ${team}"><div class="score-team-head">${label}</div><div class="score-team-players">${players.map((player)=>playerRow(match,player,focusUserId)).join("")}</div></section>`;
+  const winner = String(match?.winner || "").toLowerCase();
+  const isWinner = winner === team || (team === "blue" && winner.includes("블루")) || (team === "red" && winner.includes("레드"));
+  const resultLabel = winner ? (isWinner ? "승리팀" : "패배팀") : "";
+  return `<section class="score-team-panel ${team}${isWinner ? " winner-team" : " loser-team"}"><div class="score-team-head"><span>${label}</span>${resultLabel ? `<b>${resultLabel}</b>` : ""}</div><div class="score-team-players">${players.map((player)=>playerRow(match,player,focusUserId)).join("")}</div></section>`;
 }
 
 export function renderScoreboardRows(match, focusUserId = "") {

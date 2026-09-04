@@ -346,3 +346,30 @@
 .score-damage-track{height:6px;border-radius:999px;background:#111925;overflow:hidden;min-width:48px}
 .score-damage-track>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#d94b78,#ff7698)}
 @media(max-width:960px){.scoreboard-layout,.scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(900px,900px);overflow-x:auto}}
+
+
+/* 2026-09-04n: tighter rows, readable type, AI rank, vertical damage meter */
+.scoreboard-layout .score-player-row{
+  grid-template-columns:minmax(205px,1.55fr) 72px 56px 92px 104px 88px 112px;
+  min-height:44px;padding:3px 8px;gap:7px;font-size:13px;
+}
+.score-identity{grid-template-columns:34px minmax(0,1fr)}
+.scoreboard-profile-link{font-size:14px!important;line-height:1.15;overflow:visible;text-overflow:clip;white-space:nowrap;min-width:0}
+.score-combat-loadout{grid-template-columns:32px 35px;gap:3px}
+.score-combat-loadout .champion-icon,.score-champion-wrap{width:32px;height:32px}
+.score-level{font-size:8px;min-width:13px;height:13px;line-height:13px}
+.score-rune-spells,.score-rune-spells .profile-rune-spells{width:35px!important;min-width:35px!important;transform:scale(.86);transform-origin:center}
+.score-inventory .inventory-grid{grid-template-columns:repeat(4,20px);grid-template-rows:repeat(2,20px);gap:2px}
+.score-inventory .inventory-slot{width:20px;height:20px}
+.score-kda-cell>strong{font-size:15px}.score-kda-cell>span{font-size:10px}
+.score-ai-cell{display:grid;place-items:center;align-content:center;gap:2px}
+.score-ai-cell .ai-score{height:24px;min-width:35px;font-size:13px}
+.score-ai-cell>small{font-size:9px;color:#8290a4;white-space:nowrap;font-weight:700;letter-spacing:0}
+.score-damage-cell{display:flex!important;flex-direction:column;justify-content:center;align-items:stretch;gap:4px;min-width:0;text-align:center}
+.score-damage-track{width:100%;min-width:72px;height:6px}
+.score-damage-cell>strong{font-size:11px;line-height:1;color:#d8e1ed}
+.score-team-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.score-team-head b{font-size:10px;font-weight:850;padding:2px 6px;border-radius:999px}
+.score-team-panel.winner-team .score-team-head b{color:#74e2af;background:rgba(26,128,88,.18);border:1px solid rgba(62,189,132,.35)}
+.score-team-panel.loser-team .score-team-head b{color:#ff8b9d;background:rgba(156,48,69,.14);border:1px solid rgba(222,80,103,.3)}
+@media(max-width:960px){.scoreboard-layout,.scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(900px,900px)}}

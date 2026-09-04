@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js?v=20260904m";
-import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904m";
-import { championIcon } from "../assets.js?v=20260904m";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904m";
-import { renderLoading, switchView } from "../view.js?v=20260904m";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904m";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904m";
+import { apiGet } from "../api.js?v=20260904n";
+import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904n";
+import { championIcon } from "../assets.js?v=20260904n";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904n";
+import { renderLoading, switchView } from "../view.js?v=20260904n";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904n";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904n";
 
 
 function refreshStorageKey(userId, guildId) {
@@ -70,6 +70,30 @@ function tierIcon(tier = "") {
   return `assets/tiers/${TIER_ICON[key] || TIER_ICON.I}`;
 }
 
+function isFavoriteLocal(userId, guildId) {
+  try {
+    const rows = JSON.parse(localStorage.getItem("lucid-community-favorite-searches-v1") || "[]");
+    return Array.isArray(rows) && rows.some((row) => String(row?.userId) === String(userId) && String(row?.guildId) === String(guildId));
+  } catch (_) { return false; }
+}
+
+function profileIconUrl(player = {}) {
+  const direct = String(player?.profileIconUrl || "").trim();
+  if (direct) return direct;
+  const iconId = Number(player?.profileIconId || 0);
+  return iconId > 0
+    ? `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${iconId}.jpg`
+    : "";
+}
+
+function roleDelta(row = {}) {
+  const delta = Number(row?.recent10Delta || 0);
+  const games = Number(row?.recent10Games || 0);
+  if (!games || !delta) return `<span class="role-tier-delta neutral">최근 ${games || 0}판 ±0점</span>`;
+  const up = delta > 0;
+  return `<span class="role-tier-delta ${up ? "up" : "down"}">[${up ? "▲" : "▼"}${Math.abs(Math.round(delta))}점]</span>`;
+}
+
 function roleTierBoard(rows = []) {
   const roles = ["탑", "정글", "미드", "원딜", "서폿"];
   const list = Array.isArray(rows)
@@ -94,7 +118,9 @@ function roleTierBoard(rows = []) {
         <span class="role-tier-main">
           <img src="${escapeHtml(tierIcon(tier))}" alt="" loading="lazy">
           <strong class="tier-text ${tierClass(tier)}">${escapeHtml(tier)}</strong>
-          <span class="role-tier-record"><em>${Number(row.wins || row.win || 0)}승</em><b>${Number(row.losses || row.loss || 0)}패</b></span>
+          <span class="role-tier-mmr">${Number(row.mmr || row.score || 0).toLocaleString()}점</span>
+          <span class="role-tier-record"><em>${Number(row.wins || row.win || 0)}승</em><b>${Number(row.losses || row.loss || 0)}패</b><i>승률 ${Number(row.winRate || 0).toFixed(1)}%</i></span>
+          ${roleDelta(row)}
         </span>
       </div>`;
     }).join("")}</div>
@@ -169,7 +195,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
 
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1>${escapeHtml(p.name)}</h1></div><div class="profile-refresh-wrap"><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button><span class="profile-refresh-time" data-profile-refresh-time>최근 갱신: ${escapeHtml(refreshRelativeTime(lastRefresh))}</span></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon">${profileIconUrl(p) ? `<img class="summoner-profile-icon" src="${escapeHtml(profileIconUrl(p))}" alt="" loading="lazy">` : `<span class="summoner-profile-icon fallback">${escapeHtml(String(p.name || "?").slice(0,1).toUpperCase())}</span>`}<div class="profile-name-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button></div>${Number(p.summonerLevel || 0)>0 ? `<span class="summoner-level-text">소환사 레벨 ${Number(p.summonerLevel)}</span>` : ""}</div></div><div class="profile-refresh-wrap"><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button><span class="profile-refresh-time" data-profile-refresh-time>최근 갱신: ${escapeHtml(refreshRelativeTime(lastRefresh))}</span></div></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
@@ -184,6 +210,12 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
 
     bindChampionStats(target, p.championStats || {});
     bindExpanders(target);
+    target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
+      window.dispatchEvent(new CustomEvent("lucid:favorite-toggle", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
+      const nowFavorite = !event.currentTarget.classList.contains("active");
+      event.currentTarget.classList.toggle("active", nowFavorite);
+      event.currentTarget.textContent = nowFavorite ? "★" : "☆";
+    });
     const refreshButton = target.querySelector("[data-profile-refresh]");
     refreshButton?.addEventListener("click", async () => {
       if (refreshButton.disabled) return;
