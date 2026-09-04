@@ -524,3 +524,57 @@
 @media(max-width:1160px){
   #recentView .match-feed,#recentView .match-card{max-width:none!important}
 }
+
+
+/* 2026-09-04w: tighter preview/detail spacing, shorter damage bars, colored avg tier */
+
+.match-average-tier .avg-tier-chip{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:24px;padding:0 7px;border-radius:7px;border:1px solid #40506a;font-size:11px;font-weight:850;color:#eef3ff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+.match-average-tier .avg-tier-chip.avg-tier-gm{background:linear-gradient(180deg,rgba(133,42,61,.42),rgba(67,22,34,.55));border-color:rgba(226,95,122,.45);color:#ffb5c4}
+.match-average-tier .avg-tier-chip.avg-tier-m{background:linear-gradient(180deg,rgba(97,62,147,.4),rgba(54,30,94,.58));border-color:rgba(188,130,255,.45);color:#ddbaff}
+.match-average-tier .avg-tier-chip.avg-tier-d{background:linear-gradient(180deg,rgba(53,91,165,.4),rgba(27,49,92,.58));border-color:rgba(102,154,255,.45);color:#b6d2ff}
+.match-average-tier .avg-tier-chip.avg-tier-e{background:linear-gradient(180deg,rgba(35,110,93,.4),rgba(20,62,54,.58));border-color:rgba(74,206,175,.4);color:#bdf5e8}
+.match-average-tier .avg-tier-chip.avg-tier-p{background:linear-gradient(180deg,rgba(37,118,126,.4),rgba(20,66,72,.58));border-color:rgba(82,213,227,.4);color:#c0f7ff}
+.match-average-tier .avg-tier-chip.avg-tier-g{background:linear-gradient(180deg,rgba(126,96,34,.44),rgba(72,55,18,.58));border-color:rgba(235,186,70,.42);color:#ffe5a2}
+.match-average-tier .avg-tier-chip.avg-tier-s{background:linear-gradient(180deg,rgba(108,114,123,.36),rgba(57,63,70,.56));border-color:rgba(170,184,201,.36);color:#d8e0ea}
+.match-average-tier .avg-tier-chip.avg-tier-b{background:linear-gradient(180deg,rgba(99,73,48,.38),rgba(56,39,24,.56));border-color:rgba(197,140,92,.36);color:#f0cfb4}
+.match-average-tier .avg-tier-chip.avg-tier-i{background:linear-gradient(180deg,rgba(98,107,120,.32),rgba(45,52,61,.56));border-color:rgba(137,149,165,.36);color:#dde4ee}
+
+/* summary card width/spacing */
+#recentView{width:min(100%,1140px) !important;max-width:1140px !important;}
+#recentView .match-feed{width:min(100%,1140px) !important;max-width:1140px !important;}
+#recentView .match-card{max-width:1140px !important;}
+.match-card.expanded{overflow-x:auto !important;}
+.match-card.expanded .match-summary{min-width:1090px !important;grid-template-columns:146px minmax(700px,1fr) 62px !important;}
+.match-card.expanded .teams-preview{min-width:700px !important;}
+.match-card.expanded .team-preview{padding-right:16px !important;}
+
+/* keep summary roster from collapsing when detail opens */
+.personal-match .personal-summary,
+.personal-match.expanded .personal-summary{
+  min-width:1060px !important;
+}
+.personal-match .roster-mini,
+.personal-match.expanded .roster-mini{
+  min-width:300px !important;
+}
+
+/* detailed scoreboard spacing */
+.scoreboard-layout .scoreboard-teams{width:980px !important;max-width:980px !important;grid-template-columns:980px !important;}
+.scoreboard-layout.has-personal-analysis{grid-template-columns:980px 255px !important;width:1245px !important;min-width:1245px !important;column-gap:12px !important;}
+.personal-analysis-panel{width:255px !important;min-width:255px !important;}
+.scoreboard-layout .score-player-row{
+  grid-template-columns:66px minmax(180px,1.1fr) 52px 90px 96px 86px 92px !important;
+  gap:8px !important;
+}
+.score-combat-loadout{grid-template-columns:34px 28px !important;gap:4px !important;}
+.score-combat-loadout .champion-icon{width:34px !important;height:34px !important;}
+.score-champion-wrap{width:34px !important;height:34px !important;}
+.score-identity{grid-template-columns:34px minmax(0,1fr) !important;gap:6px !important;align-items:center !important;}
+.scoreboard-profile-link{font-size:13px !important;white-space:nowrap !important;}
+.score-ai-cell{width:52px !important;min-width:52px !important;}
+.score-kda-cell{width:90px !important;min-width:90px !important;}
+.score-combat-items{width:96px !important;min-width:96px !important;}
+.score-cs-cell{width:86px !important;min-width:86px !important;}
+.score-damage-cell,.damage-cell{width:88px !important;max-width:88px !important;min-width:88px !important;justify-self:center !important;padding:0 2px !important;}
+.score-damage-track,.damage-track{width:84px !important;min-width:84px !important;max-width:84px !important;height:6px !important;}
+.score-damage-cell>strong,.damage-cell>strong{width:84px !important;text-align:center !important;}

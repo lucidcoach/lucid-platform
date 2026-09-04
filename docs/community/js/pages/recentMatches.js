@@ -1,10 +1,10 @@
-import { apiGet } from "../api.js?v=20260904m";
-import { RECENT_PAGE_SIZE } from "../config.js?v=20260904m";
-import { state } from "../state.js?v=20260904m";
-import { $, escapeHtml } from "../utils.js?v=20260904m";
-import { renderLoading, showStatus } from "../view.js?v=20260904m";
-import { matchCard } from "../components/matchCard.js?v=20260904m";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904m";
+import { apiGet } from "../api.js?v=20260904r";
+import { RECENT_PAGE_SIZE } from "../config.js?v=20260904r";
+import { state } from "../state.js?v=20260904r";
+import { $, escapeHtml } from "../utils.js?v=20260904r";
+import { renderLoading, showStatus } from "../view.js?v=20260904r";
+import { matchCard } from "../components/matchCard.js?v=20260904w";
+import { bindExpanders } from "../components/scoreboard.js?v=20260904v";
 
 export async function loadRecent({ append = false } = {}) {
   if (state.recentLoading) return;
