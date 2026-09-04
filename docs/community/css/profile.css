@@ -1244,3 +1244,87 @@
   .role-tier-rank{grid-template-columns:22px 32px 48px!important}
   .role-tier-record{grid-template-columns:32px 32px 44px!important;width:108px!important;min-width:108px!important}
 }
+
+
+/* 2026-09-04t: actions above Riot ID, reserve the entire lower row for the nickname */
+.profile-title-row{
+  display:block!important;
+  width:100%!important;
+}
+.profile-name-with-icon{
+  display:grid!important;
+  grid-template-columns:50px minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+.profile-name-copy{
+  display:grid!important;
+  grid-template-rows:auto auto!important;
+  gap:7px!important;
+  align-self:start!important;
+  width:100%!important;
+  min-width:0!important;
+}
+.profile-refresh-wrap.profile-refresh-above-name{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+}
+.profile-refresh-above-name .profile-favorite-button{
+  order:1!important;
+  width:27px!important;
+  height:27px!important;
+  flex:0 0 27px!important;
+}
+.profile-refresh-above-name .profile-refresh-button{
+  order:2!important;
+  height:29px!important;
+  flex:0 0 auto!important;
+}
+.profile-refresh-above-name .profile-refresh-time{
+  order:3!important;
+  display:block!important;
+  font-size:9px!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+  color:#77869d!important;
+}
+.profile-name-main{
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+.profile-name-main h1{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  font-size:18px!important;
+  line-height:1.12!important;
+  white-space:nowrap!important;
+  word-break:keep-all!important;
+  overflow-wrap:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.profile-name-main .tier-badge{
+  flex:0 0 auto!important;
+  justify-self:start!important;
+}
+@media(max-width:560px){
+  .profile-name-with-icon{grid-template-columns:46px minmax(0,1fr)!important;gap:8px!important}
+  .profile-refresh-wrap.profile-refresh-above-name{justify-content:flex-start!important;flex-wrap:wrap!important;row-gap:4px!important}
+  .profile-refresh-above-name .profile-refresh-time{flex-basis:100%!important}
+  .profile-name-main h1{font-size:16px!important}
+}
