@@ -1,13 +1,13 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
-import { switchView } from "./view.js?v=20260904r";
+import { switchView } from "./view.js?v=20260905admin2";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ak";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
-import { renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260905admin1";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ag";
+import { renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260905admin2";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905admin2";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
