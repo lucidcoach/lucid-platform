@@ -126,6 +126,7 @@ function goRecent({ push = true } = {}) {
   if (push) history.pushState({ view: "recent" }, "", recentUrl());
   $("playerSearchInput").value = "";
   switchView("recent");
+  loadRecent();
 }
 
 function renderCommunityAccount() {
@@ -208,6 +209,12 @@ function bindEvents() {
         history.pushState({ view: "ranking" }, "", `${url.pathname}${url.search}`);
         switchView("ranking");
         loadRankings();
+      } else if (button.dataset.view === "analysis") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("view", "analysis");
+        history.pushState({ view: "analysis" }, "", `${url.pathname}${url.search}`);
+        applyAnalysisRoute(url.searchParams);
       } else {
         switchView(button.dataset.view);
       }
@@ -281,9 +288,4 @@ const hasDirectRoute=Boolean(
   initialParams.get("q")
 );
 
-if(hasDirectRoute){
-  applyRoute();
-}else{
-  await loadRecent();
-  applyRoute();
-}
+applyRoute();
