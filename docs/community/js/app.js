@@ -1,12 +1,12 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
-import { switchView } from "./view.js?v=20260905ao";
+import { switchView } from "./view.js?v=20260905aq";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ak";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ap";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905aq";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ao";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905aq";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -265,7 +265,25 @@ bindEvents();
 bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
-await initCommunityAuth();
-await loadGameAssets();
-await loadRecent();
-applyRoute();
+
+await Promise.all([
+  initCommunityAuth(),
+  loadGameAssets()
+]);
+
+const initialParams=new URLSearchParams(window.location.search);
+const initialView=initialParams.get("view");
+const hasDirectRoute=Boolean(
+  initialView==="analysis" ||
+  initialView==="account" ||
+  initialView==="ranking" ||
+  (initialParams.get("player") && initialParams.get("guild")) ||
+  initialParams.get("q")
+);
+
+if(hasDirectRoute){
+  applyRoute();
+}else{
+  await loadRecent();
+  applyRoute();
+}

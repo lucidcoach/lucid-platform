@@ -17,8 +17,18 @@ function validRiotId(value){
 }
 
 export function getCurrentUser(){ return currentUser; }
-export function isCommunityAdmin(){ return String(currentUser?.role||"").toLowerCase()==="admin" || Boolean(currentUser?.isAdmin || currentUser?.is_admin); }
-export function isCommunityCoach(){ return String(currentUser?.role||"").toLowerCase()==="coach" || Boolean(currentUser?.isCoach || currentUser?.is_coach); }
+export function isCommunityAdmin(){
+  const roles=Array.isArray(currentUser?.roles)?currentUser.roles.map(x=>String(x).toLowerCase()):[];
+  return String(currentUser?.role||"").toLowerCase()==="admin"
+    || roles.includes("admin") || roles.includes("관리자")
+    || Boolean(currentUser?.isAdmin || currentUser?.is_admin);
+}
+export function isCommunityCoach(){
+  const roles=Array.isArray(currentUser?.roles)?currentUser.roles.map(x=>String(x).toLowerCase()):[];
+  return String(currentUser?.role||"").toLowerCase()==="coach"
+    || roles.includes("coach") || roles.includes("코치")
+    || Boolean(currentUser?.isCoach || currentUser?.is_coach);
+}
 export function canAnalyzeAllPlayers(){ return isCommunityAdmin() || isCommunityCoach(); }
 export function getRiotAccounts(){ return [...riotAccounts]; }
 export function getResolvedAnalysisPlayers(){ return [...resolvedPlayers]; }

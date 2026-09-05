@@ -2,7 +2,7 @@ import { apiGet } from "../api.js?v=20260905ae";
 import { championIcon } from "../assets.js?v=20260905ae";
 import { $, escapeHtml } from "../utils.js?v=20260905ae";
 import { switchView } from "../view.js?v=20260904r";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, getRiotAccounts } from "../auth.js?v=20260905ag";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, getRiotAccounts } from "../auth.js?v=20260905aq";
 
 const METRICS = [["csm","CS/분",1],["gpm","분당 골드",0],["dpm","DPM",0],["kda","KDA",2],["kp","킬관여",1]];
 const RADAR_METRICS = [["csm","성장"],["gpm","골드"],["dpm","딜량"],["kda","KDA"],["kp","킬관여"],["aiScore","AI"]];
@@ -121,7 +121,11 @@ async function renderDashboard({forceReload=false}={}){
 
   if(!forceReload&&dashboardCacheValid(identity)){
     renderDashboardFromData(target,dashboardCache.matches,dashboardCache.profile,dashboardCache.solo,identity);
-    if(!dashboardCache.fullLoaded)warmFullDashboard(identity);
+    if(!dashboardCache.fullLoaded){
+      const scheduleWarmup=()=>warmFullDashboard(identity);
+      if("requestIdleCallback" in window) window.requestIdleCallback(scheduleWarmup,{timeout:5000});
+      else setTimeout(scheduleWarmup,2500);
+    }
     return;
   }
 
@@ -149,7 +153,9 @@ async function renderDashboard({forceReload=false}={}){
       }
     }).catch(()=>{});
 
-    warmFullDashboard(identity);
+    const scheduleWarmup=()=>warmFullDashboard(identity);
+    if("requestIdleCallback" in window) window.requestIdleCallback(scheduleWarmup,{timeout:5000});
+    else setTimeout(scheduleWarmup,2500);
   }catch(error){
     target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;
   }
@@ -169,7 +175,30 @@ function bindDashboardEvents(target){
   target.querySelector("#gaRoleSelect")?.addEventListener("change",e=>{analysisState.role=e.target.value;rerenderDashboardFromCache();});
 }
 
-export async function renderCompactMatchAnalysis(detail={},target){if(!target)return;const{userId="",guildId="",matchId=""}=detail;if(!canAnalyzePlayer(userId,guildId)){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석 권한이 필요합니다.</strong><span>${canAnalyzeAllPlayers()?"":"로그인 후 내 정보에 등록한 Riot ID의 경기만 분석할 수 있습니다."}</span></div>`;return;}target.innerHTML=`<div class="compact-analysis-loading">분석 중...</div>`;try{const matches=await loadAllMatches();const match=matches.find(m=>String(m.matchId)===String(matchId));const focus=match?findFocus(match,userId):null;if(!focus)throw new Error("경기 데이터를 찾지 못했습니다.");const samples=uniquePlayerMatches(byChampionRole(matches,focus.champion,focus.role));const groups=benchmarkGroups(samples),band=tierBand(focus.tier),current=groupFor(groups,band);target.innerHTML=`<div class="compact-analysis-card"><div class="compact-analysis-title"><div><small>간단 분석</small><strong>${esc(focus.champion)} · ${esc(focus.role)}</strong><span>이번 경기 ${esc(focus.tier||"-")} → ${tierName(band)} 평균</span></div><div class="compact-analysis-legend"><i></i>내 수치 <b></b>티어 평균</div></div>${compactRadar(focus,current)}<div class="compact-analysis-messages">${compactMessages(focus,current,band).map(x=>`<p>${esc(x)}</p>`).join("")}</div><button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(userId)}" data-guild-id="${esc(guildId)}" data-match-id="${esc(matchId)}" data-champion="${esc(focus.champion||"")}" data-role="${esc(focus.role||"")}">상세 분석 보기</button></div>`;}catch(e){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(e.message)}</span></div>`;}}
+export async function renderCompactMatchAnalysis(detail={},target){
+  if(!target)return;
+  const{userId="",guildId="",matchId=""}=detail;
+  if(!canAnalyzePlayer(userId,guildId)){
+    target.innerHTML=`<div class="compact-analysis-empty"><strong>분석 권한이 필요합니다.</strong><span>${canAnalyzeAllPlayers()?"":"로그인 후 내 정보에 등록한 Riot ID의 경기만 분석할 수 있습니다."}</span></div>`;
+    return;
+  }
+  target.innerHTML=`<div class="compact-analysis-loading">분석 중...</div>`;
+  try{
+    const [detailData,matches]=await Promise.all([
+      apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`),
+      loadInitialMatches()
+    ]);
+    const match=detailData?.match||null;
+    const focus=match?findFocus(match,userId):null;
+    if(!focus)throw new Error("경기 데이터를 찾지 못했습니다.");
+    const pool=[match,...matches.filter(m=>String(m.matchId)!==String(matchId))];
+    const samples=uniquePlayerMatches(byChampionRole(pool,focus.champion,focus.role));
+    const groups=benchmarkGroups(samples),band=tierBand(focus.tier),current=groupFor(groups,band);
+    target.innerHTML=`<div class="compact-analysis-card"><div class="compact-analysis-title"><div><small>간단 분석</small><strong>${esc(focus.champion)} · ${esc(focus.role)}</strong><span>이번 경기 ${esc(focus.tier||"-")} → ${tierName(band)} 평균</span></div><div class="compact-analysis-legend"><i></i>내 수치 <b></b>티어 평균</div></div>${compactRadar(focus,current)}<div class="compact-analysis-messages">${compactMessages(focus,current,band).map(x=>`<p>${esc(x)}</p>`).join("")}</div><button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(userId)}" data-guild-id="${esc(guildId)}" data-match-id="${esc(matchId)}" data-champion="${esc(focus.champion||"")}" data-role="${esc(focus.role||"")}">상세 분석 보기</button></div>`;
+  }catch(e){
+    target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(e.message)}</span></div>`;
+  }
+}
 
 async function renderMatchAnalysis({userId="",guildId="",matchId="",champion="",role=""}={}){switchView("analysis");const target=$("analysisResults");if(userId&&!canAnalyzePlayer(userId,guildId)){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>일반 계정은 등록한 Riot ID의 내전 기록만 분석할 수 있습니다.</span></div>`;return;}target.innerHTML=`<div class="analysis-loading">선택한 경기를 분석하는 중...</div>`;try{const matches=await loadAllMatches();const selected=matches.find(m=>String(m.matchId)===String(matchId));let focus=selected&&userId?findFocus(selected,userId):null;if(focus){champion=focus.champion;role=focus.role;}if(!champion)throw new Error("챔피언 정보를 찾지 못했습니다.");const samples=uniquePlayerMatches(byChampionRole(matches,champion,role));const groups=benchmarkGroups(samples),own=userId?samples.filter(r=>String(r.userId)===String(userId)):[];if(!focus)focus=own[0]||samples[0];const band=tierBand(focus?.tier),current=groupFor(groups,band),next=TIER_ORDER[TIER_ORDER.indexOf(band)+1]||"",upper=groupFor(groups,next),[cc,cl]=confidence(samples.length);target.innerHTML=`<section class="analysis-context-card"><div class="analysis-context-title"><img src="${esc(championIcon(champion)||"")}" alt=""><div><small>선택한 내전 경기</small><h2>${esc(champion)} · ${esc(role)}</h2><p>${tierName(band)} 평균과 상세 비교</p></div></div><div class="analysis-confidence-badge"><strong>${cc}</strong><span>${cl}</span></div></section><div class="analysis-subtabs"><button class="active" type="button" data-back-dashboard>게임 분석 메인</button><button type="button" data-analysis-anchor="game">이번 경기</button><button type="button" data-analysis-anchor="tiers">티어 비교</button><button type="button" data-analysis-anchor="growth">내 성장</button></div><section id="analysisGame" class="analysis-section"><div class="analysis-section-head"><div><small>THIS MATCH</small><h2>이번 경기 vs ${tierName(band)} 평균</h2></div></div><div class="analysis-metric-grid">${METRICS.map(m=>metricCard(...m,focus,current,upper,band,next)).join("")}</div>${insightRows(focus,current,band)}</section><section id="analysisTiers" class="analysis-section"><div class="analysis-section-head"><div><small>BENCHMARK</small><h2>${esc(champion)} ${esc(role)} 티어별 평균</h2></div></div>${tierTable(groups,band)}</section><section id="analysisGrowth" class="analysis-section"><div class="analysis-section-head"><div><small>GROWTH</small><h2>내 ${esc(champion)} 성장 변화</h2></div></div>${growthBlock(own)}</section>`;target.querySelector("[data-back-dashboard]")?.addEventListener("click",()=>renderDashboard());target.querySelectorAll("[data-analysis-anchor]").forEach(btn=>btn.addEventListener("click",()=>document.getElementById({game:"analysisGame",tiers:"analysisTiers",growth:"analysisGrowth"}[btn.dataset.analysisAnchor])?.scrollIntoView({behavior:"smooth"})));}catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
 
