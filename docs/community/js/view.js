@@ -10,6 +10,7 @@ export function switchView(view) {
   $("recentView")?.classList.toggle("active", view === "recent");
   $("searchView")?.classList.toggle("active", view === "search");
   $("analysisView")?.classList.toggle("active", view === "analysis");
+  $("rankingView")?.classList.toggle("active", view === "ranking");
   if ($("clearSearchBtn")) $("clearSearchBtn").hidden = view !== "search";
   document.querySelectorAll(".nav-tab[data-view]").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === view);

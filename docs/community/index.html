@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260905ag">
+  <link rel="stylesheet" href="styles.css?v=20260905ah">
 </head>
 <body>
   <header class="community-header">
@@ -24,7 +24,7 @@
       <nav class="community-nav" aria-label="커뮤니티 메뉴">
         <button class="nav-tab active" type="button" data-view="recent">최근 내전</button>
         <button class="nav-tab" type="button" data-view="analysis">게임 분석 <span class="nav-beta">BETA</span></button>
-        <button class="nav-tab" type="button" disabled title="후속 버전에서 추가">랭킹</button>
+        <button class="nav-tab" type="button" data-view="ranking">랭킹</button>
       </nav>
       <div class="community-auth-actions" aria-label="계정">
         <button id="communityLoginBtn" class="community-auth-button account" type="button">로그인</button>
@@ -96,6 +96,28 @@
         </div>
       </section>
     </section>
+    <section id="rankingView" class="content-view">
+      <div class="section-heading ranking-heading">
+        <div><p class="section-kicker">LEADERBOARD</p><h1>내전 랭킹</h1></div>
+        <button class="ghost-button" id="refreshRankingsBtn" type="button">새로고침</button>
+      </div>
+      <div class="ranking-filters" role="group" aria-label="랭킹 종류">
+        <button class="ranking-kind active" type="button" data-ranking-kind="mmr">MMR</button>
+        <button class="ranking-kind" type="button" data-ranking-kind="games">판수</button>
+        <button class="ranking-kind" type="button" data-ranking-kind="winrate">승률</button>
+        <button class="ranking-kind" type="button" data-ranking-kind="streak">연승</button>
+        <button class="ranking-kind" type="button" data-ranking-kind="awards">수상</button>
+      </div>
+      <div class="ranking-role-filters" id="rankingRoleFilters" role="group" aria-label="MMR 라인">
+        <button class="ranking-role active" type="button" data-ranking-role="">종합</button>
+        <button class="ranking-role" type="button" data-ranking-role="탑">탑</button>
+        <button class="ranking-role" type="button" data-ranking-role="정글">정글</button>
+        <button class="ranking-role" type="button" data-ranking-role="미드">미드</button>
+        <button class="ranking-role" type="button" data-ranking-role="원딜">원딜</button>
+        <button class="ranking-role" type="button" data-ranking-role="서폿">서폿</button>
+      </div>
+      <div id="rankingResults" class="ranking-board" aria-live="polite"></div>
+    </section>
     <section id="accountView" class="content-view">
       <div class="community-account-page">
         <div class="community-account-head">
@@ -125,6 +147,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app.js?v=20260905ag"></script>
+  <script type="module" src="js/app.js?v=20260905ah"></script>
 </body>
 </html>

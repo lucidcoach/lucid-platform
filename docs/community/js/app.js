@@ -5,6 +5,7 @@ import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ab";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
+import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ah";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ag";
 
 
@@ -102,6 +103,11 @@ function applyRoute({ fromPop = false } = {}) {
     applyAnalysisRoute(params);
     return;
   }
+  if (view === "ranking") {
+    switchView("ranking");
+    loadRankings();
+    return;
+  }
   if (player && guild) {
     openPlayer(player, guild, { historyMode: "none" });
     return;
@@ -195,6 +201,13 @@ function bindEvents() {
     button.addEventListener("click", () => {
       if (button.dataset.view === "recent") {
         goRecent();
+      } else if (button.dataset.view === "ranking") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("view", "ranking");
+        history.pushState({ view: "ranking" }, "", `${url.pathname}${url.search}`);
+        switchView("ranking");
+        loadRankings();
       } else {
         switchView(button.dataset.view);
       }
@@ -250,6 +263,7 @@ function bindEvents() {
 
 bindEvents();
 bindAnalysisPage();
+bindRankingPage();
 renderSearchMemory();
 await initCommunityAuth();
 await loadGameAssets();
