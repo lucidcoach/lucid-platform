@@ -1,8 +1,12 @@
 
 import { getCurrentUser, getResolvedAnalysisPlayers, isCommunityAdmin } from "../auth.js?v=20260905admin2";
+import { API_BASE_URL } from "../config.js?v=20260904d";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let activeSection="dashboard";
+let adminGuilds=[];
+let selectedGuild="";
+let guildsLoaded=false;
 
 const sections = [
   ["server","서버 설정","서버별 내전·채널·권한 설정","⚙"],
@@ -16,21 +20,31 @@ const sections = [
 ];
 
 function uniqueGuilds(){
-  const rows=getResolvedAnalysisPlayers?.()||[];
+  const rows=[...adminGuilds,...(getResolvedAnalysisPlayers?.()||[])];
   const seen=new Set();
   return rows.filter(row=>{
-    const key=String(row.guildId||"");
+    const key=String(row.guildId||row.id||"");
     if(!key||seen.has(key))return false;
     seen.add(key); return true;
-  }).map(row=>({id:String(row.guildId),name:row.guildName||row.serverName||`서버 ${row.guildId}`}));
+  }).map(row=>({id:String(row.guildId||row.id),name:row.guildName||row.serverName||row.name||`서버 ${row.guildId||row.id}`}));
+}
+
+async function loadAdminGuilds(){
+  try{
+    const response=await fetch(`${API_BASE_URL.replace(/\/$/,"")}/api/mileage/guilds`,{credentials:"include"});
+    const data=await response.json().catch(()=>({}));
+    if(response.ok&&data.ok)adminGuilds=(data.guilds||[]).filter(g=>g.canManage);
+  }catch(_){adminGuilds=[];}
+  const guilds=uniqueGuilds();
+  if(!guilds.some(g=>g.id===selectedGuild))selectedGuild=guilds[0]?.id||"";
 }
 
 function shell(content){
   const user=getCurrentUser();
   const guilds=uniqueGuilds();
   const guildOptions=guilds.length
-    ? guilds.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join("")
-    : `<option value="">현재 커뮤니티 서버</option>`;
+    ? guilds.map(g=>`<option value="${esc(g.id)}" ${g.id===selectedGuild?"selected":""}>${esc(g.name)}</option>`).join("")
+    : `<option value="">관리 가능한 서버 없음</option>`;
   return `
     <div class="admin-page">
       <header class="admin-page-head">
@@ -71,23 +85,23 @@ function panelTitle(title, subtitle){
 }
 
 function serverPanel(){
+  const guild=uniqueGuilds().find(g=>g.id===selectedGuild);
   return shell(`
-    ${panelTitle("서버 설정","기존 Discord 설정을 서버 단위로 정리하는 영역입니다.")}
+    ${panelTitle("서버 설정",guild?`${esc(guild.name)}의 Discord 운영 설정 안내입니다.`:"관리할 서버를 먼저 선택해주세요.")}
     <div class="admin-layout">
       <nav class="admin-side-tabs">
-        <button class="active">기본 설정</button><button>내전 설정</button><button>채널 설정</button><button>권한</button>
+        <button class="active" data-server-tab="basic">기본 설정</button><button data-server-tab="match">내전 설정</button><button data-server-tab="channels">채널 설정</button><button data-server-tab="permissions">권한</button>
       </nav>
       <section class="admin-work-panel">
-        <div class="admin-form-section"><h3>내전 운영</h3>
-          <div class="admin-setting-row"><div><strong>내전 빈도</strong><small>MMR 변동 규칙에 사용할 서버 운영 빈도</small></div><select><option>보통</option><option>낮음</option><option>높음</option></select></div>
-          <div class="admin-setting-row"><div><strong>큐 진행 시간</strong><small>큐가 열린 뒤 자동 진행에 사용하는 시간</small></div><div class="admin-inline-input"><input value="10"><span>분</span></div></div>
+        <div data-server-panel="basic">
+          <div class="admin-form-section"><h3>선택 서버</h3><div class="admin-setting-row"><div><strong>${esc(guild?.name||"선택된 서버 없음")}</strong><small>${guild?`Discord 서버 ID ${esc(guild.id)}`:"LucidGame이 동기화한 관리자 서버가 없습니다."}</small></div></div></div>
+          <div class="admin-draft-note">저장되지 않는 임시 입력칸은 제거했습니다. 실제 설정은 연결된 기능만 표시합니다.</div>
         </div>
-        <div class="admin-form-section"><h3>채널 설정</h3>
-          <div class="admin-setting-row"><div><strong>일반 채널</strong></div><button class="admin-select-button"># 일반</button></div>
-          <div class="admin-setting-row"><div><strong>내전 채널</strong></div><button class="admin-select-button"># 내전</button></div>
-          <div class="admin-setting-row"><div><strong>도움말 채널</strong><small>/가이드설정 → /채널설정 도움말 통합 예정</small></div><button class="admin-select-button"># 도움말</button></div>
+        <div data-server-panel="match" hidden>
+          <div class="admin-form-section"><h3>내전 설정</h3><div class="admin-setting-row"><div><strong>내전 빈도</strong><small>MMR 변동 폭 기준입니다. Discord의 /서버옵션에서 변경할 수 있습니다.</small></div></div><div class="admin-setting-row"><div><strong>큐 운영</strong><small>예약시간과 자동 팀 구성은 Discord 큐 패널에서 관리합니다. 의미가 불명확했던 ‘큐 진행 시간’ 입력은 제거했습니다.</small></div></div></div>
         </div>
-        <div class="admin-draft-note">UI 설계 단계 · 저장 동작은 기존 서버 설정 API 연결 시 활성화</div>
+        <div data-server-panel="channels" hidden><div class="admin-form-section"><h3>채널 설정</h3><div class="admin-setting-row"><div><strong>/채널설정 일반</strong><small>공지·신고·파티 등 일반 기능 채널</small></div></div><div class="admin-setting-row"><div><strong>/채널설정 내전</strong><small>내전·기록·리그 관련 채널</small></div></div><div class="admin-setting-row"><div><strong>/채널설정 도움말</strong><small>일반 및 관리자 도움말 패널 채널</small></div></div></div></div>
+        <div data-server-panel="permissions" hidden><div class="admin-form-section"><h3>관리 권한</h3><div class="admin-setting-row"><div><strong>Discord 관리자 동기화</strong><small>서버 관리자·서버 관리 권한·내전 관리자 역할을 봇이 확인하여 홈페이지 접근 권한을 갱신합니다.</small></div></div></div></div>
       </section>
     </div>
   `);
@@ -103,7 +117,7 @@ function mileagePanel(){
       <article><span>활동 유저</span><strong>— 명</strong><small>최근 7일</small></article>
     </div>
     <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active">지급 설정</button><button>거래내역</button><button>수동 조정</button><button>경제 현황</button></div>
+      <div class="admin-subtabs"><button class="active" data-tab-message="지급 규칙을 표시합니다.">지급 설정</button><button data-tab-message="최근 마일리지 거래를 표시합니다.">거래내역</button><button data-tab-message="사용자 수동 지급·차감 화면을 표시합니다.">수동 조정</button><button data-tab-message="서버 마일리지 경제 현황을 표시합니다.">경제 현황</button></div>
       ${[
         ["내전 정상 완료","경기 정상 종료 시 지급","20 P",true],
         ["승리 보너스","승리팀에 추가 지급","5 P",true],
@@ -129,9 +143,9 @@ function shopPanel(){
       <section class="admin-work-panel shop-products-panel">
         <div class="admin-toolbar">
           <div class="admin-subtabs">
-            <button class="active" data-shop-tab="products">상품</button>
-            <button data-shop-tab="orders">주문</button>
-            <button data-shop-tab="settings">상점 설정</button>
+            <button class="active" data-shop-tab="products" data-tab-message="상품 목록입니다.">상품</button>
+            <button data-shop-tab="orders" data-tab-message="구매 처리와 환불은 실제 마일리지 관리 화면에서 처리합니다.">주문</button>
+            <button data-shop-tab="settings" data-tab-message="상점 사용 여부와 상품 설정은 실제 마일리지 관리 화면에서 처리합니다.">상점 설정</button>
           </div>
           <button class="admin-primary" id="shopCreateBtn">+ 상품 등록</button>
         </div>
@@ -223,7 +237,8 @@ function eventsPanel(){
   return shell(`
     ${panelTitle("이벤트 관리","Discord /이벤트랭킹을 홈페이지 이벤트 관리로 이관하는 영역입니다.")}
     <section class="admin-work-panel">
-      <div class="admin-toolbar"><div class="admin-subtabs"><button class="active">진행중</button><button>종료</button></div><button class="admin-primary">+ 이벤트</button></div>
+      <div class="admin-toolbar"><div class="admin-subtabs"><button class="active" data-tab-message="현재 진행 중인 이벤트입니다.">진행중</button><button data-tab-message="종료된 이벤트 조회 API는 아직 연결되지 않았습니다.">종료</button></div><button class="admin-primary">+ 이벤트</button></div>
+      <p class="admin-tab-feedback">현재 진행 중인 이벤트입니다.</p>
       <article class="admin-event-card"><div><small>진행중</small><h3>9월 내전왕</h3><p>2026.09.01 ~ 09.30 · 참가자/점수/순위를 한 화면에서 관리</p></div><div class="admin-event-actions"><button>상세</button><button>수정</button><button>종료</button></div></article>
     </section>
   `);
@@ -243,7 +258,8 @@ function logsPanel(){
   return shell(`
     ${panelTitle("운영 로그","채팅로그를 포함해 관리자 작업과 주요 변경 이력을 모읍니다.")}
     <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active">채팅</button><button>관리자 작업</button><button>마일리지</button><button>신고</button></div>
+      <div class="admin-subtabs"><button class="active" data-tab-message="채팅 로그 API는 아직 연결되지 않았습니다.">채팅</button><button data-tab-message="관리자 작업 로그 API는 아직 연결되지 않았습니다.">관리자 작업</button><button data-tab-message="마일리지 감사로그는 실제 마일리지 관리 화면에서 확인할 수 있습니다.">마일리지</button><button data-tab-message="신고 로그 API는 아직 연결되지 않았습니다.">신고</button></div>
+      <p class="admin-tab-feedback">채팅 로그 API는 아직 연결되지 않았습니다.</p>
       <div class="admin-table">
         <div class="admin-table-head admin-log-cols"><span>유저/관리자</span><span>내용</span><span>위치</span><span>시간</span></div>
         <div class="admin-empty-admin"><strong>운영 로그 API 연결 대기</strong><span>/채팅로그 기능은 이 화면으로 이관할 예정입니다.</span></div>
@@ -269,7 +285,8 @@ function supportPanel(){
   return shell(`
     ${panelTitle("문의 관리","/봇제작자문의를 홈페이지 문의 시스템으로 이관합니다.")}
     <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active">전체</button><button>미처리</button><button>처리중</button><button>완료</button></div>
+      <div class="admin-subtabs"><button class="active" data-tab-message="전체 문의입니다.">전체</button><button data-tab-message="미처리 문의입니다.">미처리</button><button data-tab-message="처리 중인 문의입니다.">처리중</button><button data-tab-message="처리 완료된 문의입니다.">완료</button></div>
+      <p class="admin-tab-feedback">전체 문의입니다.</p>
       <div class="admin-empty-admin"><strong>아직 등록된 문의가 없습니다.</strong><span>커뮤니티/봇 문의가 접수되면 이곳에서 처리 상태를 관리합니다.</span></div>
     </section>
   `);
@@ -285,8 +302,23 @@ function renderSection(){
   const pages={dashboard,server:serverPanel,mileage:mileagePanel,shop:shopPanel,events:eventsPanel,users:usersPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
-    activeSection=btn.dataset.adminSection||"dashboard";
+    const next=btn.dataset.adminSection||"dashboard";
+    if(next==="mileage"||next==="shop"){
+      document.getElementById("mileageNav")?.click();
+      return;
+    }
+    activeSection=next;
     renderSection();
+  }));
+  root.querySelector("#adminGuildSelect")?.addEventListener("change",event=>{selectedGuild=event.currentTarget.value;renderSection();});
+  root.querySelectorAll("[data-server-tab]").forEach(btn=>btn.addEventListener("click",()=>{
+    root.querySelectorAll("[data-server-tab]").forEach(item=>item.classList.toggle("active",item===btn));
+    root.querySelectorAll("[data-server-panel]").forEach(panel=>panel.hidden=panel.dataset.serverPanel!==btn.dataset.serverTab);
+  }));
+  root.querySelectorAll(".admin-subtabs button").forEach(btn=>btn.addEventListener("click",()=>{
+    btn.parentElement?.querySelectorAll("button").forEach(item=>item.classList.toggle("active",item===btn));
+    const feedback=root.querySelector(".admin-tab-feedback");
+    if(feedback&&btn.dataset.tabMessage)feedback.textContent=btn.dataset.tabMessage;
   }));
   const openShopEditor=(mode="create")=>{
     const backdrop=document.getElementById("shopEditorBackdrop");
@@ -320,4 +352,8 @@ export function renderCommunityAdmin({home=false}={}){
   if(home)activeSection="dashboard";
   activeSection=activeSection||"dashboard";
   renderSection();
+  if(!guildsLoaded){
+    guildsLoaded=true;
+    loadAdminGuilds().then(renderSection);
+  }
 }
