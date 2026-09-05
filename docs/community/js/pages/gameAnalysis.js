@@ -9,7 +9,8 @@ const RADAR_METRICS = [["csm","성장"],["gpm","골드"],["dpm","딜량"],["kda"
 const TIER_ORDER=["I","B","S","G","P","E","D","M","GM","C"];
 const TIER_NAME={I:"아이언",B:"브론즈",S:"실버",G:"골드",P:"플래티넘",E:"에메랄드",D:"다이아몬드",M:"마스터",GM:"그랜드마스터",C:"챌린저"};
 let analysisState={tab:"overview",role:"정글",champion:""};
-let dashboardCache={key:"",loadedAt:0,matches:null,profile:null,solo:null,identity:null};
+let dashboardCache={key:"",loadedAt:0,matches:null,profile:null,solo:null,identity:null,fullLoaded:false};
+let dashboardWarmupPromise=null;
 const DASHBOARD_CACHE_TTL=5*60*1000;
 
 function tierBand(tier=""){const raw=String(tier||"");const t=raw.toUpperCase().replace(/[\s_-]+/g,"");if(t.startsWith("GRANDMASTER")||t.startsWith("GM")||raw.includes("그랜드마스터"))return"GM";if(t.startsWith("CHALLENGER")||raw.includes("챌린저"))return"C";if(t.startsWith("MASTER")||t==="M"||raw.includes("마스터"))return"M";const m=t.match(/^(D|E|P|G|S|B|I)/);return m?m[1]:"";}
@@ -24,7 +25,30 @@ function confidence(n){if(n>=300)return["A","높음"];if(n>=150)return["B","충�
 function winRate(rows){const played=rows.filter(r=>["win","loss"].includes(String(r.result)));return played.length?played.filter(r=>r.result==="win").length/played.length*100:0;}
 function esc(v){return escapeHtml(String(v??""));}
 
-async function loadAllMatches(max=500){const rows=[];let offset=0;while(rows.length<max){const data=await apiGet(`/api/community/matches?limit=50&offset=${offset}&category=all`);const batch=data.matches||[];rows.push(...batch);offset+=batch.length;if(!batch.length||offset>=Number(data.total||0))break;}return rows.slice(0,max);}
+async function loadAllMatches(max=500){
+  const pageSize=50;
+  const first=await apiGet(`/api/community/matches?limit=${pageSize}&offset=0&category=all`);
+  const firstRows=first.matches||[];
+  const total=Math.min(Number(first.total||firstRows.length),max);
+  if(firstRows.length>=total||total<=pageSize)return firstRows.slice(0,max);
+
+  const offsets=[];
+  for(let offset=pageSize;offset<total;offset+=pageSize)offsets.push(offset);
+
+  const rows=[...firstRows];
+  const concurrency=4;
+  for(let i=0;i<offsets.length;i+=concurrency){
+    const chunk=offsets.slice(i,i+concurrency);
+    const pages=await Promise.all(chunk.map(offset=>
+      apiGet(`/api/community/matches?limit=${pageSize}&offset=${offset}&category=all`).catch(()=>({matches:[]}))
+    ));
+    pages.forEach(page=>rows.push(...(page.matches||[])));
+  }
+  return rows.slice(0,max);
+}
+
+async function loadInitialMatches(){return loadAllMatches(100);}
+
 async function loadProfile(identity){if(!identity?.userId||!identity?.guildId)return null;try{return await apiGet(`/api/community/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`);}catch(_){return null;}}
 async function loadSoloSummary(){const riotId=(getRiotAccounts()||[])[0];if(!riotId)return{available:false,reason:"riot_id_missing"};try{return await apiGet(`/api/community/riot/solo-summary?riotId=${encodeURIComponent(riotId)}`);}catch(_){return{available:false,reason:"api_not_ready",riotId};}}
 function flattenMatches(matches){const out=[];for(const match of matches)for(const p of(match.players||[]))out.push({...p,time:match.time,matchId:match.matchId,guildId:match.guildId});return out;}
@@ -61,7 +85,7 @@ function dashboardIdentityKey(identity){
   const riotId=(getRiotAccounts()||[])[0]||"";
   return `${identity?.guildId||""}:${identity?.userId||""}:${riotId}`;
 }
-function invalidateDashboardCache(){dashboardCache={key:"",loadedAt:0,matches:null,profile:null,solo:null,identity:null};}
+function invalidateDashboardCache(){dashboardCache={key:"",loadedAt:0,matches:null,profile:null,solo:null,identity:null,fullLoaded:false};dashboardWarmupPromise=null;}
 function dashboardCacheValid(identity){return dashboardCache.matches&&dashboardCache.key===dashboardIdentityKey(identity)&&(Date.now()-dashboardCache.loadedAt)<DASHBOARD_CACHE_TTL;}
 function renderDashboardFromData(target,matches,profile,solo,identity){
   const rows=ownRows(matches,identity);
@@ -69,22 +93,66 @@ function renderDashboardFromData(target,matches,profile,solo,identity){
   target.innerHTML=`${profileHead(profile,identity,solo)}${tabs()}<div class="ga-tab-body">${body}</div>`;
   bindDashboardEvents(target);
 }
+async function warmFullDashboard(identity){
+  const key=dashboardIdentityKey(identity);
+  if(dashboardWarmupPromise)return dashboardWarmupPromise;
+  dashboardWarmupPromise=(async()=>{
+    try{
+      const matches=await loadAllMatches(500);
+      if(dashboardCache.key!==key)return;
+      dashboardCache={...dashboardCache,matches,loadedAt:Date.now(),fullLoaded:true};
+      const target=$("analysisResults");
+      if(target&&document.getElementById("analysisView")?.classList.contains("active")){
+        renderDashboardFromData(target,dashboardCache.matches,dashboardCache.profile,dashboardCache.solo,identity);
+      }
+    }finally{
+      dashboardWarmupPromise=null;
+    }
+  })();
+  return dashboardWarmupPromise;
+}
+
 async function renderDashboard({forceReload=false}={}){
   switchView("analysis");
   const target=$("analysisResults");
   if(!target)return;
   const identity=getAnalysisIdentity();
   if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록하면 솔로랭크와 내전 분석을 연결할 수 있습니다.</span></div>`;return;}
+
   if(!forceReload&&dashboardCacheValid(identity)){
     renderDashboardFromData(target,dashboardCache.matches,dashboardCache.profile,dashboardCache.solo,identity);
+    if(!dashboardCache.fullLoaded)warmFullDashboard(identity);
     return;
   }
-  target.innerHTML=`<div class="analysis-loading">게임 분석 데이터를 불러오는 중...</div>`;
+
+  target.innerHTML=`<div class="analysis-loading">게임 분석을 준비하는 중...</div>`;
   try{
-    const[matches,profile,solo]=await Promise.all([loadAllMatches(),loadProfile(identity),loadSoloSummary()]);
-    dashboardCache={key:dashboardIdentityKey(identity),loadedAt:Date.now(),matches,profile,solo,identity};
-    renderDashboardFromData(target,matches,profile,solo,identity);
-  }catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+    // 첫 화면은 최근 100경기 + 내 프로필만 기다려서 빠르게 표시한다.
+    // 솔로랭크와 전체 500경기 표본은 뒤에서 조용히 채운다.
+    const[matches,profile]=await Promise.all([loadInitialMatches(),loadProfile(identity)]);
+    dashboardCache={
+      key:dashboardIdentityKey(identity),
+      loadedAt:Date.now(),
+      matches,
+      profile,
+      solo:{available:false,reason:"loading"},
+      identity,
+      fullLoaded:false
+    };
+    renderDashboardFromData(target,matches,profile,dashboardCache.solo,identity);
+
+    loadSoloSummary().then(solo=>{
+      if(dashboardCache.key!==dashboardIdentityKey(identity))return;
+      dashboardCache={...dashboardCache,solo,loadedAt:Date.now()};
+      if(document.getElementById("analysisView")?.classList.contains("active")){
+        renderDashboardFromData(target,dashboardCache.matches,dashboardCache.profile,solo,identity);
+      }
+    }).catch(()=>{});
+
+    warmFullDashboard(identity);
+  }catch(error){
+    target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;
+  }
 }
 function rerenderDashboardFromCache(){
   const target=$("analysisResults");
