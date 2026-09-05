@@ -1,26 +1,29 @@
 
-import { getCurrentUser, getResolvedAnalysisPlayers, isCommunityAdmin } from "../auth.js?v=20260905admin2";
+import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260905admin2";
 import { API_BASE_URL } from "../config.js?v=20260904d";
+import { renderMileage } from "./mileage.js?v=20260906mileage3";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let activeSection="dashboard";
 let adminGuilds=[];
 let selectedGuild="";
 let guildsLoaded=false;
+let guildAdminAccess=false;
+const apiUrl=path=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
+async function adminRequest(path,{method="GET",body}={}){const response=await fetch(apiUrl(path),{method,credentials:"include",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||"요청에 실패했습니다.");return data;}
 
 const sections = [
   ["server","서버 설정","서버별 내전·채널·권한 설정","⚙"],
-  ["mileage","마일리지","지급 규칙·거래내역·수동 조정","M"],
-  ["shop","상점","상품·주문·상점 운영","▣"],
+  ["mileage","마일리지 관리","지급 규칙·상점·주문·감사로그","M"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
-  ["users","유저 탐색","코치/분석 권한용 유저 분석","⌕"],
+  ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
   ["logs","운영 로그","채팅·관리자 작업·신고·마일리지 로그","≡"],
   ["data","데이터 관리","서버 데이터 내보내기","⇩"],
   ["support","문의 관리","커뮤니티/봇 문의 처리","?"],
 ];
 
 function uniqueGuilds(){
-  const rows=[...adminGuilds,...(getResolvedAnalysisPlayers?.()||[])];
+  const rows=[...adminGuilds];
   const seen=new Set();
   return rows.filter(row=>{
     const key=String(row.guildId||row.id||"");
@@ -35,6 +38,7 @@ async function loadAdminGuilds(){
     const data=await response.json().catch(()=>({}));
     if(response.ok&&data.ok)adminGuilds=(data.guilds||[]).filter(g=>g.canManage);
   }catch(_){adminGuilds=[];}
+  guildAdminAccess=adminGuilds.length>0;
   const guilds=uniqueGuilds();
   if(!guilds.some(g=>g.id===selectedGuild))selectedGuild=guilds[0]?.id||"";
 }
@@ -70,7 +74,7 @@ function dashboard(){
       <span class="admin-status-pill">관리자 권한 확인됨</span>
     </section>
     <div class="admin-card-grid">
-      ${sections.map(([id,title,desc,icon])=>`
+      ${sections.filter(([id])=>isCommunityAdmin()||!["data","support"].includes(id)).map(([id,title,desc,icon])=>`
         <button class="admin-menu-card" type="button" data-admin-section="${id}">
           <span class="admin-menu-icon">${icon}</span>
           <span><strong>${title}</strong><small>${desc}</small></span>
@@ -109,30 +113,8 @@ function serverPanel(){
 
 function mileagePanel(){
   return shell(`
-    ${panelTitle("마일리지","서버별 포인트 경제를 설정하고 추적합니다.")}
-    <div class="admin-stat-grid">
-      <article><span>총 유통량</span><strong>— P</strong><small>DB 연동 후 표시</small></article>
-      <article><span>최근 7일 지급</span><strong>+ — P</strong><small>적립 총액</small></article>
-      <article><span>최근 7일 사용</span><strong>- — P</strong><small>상점 소비</small></article>
-      <article><span>활동 유저</span><strong>— 명</strong><small>최근 7일</small></article>
-    </div>
-    <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active" data-tab-message="지급 규칙을 표시합니다.">지급 설정</button><button data-tab-message="최근 마일리지 거래를 표시합니다.">거래내역</button><button data-tab-message="사용자 수동 지급·차감 화면을 표시합니다.">수동 조정</button><button data-tab-message="서버 마일리지 경제 현황을 표시합니다.">경제 현황</button></div>
-      ${[
-        ["내전 정상 완료","경기 정상 종료 시 지급","20 P",true],
-        ["승리 보너스","승리팀에 추가 지급","5 P",true],
-        ["음성채널 활동","30분당 지급 · 일일 상한 설정","5 P / 30분",true],
-        ["주간 활동 퀘스트","주간 조건 완료 시 지급","설정",true],
-        ["이벤트 / 리그 참가","실제 참가 확정 시 지급","설정",true],
-        ["친구 초대","초대 유저 실제 활동 조건 달성 시 지급","설정",false],
-        ["운영진 기여 보상","관리자가 사유와 함께 수동 지급","수동",true],
-      ].map(([name,desc,value,on])=>`
-        <div class="admin-setting-row">
-          <div><strong>${name}</strong><small>${desc}</small></div>
-          <div class="admin-setting-actions"><span>${value}</span><i class="admin-toggle ${on?"on":""}"></i></div>
-        </div>`).join("")}
-      <div class="admin-economy-hint"><strong>운영 가이드</strong><span>일/주간 획득 상한과 예상 주간 획득량을 함께 표시하는 구조를 권장합니다.</span></div>
-    </section>
+    ${panelTitle("마일리지 관리","실제 지급 설정·상점·주문·환불·감사로그를 한 화면에서 관리합니다.")}
+    <div id="adminMileageRoot"></div>
   `);
 }
 
@@ -237,19 +219,18 @@ function eventsPanel(){
   return shell(`
     ${panelTitle("이벤트 관리","Discord /이벤트랭킹을 홈페이지 이벤트 관리로 이관하는 영역입니다.")}
     <section class="admin-work-panel">
-      <div class="admin-toolbar"><div class="admin-subtabs"><button class="active" data-tab-message="현재 진행 중인 이벤트입니다.">진행중</button><button data-tab-message="종료된 이벤트 조회 API는 아직 연결되지 않았습니다.">종료</button></div><button class="admin-primary">+ 이벤트</button></div>
-      <p class="admin-tab-feedback">현재 진행 중인 이벤트입니다.</p>
-      <article class="admin-event-card"><div><small>진행중</small><h3>9월 내전왕</h3><p>2026.09.01 ~ 09.30 · 참가자/점수/순위를 한 화면에서 관리</p></div><div class="admin-event-actions"><button>상세</button><button>수정</button><button>종료</button></div></article>
+      <div class="admin-empty-admin"><strong>이벤트 API는 아직 연결되지 않았습니다.</strong><span>현재 봇에는 홈페이지가 안전하게 수정할 별도 이벤트 저장소가 없어 Discord 운영 데이터와 실시간 연동할 수 없습니다.</span></div>
     </section>
   `);
 }
 
-function usersPanel(){
+function missingPanel(){
   return shell(`
-    ${panelTitle("유저 탐색","코치/분석 권한자가 조건별 유저를 찾는 관리 도구입니다.")}
+    ${panelTitle("상세스탯 누락","기본 경기기록은 유지하면서 누락된 상세스탯 경기를 확인하고 관리 목록에서 제외합니다.")}
     <section class="admin-work-panel">
-      <div class="admin-filter-grid"><label>티어<select><option>전체</option><option>골드</option><option>플래티넘</option></select></label><label>포지션<select><option>전체</option><option>정글</option><option>미드</option></select></label><label>챔피언<input placeholder="챔피언 검색"></label><label>최소 판수<input value="10"></label><button class="admin-primary">검색</button></div>
-      <div class="admin-empty-admin"><strong>분석 조건을 선택하세요.</strong><span>저평가 후보, 성장 유저, 지표 우수/취약 유저를 이 영역에 표시합니다.</span></div>
+      <div class="admin-toolbar"><p class="admin-tab-feedback">상세스탯이 10명 미만 저장된 경기를 표시합니다.</p><button id="missingRefresh" class="admin-primary">새로고침</button></div>
+      <div id="missingDetailsList" class="admin-table"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
+      <div class="admin-draft-note">삭제는 경기/MMR을 지우지 않고 누락 관리 목록에서 보관 처리합니다. 원본 경기기록을 직접 지우면 봇 메모리와 충돌할 수 있어 안전하게 분리했습니다.</div>
     </section>
   `);
 }
@@ -258,12 +239,9 @@ function logsPanel(){
   return shell(`
     ${panelTitle("운영 로그","채팅로그를 포함해 관리자 작업과 주요 변경 이력을 모읍니다.")}
     <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active" data-tab-message="채팅 로그 API는 아직 연결되지 않았습니다.">채팅</button><button data-tab-message="관리자 작업 로그 API는 아직 연결되지 않았습니다.">관리자 작업</button><button data-tab-message="마일리지 감사로그는 실제 마일리지 관리 화면에서 확인할 수 있습니다.">마일리지</button><button data-tab-message="신고 로그 API는 아직 연결되지 않았습니다.">신고</button></div>
-      <p class="admin-tab-feedback">채팅 로그 API는 아직 연결되지 않았습니다.</p>
-      <div class="admin-table">
-        <div class="admin-table-head admin-log-cols"><span>유저/관리자</span><span>내용</span><span>위치</span><span>시간</span></div>
-        <div class="admin-empty-admin"><strong>운영 로그 API 연결 대기</strong><span>/채팅로그 기능은 이 화면으로 이관할 예정입니다.</span></div>
-      </div>
+      <div class="admin-subtabs"><button class="active" data-log-kind="chat">채팅</button><button data-log-kind="mileage">마일리지 감사</button><button data-log-kind="reports">신고</button></div>
+      <p class="admin-tab-feedback">선택한 서버의 최근 채팅 로그입니다.</p>
+      <div id="operationLogList" class="admin-table"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
     </section>
   `);
 }
@@ -285,28 +263,39 @@ function supportPanel(){
   return shell(`
     ${panelTitle("문의 관리","/봇제작자문의를 홈페이지 문의 시스템으로 이관합니다.")}
     <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active" data-tab-message="전체 문의입니다.">전체</button><button data-tab-message="미처리 문의입니다.">미처리</button><button data-tab-message="처리 중인 문의입니다.">처리중</button><button data-tab-message="처리 완료된 문의입니다.">완료</button></div>
+      <div class="admin-subtabs"><button class="active" data-inquiry-status="">전체</button><button data-inquiry-status="open">미처리</button><button data-inquiry-status="processing">처리중</button><button data-inquiry-status="completed">완료</button></div>
       <p class="admin-tab-feedback">전체 문의입니다.</p>
-      <div class="admin-empty-admin"><strong>아직 등록된 문의가 없습니다.</strong><span>커뮤니티/봇 문의가 접수되면 이곳에서 처리 상태를 관리합니다.</span></div>
+      <div id="adminInquiryList"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
     </section>
   `);
+}
+
+async function loadMissingDetails(){
+  const target=document.getElementById("missingDetailsList");if(!target||!selectedGuild)return;
+  try{const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/missing-details`),rows=data.matches||[];target.innerHTML=rows.length?`<div class="admin-table-head admin-log-cols"><span>경기</span><span>누락 인원</span><span>저장 상태</span><span>관리</span></div>${rows.map(row=>`<div class="admin-table-row admin-log-cols"><span><strong>${esc(row.time||row.matchId)}</strong><small>${esc(row.matchId)}</small></span><span>${esc((row.missingPlayers||[]).join(", ")||"확인 필요")}</span><span>${row.savedCount}/10명</span><button class="admin-select-button" data-archive-missing="${esc(row.matchId)}">삭제(보관)</button></div>`).join("")}`:`<div class="admin-empty-admin"><strong>누락된 상세스탯 경기가 없습니다.</strong></div>`;target.querySelectorAll("[data-archive-missing]").forEach(button=>button.addEventListener("click",async()=>{if(!confirm("이 경기를 누락 관리 목록에서 삭제하고 보관 처리할까요?\n기본 경기/MMR 기록은 유지됩니다."))return;await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/missing-details/${encodeURIComponent(button.dataset.archiveMissing)}`,{method:"DELETE",body:{reason:"관리자 누락 목록 정리"}});loadMissingDetails();}));}catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
+async function loadOperationLogs(kind="chat"){
+  const target=document.getElementById("operationLogList");if(!target||!selectedGuild)return;target.innerHTML=`<div class="admin-empty-admin"><strong>불러오는 중...</strong></div>`;
+  try{const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/logs/${kind}`),rows=data.logs||[];target.innerHTML=rows.length?rows.map(row=>kind==="chat"?`<div class="admin-table-row admin-log-cols"><span>${esc(row.authorName)}<small>${esc(row.userId)}</small></span><span>${esc(row.content||"(첨부파일)")}</span><span>#${esc(row.channelName)}</span><span>${esc(row.createdAt)}</span></div>`:kind==="reports"?`<div class="admin-table-row admin-log-cols"><span>${esc(row.id)}<small>${esc(row.status)}</small></span><span><strong>${esc(row.target)}</strong><small>${esc(row.reason)}</small></span><span>${esc(row.createdAt)}</span><span>${row.status==="open"?`<button class="admin-select-button" data-report-action="${esc(row.id)}" data-status="processed">처리완료</button> <button class="admin-select-button" data-report-action="${esc(row.id)}" data-status="dismissed">잘못된 신고</button>`:"보관됨"}</span></div>`:`<div class="admin-table-row admin-log-cols"><span>${esc(row.userId)}<small>${esc(row.type)}</small></span><span>${esc(row.reason)}</span><span>${Number(row.amount)>0?"+":""}${Number(row.amount).toLocaleString()}P</span><span>${esc(row.createdAt)}<small>${esc(row.administratorId||"")}</small></span></div>`).join(""):`<div class="admin-empty-admin"><strong>표시할 로그가 없습니다.</strong></div>`;target.querySelectorAll("[data-report-action]").forEach(button=>button.addEventListener("click",async()=>{const reason=prompt(button.dataset.status==="dismissed"?"잘못된 신고로 보관하는 이유":"처리 내용을 남겨주세요","");if(reason===null)return;await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/reports/${encodeURIComponent(button.dataset.reportAction)}`,{method:"DELETE",body:{status:button.dataset.status,reason}});loadOperationLogs("reports");}));}catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
+async function loadInquiries(status=""){
+  const target=document.getElementById("adminInquiryList");if(!target)return;
+  try{const data=await adminRequest(`/api/community/admin/inquiries${status?`?status=${status}`:""}`),rows=data.inquiries||[];target.innerHTML=rows.length?rows.map(row=>`<article class="admin-event-card"><div><small>${esc(row.status)} · ${esc(row.createdAt)}</small><h3>${esc(row.subject)}</h3><p>${esc(row.message)}</p><p>${esc(row.contact)}</p></div><div class="admin-event-actions"><button data-inquiry-id="${esc(row.id)}" data-inquiry-next="processing">처리중</button><button data-inquiry-id="${esc(row.id)}" data-inquiry-next="completed">완료</button></div></article>`).join(""):`<div class="admin-empty-admin"><strong>등록된 문의가 없습니다.</strong></div>`;target.querySelectorAll("[data-inquiry-id]").forEach(button=>button.addEventListener("click",async()=>{const note=prompt("관리 메모(선택)","");if(note===null)return;await adminRequest(`/api/community/admin/inquiries/${encodeURIComponent(button.dataset.inquiryId)}`,{method:"PATCH",body:{status:button.dataset.inquiryNext,note}});loadInquiries(status);}));}catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 
 function renderSection(){
   const root=document.getElementById("communityAdminRoot");
   if(!root)return;
-  if(!isCommunityAdmin()){
+  if(!isCommunityAdmin()&&!guildAdminAccess){
     root.innerHTML=`<div class="admin-denied"><strong>관리자 권한이 필요합니다.</strong><span>커뮤니티 관리자에게만 보이는 페이지입니다.</span></div>`;
     return;
   }
-  const pages={dashboard,server:serverPanel,mileage:mileagePanel,shop:shopPanel,events:eventsPanel,users:usersPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  const pages={dashboard,server:serverPanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
-    if(next==="mileage"||next==="shop"){
-      document.getElementById("mileageNav")?.click();
-      return;
-    }
     activeSection=next;
     renderSection();
   }));
@@ -337,12 +326,36 @@ function renderSection(){
   });
   root.querySelector("#shopEditorBackdrop")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeShopEditor();});
 
+  if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true});
+  if(activeSection==="missing"){
+    loadMissingDetails();
+    root.querySelector("#missingRefresh")?.addEventListener("click",loadMissingDetails);
+  }
+  if(activeSection==="logs"){
+    loadOperationLogs("chat");
+    root.querySelectorAll("[data-log-kind]").forEach(button=>button.addEventListener("click",()=>{
+      root.querySelectorAll("[data-log-kind]").forEach(item=>item.classList.toggle("active",item===button));
+      loadOperationLogs(button.dataset.logKind);
+    }));
+  }
+  if(activeSection==="support"){
+    loadInquiries("");
+    root.querySelectorAll("[data-inquiry-status]").forEach(button=>button.addEventListener("click",()=>{
+      root.querySelectorAll("[data-inquiry-status]").forEach(item=>item.classList.toggle("active",item===button));
+      loadInquiries(button.dataset.inquiryStatus);
+    }));
+  }
+
 }
 
-export function syncAdminAccess(){
+export function hasCommunityAdminAccess(){return isCommunityAdmin()||guildAdminAccess;}
+
+export async function syncAdminAccess(){
+  if(!getCurrentUser()){adminGuilds=[];guildAdminAccess=false;guildsLoaded=false;}
+  else if(!guildsLoaded){guildsLoaded=true;await loadAdminGuilds();}
   const nav=document.getElementById("communityAdminNav");
-  if(nav)nav.hidden=!isCommunityAdmin();
-  if(!isCommunityAdmin() && document.getElementById("adminView")?.classList.contains("active")){
+  if(nav)nav.hidden=!hasCommunityAdminAccess();
+  if(!hasCommunityAdminAccess() && document.getElementById("adminView")?.classList.contains("active")){
     window.history.replaceState({view:"recent"},"",window.location.pathname);
     window.dispatchEvent(new CustomEvent("lucid:admin-denied"));
   }

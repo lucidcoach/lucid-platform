@@ -1,20 +1,36 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
-import { switchView } from "./view.js?v=20260905admin2";
+import { switchView } from "./view.js?v=20260906ops1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ak";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
-import { renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260906mileage2";
-import { renderMileage } from "./pages/mileage.js?v=20260906mileage2";
+import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260906ops1";
+import { renderMileage } from "./pages/mileage.js?v=20260906ops1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905admin2";
+import { API_BASE_URL } from "./config.js?v=20260904d";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
 const FAVORITE_SEARCH_KEY = "lucid-community-favorite-searches-v1";
 const RECENT_SEARCH_LIMIT = 8;
 const FAVORITE_SEARCH_LIMIT = 12;
+
+function renderCommunitySupport(){
+  const root=$("communitySupportRoot");if(!root)return;
+  const user=getCurrentUser();
+  root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">CONTACT LUCID</p><h1>문의하기</h1><p class="mileage-muted">봇 이용, 내전 기록, 마일리지와 홈페이지 사용 중 생긴 문제를 남겨주세요.</p></div></section><section class="mileage-card"><form id="communityInquiryForm" class="mileage-form"><label class="wide">제목<input name="subject" required maxlength="120" placeholder="문의 제목"></label>${user?"":`<label class="wide">답변 받을 연락처<input name="contact" required maxlength="160" placeholder="이메일 또는 Discord ID"></label>`}<label class="wide">문의 내용<textarea name="message" required maxlength="3000" rows="8" placeholder="확인이 필요한 서버와 상황을 구체적으로 적어주세요."></textarea></label><button class="wide" type="submit">문의 접수</button><p id="communityInquiryStatus" class="mileage-status wide"></p></form></section></div>`;
+  root.querySelector("#communityInquiryForm")?.addEventListener("submit",async event=>{
+    event.preventDefault();const form=event.currentTarget,status=$("communityInquiryStatus"),button=form.querySelector("button");
+    const values=new FormData(form);button.disabled=true;status.textContent="접수 중...";
+    try{
+      const response=await fetch(`${API_BASE_URL.replace(/\/$/,"")}/api/community/inquiries`,{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:values.get("subject"),contact:values.get("contact"),message:values.get("message")})});
+      const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||"문의 접수에 실패했습니다.");
+      form.reset();status.textContent=`접수되었습니다. 문의 번호: ${data.inquiryId}`;
+    }catch(error){status.textContent=error.message;}finally{button.disabled=false;}
+  });
+}
 
 function safeRows(key, limit) {
   try {
@@ -111,13 +127,13 @@ function applyRoute({ fromPop = false } = {}) {
     return;
   }
   if (view === "mileage") {
-    if (!getCurrentUser()) { goRecent({push:false}); return; }
     switchView("mileage");
     renderMileage();
     return;
   }
+  if (view === "support") { switchView("support"); renderCommunitySupport(); return; }
   if (view === "admin") {
-    if (!isCommunityAdmin()) { goRecent({push:false}); return; }
+    if (!hasCommunityAdminAccess()) { goRecent({push:false}); return; }
     switchView("admin");
     renderCommunityAdmin();
     return;
@@ -223,7 +239,7 @@ function bindEvents() {
         switchView("ranking");
         loadRankings();
       } else if (button.dataset.view === "admin") {
-        if (!isCommunityAdmin()) return;
+        if (!hasCommunityAdminAccess()) return;
         const url = new URL(window.location.href);
         url.search = "";
         url.searchParams.set("view", "admin");
@@ -237,6 +253,13 @@ function bindEvents() {
         history.pushState({ view: "mileage" }, "", `${url.pathname}${url.search}`);
         switchView("mileage");
         renderMileage();
+      } else if (button.dataset.view === "support") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("view", "support");
+        history.pushState({ view: "support" }, "", `${url.pathname}${url.search}`);
+        switchView("support");
+        renderCommunitySupport();
       } else {
         switchView(button.dataset.view);
       }
@@ -283,14 +306,15 @@ function bindEvents() {
     openPlayer(userId, guildId, { historyMode: "push" });
   });
   window.addEventListener("lucid:open-account", () => openCommunityAccount());
-  window.addEventListener("lucid:auth-changed", (event) => {
-    syncAdminAccess();
+  window.addEventListener("lucid:auth-changed", async (event) => {
+    await syncAdminAccess();
     const user=event.detail?.user;
     const linked=Boolean(user?.discordConnected||user?.discord_connected||user?.discordDisplayName||user?.discord_display_name);
-    if($("mileageNav")) $("mileageNav").hidden=!linked;
+    if($("mileageNav")) $("mileageNav").hidden=false;
     if(document.getElementById("accountView")?.classList.contains("active")) renderCommunityAccount();
     if(document.getElementById("adminView")?.classList.contains("active")) renderCommunityAdmin();
     if(document.getElementById("mileageView")?.classList.contains("active")) renderMileage();
+    if(document.getElementById("supportView")?.classList.contains("active")) renderCommunitySupport();
   });
   window.addEventListener("lucid:admin-denied", () => goRecent({push:false}));
   window.addEventListener("lucid:logged-out", () => goRecent());
@@ -304,7 +328,7 @@ bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
 await initCommunityAuth();
-syncAdminAccess();
+await syncAdminAccess();
 await loadGameAssets();
 await loadRecent();
 applyRoute();

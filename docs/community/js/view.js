@@ -13,6 +13,7 @@ export function switchView(view) {
   $("rankingView")?.classList.toggle("active", view === "ranking");
   $("mileageView")?.classList.toggle("active", view === "mileage");
   $("adminView")?.classList.toggle("active", view === "admin");
+  $("supportView")?.classList.toggle("active", view === "support");
   $("accountView")?.classList.toggle("active", view === "account");
   document.body.classList.toggle("community-admin-mode", view === "admin");
   if ($("clearSearchBtn")) $("clearSearchBtn").hidden = view !== "search";
