@@ -316,7 +316,8 @@ export function syncAdminAccess(){
   }
 }
 
-export function renderCommunityAdmin(){
+export function renderCommunityAdmin({home=false}={}){
+  if(home)activeSection="dashboard";
   activeSection=activeSection||"dashboard";
   renderSection();
 }
