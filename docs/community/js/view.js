@@ -11,6 +11,7 @@ export function switchView(view) {
   $("searchView")?.classList.toggle("active", view === "search");
   $("analysisView")?.classList.toggle("active", view === "analysis");
   $("rankingView")?.classList.toggle("active", view === "ranking");
+  $("mileageView")?.classList.toggle("active", view === "mileage");
   $("adminView")?.classList.toggle("active", view === "admin");
   $("accountView")?.classList.toggle("active", view === "account");
   document.body.classList.toggle("community-admin-mode", view === "admin");

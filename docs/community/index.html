@@ -25,6 +25,7 @@
         <button class="nav-tab active" type="button" data-view="recent">최근 내전</button>
         <button class="nav-tab" type="button" data-view="analysis">게임 분석 <span class="nav-beta">BETA</span></button>
         <button class="nav-tab" type="button" data-view="ranking">랭킹</button>
+        <button id="mileageNav" class="nav-tab" type="button" data-view="mileage" hidden>마일리지 상점</button>
         <button id="communityAdminNav" class="nav-tab admin-nav-tab" type="button" data-view="admin" hidden>관리</button>
       </nav>
       <div class="community-auth-actions" aria-label="계정">
@@ -124,6 +125,10 @@
       <div id="communityAdminRoot"></div>
     </section>
 
+    <section id="mileageView" class="content-view">
+      <div id="mileageRoot"></div>
+    </section>
+
     <section id="accountView" class="content-view">
       <div class="community-account-page">
         <div class="community-account-head">
@@ -153,6 +158,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app.js?v=20260905shop1"></script>
+  <script type="module" src="js/app.js?v=20260905mileage1"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@ import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ak"
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
 import { renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260905shop1";
+import { renderMileage } from "./pages/mileage.js?v=20260905mileage1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905admin2";
 
 
@@ -107,6 +108,12 @@ function applyRoute({ fromPop = false } = {}) {
   if (view === "ranking") {
     switchView("ranking");
     loadRankings();
+    return;
+  }
+  if (view === "mileage") {
+    if (!getCurrentUser()) { goRecent({push:false}); return; }
+    switchView("mileage");
+    renderMileage();
     return;
   }
   if (view === "admin") {
@@ -223,6 +230,13 @@ function bindEvents() {
         history.pushState({ view: "admin" }, "", `${url.pathname}${url.search}`);
         switchView("admin");
         renderCommunityAdmin();
+      } else if (button.dataset.view === "mileage") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("view", "mileage");
+        history.pushState({ view: "mileage" }, "", `${url.pathname}${url.search}`);
+        switchView("mileage");
+        renderMileage();
       } else {
         switchView(button.dataset.view);
       }
@@ -269,7 +283,15 @@ function bindEvents() {
     openPlayer(userId, guildId, { historyMode: "push" });
   });
   window.addEventListener("lucid:open-account", () => openCommunityAccount());
-  window.addEventListener("lucid:auth-changed", () => { syncAdminAccess(); if(document.getElementById("accountView")?.classList.contains("active")) renderCommunityAccount(); if(document.getElementById("adminView")?.classList.contains("active")) renderCommunityAdmin(); });
+  window.addEventListener("lucid:auth-changed", (event) => {
+    syncAdminAccess();
+    const user=event.detail?.user;
+    const linked=Boolean(user?.discordConnected||user?.discord_connected||user?.discordDisplayName||user?.discord_display_name);
+    if($("mileageNav")) $("mileageNav").hidden=!linked;
+    if(document.getElementById("accountView")?.classList.contains("active")) renderCommunityAccount();
+    if(document.getElementById("adminView")?.classList.contains("active")) renderCommunityAdmin();
+    if(document.getElementById("mileageView")?.classList.contains("active")) renderMileage();
+  });
   window.addEventListener("lucid:admin-denied", () => goRecent({push:false}));
   window.addEventListener("lucid:logged-out", () => goRecent());
   window.addEventListener("popstate", () => applyRoute({ fromPop: true }));
