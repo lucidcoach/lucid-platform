@@ -3,9 +3,9 @@ import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260904r";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ab";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ai";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
-import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ah";
+import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ag";
 
 

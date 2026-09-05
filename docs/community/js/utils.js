@@ -74,6 +74,24 @@ export function tierClass(value = "") {
   return "tier-unranked";
 }
 
+export function tierLeaguePoints(tier = "", rawScore = 0) {
+  const score = Math.max(0, Math.round(Number(rawScore || 0)));
+  const compact = String(tier || "").trim().toUpperCase().replace(/[\s_-]+/g, "");
+  if (!score) return 0;
+  if (["C", "GM", "M"].some((key) => compact === key) || /^(CHALLENGER|GRANDMASTER|MASTER)/.test(compact)) {
+    return Math.max(0, score - 2800);
+  }
+  const division = Number((compact.match(/([1-4])$/) || [])[1] || 4);
+  const majorBase = compact.startsWith("DIAMOND") || compact.startsWith("D") ? 2400
+    : compact.startsWith("EMERALD") || compact.startsWith("E") ? 2000
+    : compact.startsWith("PLATINUM") || compact.startsWith("P") ? 1600
+    : compact.startsWith("GOLD") || compact.startsWith("G") ? 1200
+    : compact.startsWith("SILVER") || compact.startsWith("S") ? 800
+    : compact.startsWith("BRONZE") || compact.startsWith("B") ? 400
+    : 0;
+  return Math.max(0, score - (majorBase + (4 - Math.max(1, Math.min(4, division))) * 100));
+}
+
 export function winRateClass(value) {
   const n = Number(value || 0);
   if (!Number.isFinite(n) || n < 50) return "winrate-low";

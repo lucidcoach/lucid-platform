@@ -37,9 +37,11 @@ export function playerMatchCard(match, userId) {
   const runeSpells = renderProfileRuneSpells(player);
   const achievements = achievementBadges(player);
   const rank = aiRank(match, player);
+  const mmrDelta = Math.round(Number(player.mmrDelta || 0));
+  const resultText = `${won ? "승리" : "패배"}${mmrDelta ? ` (${mmrDelta > 0 ? "+" : ""}${mmrDelta})` : ""}`;
   return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}">
     <div class="personal-summary">
-      <div class="result-meta"><strong>${won ? "승리" : "패배"}</strong><span>${escapeHtml(relativeTime(match.time))}</span><div>${escapeHtml(normalizeMode(match))}</div></div>
+      <div class="result-meta"><strong>${resultText}</strong><span>${escapeHtml(relativeTime(match.time))}</span><div>${escapeHtml(normalizeMode(match))}</div></div>
       <div class="focus-visual compact-focus-layout">
         <div class="focus-champion">${champion ? `<img src="${escapeHtml(champion)}" alt="" loading="lazy">` : ""}${Number(player.level || 0) > 0 ? `<span class="champion-level">${Number(player.level)}</span>` : ""}</div>
         ${runeSpells ? `<div class="focus-loadout-side">${runeSpells}</div>` : `<div class="focus-loadout-side"></div>`}

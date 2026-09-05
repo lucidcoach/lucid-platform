@@ -5,6 +5,7 @@
 .ranking-kind.active,.ranking-role.active{border-color:#7d5cff;background:var(--purple-soft);color:#fff}
 .ranking-role-filters[hidden]{display:none}
 .ranking-board{overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--panel)}
+.ranking-period{padding:11px 18px;border-bottom:1px solid var(--line-soft);background:#0b1018;color:#c7d1df;font-size:11px;font-weight:850}
 .ranking-table-head,.ranking-row{display:grid;grid-template-columns:62px minmax(160px,1fr) 115px 160px;align-items:center;gap:12px;padding:0 18px}
 .ranking-table-head{min-height:42px;border-bottom:1px solid var(--line-soft);color:var(--muted);font-size:11px;font-weight:850}
 .ranking-row{min-height:66px;border-bottom:1px solid var(--line-soft)}
@@ -14,6 +15,6 @@
 .ranking-player{min-width:0;border:0;background:transparent;color:#fff;text-align:left;font-weight:850;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ranking-player:hover{color:#a995ff}
 .ranking-tier{font-weight:850}
-.ranking-value{font-weight:900;text-align:right}
+.ranking-value{font-weight:900;text-align:right;white-space:nowrap}
 .ranking-note{padding:12px 18px;border-top:1px solid var(--line-soft);color:var(--muted);font-size:11px}
 @media(max-width:620px){.ranking-table-head,.ranking-row{grid-template-columns:42px minmax(110px,1fr) 72px 108px;gap:7px;padding:0 10px}.ranking-kind,.ranking-role{padding:0 11px}.ranking-table-head{font-size:9px}.ranking-row{font-size:12px}}

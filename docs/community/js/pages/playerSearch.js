@@ -1,9 +1,9 @@
 import { apiGet } from "../api.js?v=20260904r";
 import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, winRateClass } from "../utils.js?v=20260904r";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260905ai";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260904aa";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260905ai";
 import { bindExpanders } from "../components/scoreboard.js?v=20260904v";
 
 
@@ -93,25 +93,6 @@ function roleDelta(row = {}) {
   return `<span class="role-tier-delta ${up ? "up" : "down"}">${up ? "▲" : "▼"}${Math.abs(Math.round(delta))}점</span>`;
 }
 
-function tierLeaguePoints(tier = "", rawScore = 0) {
-  const score = Math.max(0, Math.round(Number(rawScore || 0)));
-  const compact = String(tier || "").trim().toUpperCase().replace(/[\s_-]+/g, "");
-  if (!score) return 0;
-  if (compact.startsWith("CHALLENGER") || compact === "C") return Math.max(0, score - 2800);
-  if (compact.startsWith("GRANDMASTER") || compact === "GM") return Math.max(0, score - 2800);
-  if (compact.startsWith("MASTER") || compact === "M") return Math.max(0, score - 2800);
-  const division = Number((compact.match(/([1-4])$/) || [])[1] || 4);
-  const majorBase = compact.startsWith("DIAMOND") || compact.startsWith("D") ? 2400
-    : compact.startsWith("EMERALD") || compact.startsWith("E") ? 2000
-    : compact.startsWith("PLATINUM") || compact.startsWith("P") ? 1600
-    : compact.startsWith("GOLD") || compact.startsWith("G") ? 1200
-    : compact.startsWith("SILVER") || compact.startsWith("S") ? 800
-    : compact.startsWith("BRONZE") || compact.startsWith("B") ? 400
-    : 0;
-  const divisionBase = majorBase + (4 - Math.max(1, Math.min(4, division))) * 100;
-  return Math.max(0, score - divisionBase);
-}
-
 function roleTierBoard(rows = []) {
   const roles = ["탑", "정글", "미드", "원딜", "서폿"];
   const list = Array.isArray(rows)
@@ -163,6 +144,33 @@ function championStatsPanel(groups = {}) {
     <div class="champion-stat-list" data-champion-list></div>
     <button class="champion-more-button" type="button" data-champion-more hidden>더 보기</button>
   </section>`;
+}
+
+function associateRow(row) {
+  return `<div class="associate-row"><button type="button" data-player-profile data-user-id="${escapeHtml(row.userId)}" data-guild-id="${escapeHtml(row.guildId)}" title="${escapeHtml(row.name)} 전적 보기">${escapeHtml(row.name)}</button><span>${Number(row.wins || 0)}승</span><span>${Number(row.losses || 0)}패</span><strong class="${winRateClass(row.winRate)}">${Number(row.winRate || 0).toFixed(1)}%</strong></div>`;
+}
+
+function associatesPanel(data = {}) {
+  return `<section class="associate-stats-panel">
+    <div class="profile-section-title"><strong>최근 같이 게임한 소환사</strong><span>최근 ${Number(data.sampleGames || 0)}게임 · 2판 이상</span></div>
+    <div class="associate-tabs" role="tablist"><button class="associate-tab active" type="button" data-associate-kind="allies">같은 팀</button><button class="associate-tab" type="button" data-associate-kind="opponents">상대 팀</button></div>
+    <div class="associate-list" data-associate-list></div>
+  </section>`;
+}
+
+function bindAssociates(target, data = {}) {
+  const list = target.querySelector("[data-associate-list]");
+  const tabs = [...target.querySelectorAll("[data-associate-kind]")];
+  if (!list) return;
+  const render = (kind) => {
+    const rows = Array.isArray(data?.[kind]) ? data[kind] : [];
+    list.innerHTML = rows.length ? rows.map(associateRow).join("") : `<div class="associate-empty">최근 20게임에서 2판 이상 만난 소환사가 없습니다.</div>`;
+  };
+  tabs.forEach((button) => button.addEventListener("click", () => {
+    tabs.forEach((item) => item.classList.toggle("active", item === button));
+    render(button.dataset.associateKind || "allies");
+  }));
+  render("allies");
 }
 
 function bindChampionStats(target, groups = {}) {
@@ -221,11 +229,13 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       </div>
       <div class="profile-champion-panel">
         ${championStatsPanel(p.championStats || {})}
+        ${associatesPanel(p.recentAssociates || {})}
       </div>
     </section>
     <div class="match-feed personal-feed">${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
+    bindAssociates(target, p.recentAssociates || {});
     bindExpanders(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
       window.dispatchEvent(new CustomEvent("lucid:favorite-toggle", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
