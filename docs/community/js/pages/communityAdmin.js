@@ -124,17 +124,98 @@ function mileagePanel(){
 
 function shopPanel(){
   return shell(`
-    ${panelTitle("상점 관리","서버 관리자가 마일리지 상품과 주문을 관리합니다.")}
-    <section class="admin-work-panel">
-      <div class="admin-toolbar"><div class="admin-subtabs"><button class="active">상품</button><button>주문</button><button>상점 설정</button></div><button class="admin-primary">+ 상품 등록</button></div>
-      <div class="admin-table">
-        <div class="admin-table-head"><span>상품</span><span>가격</span><span>재고</span><span>유형</span><span>상태</span></div>
-        <div class="admin-table-row"><strong>경기분석권</strong><span>500 P</span><span>∞</span><span>경기분석</span><b>판매중</b></div>
-        <div class="admin-table-row"><strong>코칭 할인권</strong><span>1,500 P</span><span>30</span><span>수동 지급</span><b>판매중</b></div>
-        <div class="admin-table-row muted"><strong>특별 칭호</strong><span>800 P</span><span>10</span><span>Discord 역할</span><b>판매중지</b></div>
-      </div>
-      <div class="admin-draft-note">상품 예시 화면 · 실제 상품 데이터 연결 후 목록으로 교체</div>
-    </section>
+    ${panelTitle("상점 관리","마일리지로 구매할 상품과 주문을 관리합니다.")}
+    <div class="shop-admin-grid">
+      <section class="admin-work-panel shop-products-panel">
+        <div class="admin-toolbar">
+          <div class="admin-subtabs">
+            <button class="active" data-shop-tab="products">상품</button>
+            <button data-shop-tab="orders">주문</button>
+            <button data-shop-tab="settings">상점 설정</button>
+          </div>
+          <button class="admin-primary" id="shopCreateBtn">+ 상품 등록</button>
+        </div>
+
+        <div class="shop-summary-row">
+          <article><span>판매중 상품</span><strong>3</strong></article>
+          <article><span>오늘 주문</span><strong>7</strong></article>
+          <article><span>처리 대기</span><strong>2</strong></article>
+          <article><span>오늘 사용 마일리지</span><strong>4,300 P</strong></article>
+        </div>
+
+        <div class="shop-product-list">
+          <article class="shop-product-card">
+            <div class="shop-product-thumb">A</div>
+            <div class="shop-product-main">
+              <div class="shop-product-title-row"><strong>경기분석권</strong><span class="shop-status live">판매중</span></div>
+              <p>게임 분석 상세 기능 1회 이용권</p>
+              <div class="shop-product-meta"><span>500 P</span><span>재고 무제한</span><span>유저당 5회</span><span>자동 지급</span></div>
+            </div>
+            <div class="shop-product-actions"><button data-shop-action="edit">수정</button><button>판매중지</button></div>
+          </article>
+
+          <article class="shop-product-card">
+            <div class="shop-product-thumb">C</div>
+            <div class="shop-product-main">
+              <div class="shop-product-title-row"><strong>코칭 5,000원 할인권</strong><span class="shop-status live">판매중</span></div>
+              <p>Lucid 코칭 상품 결제 시 사용 가능한 할인권</p>
+              <div class="shop-product-meta"><span>1,500 P</span><span>재고 30</span><span>유저당 1회</span><span>운영진 처리</span></div>
+            </div>
+            <div class="shop-product-actions"><button data-shop-action="edit">수정</button><button>판매중지</button></div>
+          </article>
+
+          <article class="shop-product-card muted">
+            <div class="shop-product-thumb">R</div>
+            <div class="shop-product-main">
+              <div class="shop-product-title-row"><strong>특별 Discord 역할</strong><span class="shop-status paused">판매중지</span></div>
+              <p>구매 후 지정 Discord 역할을 자동 지급</p>
+              <div class="shop-product-meta"><span>800 P</span><span>재고 10</span><span>유저당 1회</span><span>Discord 역할</span></div>
+            </div>
+            <div class="shop-product-actions"><button data-shop-action="edit">수정</button><button>판매재개</button></div>
+          </article>
+        </div>
+      </section>
+
+      <aside class="shop-preview-panel">
+        <div class="shop-preview-head"><span>사용자 상점 미리보기</span><small>파라다이스 서버</small></div>
+        <div class="shop-balance-card"><span>내 마일리지</span><strong>1,420 P</strong></div>
+        <div class="shop-preview-item">
+          <div class="shop-preview-thumb">A</div>
+          <div><strong>경기분석권</strong><small>게임 분석 상세 기능 1회</small></div>
+          <button>500 P</button>
+        </div>
+        <div class="shop-preview-item">
+          <div class="shop-preview-thumb">C</div>
+          <div><strong>코칭 할인권</strong><small>5,000원 할인</small></div>
+          <button>1,500 P</button>
+        </div>
+        <div class="shop-preview-note">실제 사용자 상점은 커뮤니티 상단의 ‘상점’ 메뉴로 연결하는 구조를 권장합니다.</div>
+      </aside>
+    </div>
+
+    <div class="shop-editor-backdrop" id="shopEditorBackdrop" hidden>
+      <section class="shop-editor-dialog">
+        <div class="shop-editor-head">
+          <div><small>SHOP ITEM</small><h3 id="shopEditorTitle">상품 등록</h3></div>
+          <button id="shopEditorClose" type="button">×</button>
+        </div>
+        <div class="shop-editor-form">
+          <label class="wide"><span>상품명</span><input id="shopName" placeholder="예: 경기분석권"></label>
+          <label><span>가격</span><div class="shop-input-suffix"><input id="shopPrice" type="number" value="500"><b>P</b></div></label>
+          <label><span>상품 유형</span><select id="shopType"><option>경기분석권</option><option>코칭권/할인권</option><option>Discord 역할</option><option>운영진 수동 처리</option><option>쿠폰/코드</option></select></label>
+          <label class="wide"><span>설명</span><textarea id="shopDescription" rows="3" placeholder="상품 설명"></textarea></label>
+          <label><span>재고</span><input id="shopStock" placeholder="비워두면 무제한"></label>
+          <label><span>유저당 구매 제한</span><input id="shopLimit" type="number" value="1"></label>
+          <label><span>판매 시작</span><input id="shopStart" type="datetime-local"></label>
+          <label><span>판매 종료</span><input id="shopEnd" type="datetime-local"></label>
+          <label class="wide"><span>상품 이미지</span><div class="shop-image-drop">이미지 업로드 영역</div></label>
+        </div>
+        <div class="shop-editor-footer">
+          <button class="admin-select-button" id="shopEditorCancel">취소</button>
+          <button class="admin-primary" id="shopEditorSave">상품 저장</button>
+        </div>
+      </section>
+    </div>
   `);
 }
 
@@ -207,6 +288,23 @@ function renderSection(){
     activeSection=btn.dataset.adminSection||"dashboard";
     renderSection();
   }));
+  const openShopEditor=(mode="create")=>{
+    const backdrop=document.getElementById("shopEditorBackdrop");
+    const title=document.getElementById("shopEditorTitle");
+    if(title) title.textContent=mode==="edit"?"상품 수정":"상품 등록";
+    if(backdrop) backdrop.hidden=false;
+  };
+  root.querySelector("#shopCreateBtn")?.addEventListener("click",()=>openShopEditor("create"));
+  root.querySelectorAll('[data-shop-action="edit"]').forEach(btn=>btn.addEventListener("click",()=>openShopEditor("edit")));
+  const closeShopEditor=()=>{const backdrop=document.getElementById("shopEditorBackdrop");if(backdrop)backdrop.hidden=true;};
+  root.querySelector("#shopEditorClose")?.addEventListener("click",closeShopEditor);
+  root.querySelector("#shopEditorCancel")?.addEventListener("click",closeShopEditor);
+  root.querySelector("#shopEditorSave")?.addEventListener("click",()=>{
+    closeShopEditor();
+    alert("현재는 UI 초안입니다. 다음 단계에서 실제 상점 DB/API 저장 기능을 연결하면 됩니다.");
+  });
+  root.querySelector("#shopEditorBackdrop")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeShopEditor();});
+
 }
 
 export function syncAdminAccess(){
