@@ -1,12 +1,13 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
-import { switchView } from "./view.js?v=20260905ar";
+import { switchView } from "./view.js?v=20260904r";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ak";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ar";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysis.js?v=20260905ag";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ar";
+import { renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260905admin1";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905ag";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -108,6 +109,12 @@ function applyRoute({ fromPop = false } = {}) {
     loadRankings();
     return;
   }
+  if (view === "admin") {
+    if (!isCommunityAdmin()) { goRecent({push:false}); return; }
+    switchView("admin");
+    renderCommunityAdmin();
+    return;
+  }
   if (player && guild) {
     openPlayer(player, guild, { historyMode: "none" });
     return;
@@ -126,7 +133,6 @@ function goRecent({ push = true } = {}) {
   if (push) history.pushState({ view: "recent" }, "", recentUrl());
   $("playerSearchInput").value = "";
   switchView("recent");
-  loadRecent();
 }
 
 function renderCommunityAccount() {
@@ -209,12 +215,14 @@ function bindEvents() {
         history.pushState({ view: "ranking" }, "", `${url.pathname}${url.search}`);
         switchView("ranking");
         loadRankings();
-      } else if (button.dataset.view === "analysis") {
+      } else if (button.dataset.view === "admin") {
+        if (!isCommunityAdmin()) return;
         const url = new URL(window.location.href);
         url.search = "";
-        url.searchParams.set("view", "analysis");
-        history.pushState({ view: "analysis" }, "", `${url.pathname}${url.search}`);
-        applyAnalysisRoute(url.searchParams);
+        url.searchParams.set("view", "admin");
+        history.pushState({ view: "admin" }, "", `${url.pathname}${url.search}`);
+        switchView("admin");
+        renderCommunityAdmin();
       } else {
         switchView(button.dataset.view);
       }
@@ -261,7 +269,8 @@ function bindEvents() {
     openPlayer(userId, guildId, { historyMode: "push" });
   });
   window.addEventListener("lucid:open-account", () => openCommunityAccount());
-  window.addEventListener("lucid:auth-changed", () => { if(document.getElementById("accountView")?.classList.contains("active")) renderCommunityAccount(); });
+  window.addEventListener("lucid:auth-changed", () => { syncAdminAccess(); if(document.getElementById("accountView")?.classList.contains("active")) renderCommunityAccount(); if(document.getElementById("adminView")?.classList.contains("active")) renderCommunityAdmin(); });
+  window.addEventListener("lucid:admin-denied", () => goRecent({push:false}));
   window.addEventListener("lucid:logged-out", () => goRecent());
   window.addEventListener("popstate", () => applyRoute({ fromPop: true }));
   window.addEventListener("lucid:player-opened", (event) => rememberRecentSearch(event.detail));
@@ -272,20 +281,8 @@ bindEvents();
 bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
-
-await Promise.all([
-  initCommunityAuth(),
-  loadGameAssets()
-]);
-
-const initialParams=new URLSearchParams(window.location.search);
-const initialView=initialParams.get("view");
-const hasDirectRoute=Boolean(
-  initialView==="analysis" ||
-  initialView==="account" ||
-  initialView==="ranking" ||
-  (initialParams.get("player") && initialParams.get("guild")) ||
-  initialParams.get("q")
-);
-
+await initCommunityAuth();
+syncAdminAccess();
+await loadGameAssets();
+await loadRecent();
 applyRoute();
