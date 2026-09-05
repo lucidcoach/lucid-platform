@@ -169,6 +169,13 @@
   font-size: 13px;
   line-height: 1.6;
 }
+.auth-content .auth-consent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.auth-content .auth-consent input { width: 16px; height: 16px; margin: 0; }
 .auth-content button:disabled {
   cursor: not-allowed;
   opacity: 0.6;

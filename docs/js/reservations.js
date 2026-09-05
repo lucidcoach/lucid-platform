@@ -19,7 +19,7 @@ export function paymentStatus(booking) {
 }
 
 export function paymentStatusLabel(booking) {
-  return ({ PAID: "결제 완료", PARTIALLY_REFUNDED: "부분 환불", CANCELED: "결제 취소", REFUNDED: "환불 완료" })[paymentStatus(booking)]
+  return ({ READY: "결제 준비", CONFIRMING: "결제 확인 중", PAID: "결제 완료", PARTIALLY_REFUNDED: "부분 환불", CANCELED: "결제 취소", REFUNDED: "환불 완료" })[paymentStatus(booking)]
     || ({ "결제대기": "결제 대기", "코치확정대기": "코치 확정 대기", "예약확정": "결제 가능" }[booking.status] || "일정 확인 후 결제");
 }
 
@@ -144,6 +144,18 @@ export async function confirmCoachReservationRequest(reservationId) {
   return requestJson(`/api/coach/reservations/${encodeURIComponent(reservationId)}/confirm`, { method: "POST", credentials: "include" });
 }
 
+export function runCoachReservationAction(reservationId, action, payload = {}) {
+  return requestJson(`/api/coach/reservations/${encodeURIComponent(reservationId)}/action`, {
+    method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, ...payload }),
+  });
+}
+
+export function runStudentReservationAction(reservationId, action) {
+  return requestJson(`/api/my/reservations/${encodeURIComponent(reservationId)}/action`, {
+    method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }),
+  });
+}
+
 export async function confirmPayment(payload) {
   return requestJson("/api/payments/confirm", {
     method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
@@ -162,6 +174,8 @@ export function getPaymentErrorMessage(code) {
     reservation_not_confirmed: "일정이 확정된 예약만 결제할 수 있습니다.",
     invalid_payment_amount: "서버 상품 가격을 확인해주세요.",
     amount_mismatch: "결제 금액이 서버 주문과 일치하지 않습니다.",
+    email_verification_required: "결제 전에 이메일 인증을 완료해주세요.",
+    required_consents_missing: "필수 약관 동의가 필요합니다.",
     PAY_PROCESS_CANCELED: "결제가 취소되었습니다.",
     PAY_PROCESS_ABORTED: "결제 인증에 실패했습니다.",
   })[code] || code || "결제 처리 중 오류가 발생했습니다.";
@@ -178,6 +192,8 @@ export function mapReservationFromApi(reservation) {
     lesson: reservation.coach_name || "-", time: reservation.preferred_time || "-", contact: reservation.contact || "-", memo: reservation.memo || "-",
     payment: reservation.payment || null, review: reservation.review || reservation.review_data || reservation.review_metadata || null,
     refundRequest: reservation.refundRequest || reservation.refund_request || null,
+    proposedTime: reservation.proposedTime || reservation.proposed_time || "",
+    completionRequestedAt: reservation.completionRequestedAt || reservation.completion_requested_at || "",
   };
 }
 

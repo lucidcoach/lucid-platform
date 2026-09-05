@@ -24,6 +24,7 @@ import {
   updateReservationStatus,
 } from "../reservations.js";
 import { byId as $, escapeHtml, formatDateTime } from "../utils.js";
+import { fetchAdminSettlements, reconcileAdminPayment, updateAdminSettlement } from "../admin.js";
 
 export function createReservationPage({
   isCoachUser,
@@ -235,16 +236,64 @@ async function loadAdminRefundRequests() {
   if (state.activeView !== "bookings") return;
   state.refundAdminLoadState = "loading";
   state.refundAdminLoadError = "";
+  state.settlementAdminLoadState = "loading";
+  state.settlementAdminLoadError = "";
   renderRefundAdminPanel();
+  renderSettlementAdminPanel();
   try {
-    state.adminRefundRequests = await runAdminRequest(() => fetchAdminRefundRequests());
+    const [refunds, settlementResult] = await Promise.all([
+      runAdminRequest(() => fetchAdminRefundRequests()),
+      runAdminRequest(() => fetchAdminSettlements()),
+    ]);
+    state.adminRefundRequests = refunds;
+    state.adminSettlements = settlementResult.settlements || [];
+    state.settlementTotals = settlementResult.totals || { gross: 0, fees: 0, payout: 0 };
     state.refundAdminLoadState = "loaded";
+    state.settlementAdminLoadState = "loaded";
   } catch (error) {
     state.adminRefundRequests = [];
     state.refundAdminLoadState = "error";
     state.refundAdminLoadError = error.message || "환불 요청을 불러오지 못했습니다.";
+    state.settlementAdminLoadState = "error";
+    state.settlementAdminLoadError = error.message || "정산 내역을 불러오지 못했습니다.";
   }
   renderRefundAdminPanel();
+  renderSettlementAdminPanel();
+}
+
+function renderSettlementAdminPanel() {
+  const panel = $("settlementAdminPanel");
+  if (!panel) return;
+  if (state.settlementAdminLoadState === "error") {
+    panel.innerHTML = `<div class="refund-admin-empty error">${escapeHtml(state.settlementAdminLoadError)}</div>`;
+    return;
+  }
+  const rows = state.adminSettlements || [];
+  const totals = state.settlementTotals || {};
+  panel.innerHTML = `
+    <div class="refund-admin-head"><div><span>정산 관리</span><strong>지급 장부</strong><small>총 결제 ${Number(totals.gross || 0).toLocaleString("ko-KR")}원 · 수수료 ${Number(totals.fees || 0).toLocaleString("ko-KR")}원 · 지급 대기 ${Number(totals.payout || 0).toLocaleString("ko-KR")}원</small></div></div>
+    ${rows.length ? `<div class="refund-admin-list">${rows.map((row) => `
+      <article class="refund-admin-row">
+        <div><strong>${escapeHtml(row.coachName || row.coachKey)} · ${escapeHtml(row.studentName || "-")}</strong><small>${Number(row.grossAmount || 0).toLocaleString("ko-KR")}원 / 지급 ${Number(row.payoutAmount || 0).toLocaleString("ko-KR")}원 · ${row.saleType === "direct" ? "직접판매" : `중개 ${row.commissionRate}%`}</small></div>
+        <div><span class="chip">${escapeHtml(row.status)}</span><small>${escapeHtml(row.adminNote || "메모 없음")}</small></div>
+        <div class="booking-actions">
+          ${!["paid", "adjusted"].includes(row.status) ? `<button type="button" class="mini primary-mini" data-settlement-paid="${escapeHtml(row.id)}">지급 완료</button><button type="button" class="mini" data-settlement-held="${escapeHtml(row.id)}">보류</button>` : ""}
+          ${row.orderId && ["pending", "ready"].includes(row.status) ? `<button type="button" class="mini" data-payment-reconcile="${escapeHtml(row.orderId)}">결제 확인</button>` : ""}
+        </div>
+      </article>`).join("")}</div>` : `<div class="refund-admin-empty">정산 장부가 없습니다.</div>`}
+  `;
+  document.querySelectorAll("[data-settlement-paid], [data-settlement-held]").forEach((button) => button.addEventListener("click", async () => {
+    const status = button.dataset.settlementPaid ? "paid" : "held";
+    const id = button.dataset.settlementPaid || button.dataset.settlementHeld;
+    if (!window.confirm(status === "paid" ? "실제 송금을 확인했고 지급 완료로 기록할까요?" : "이 정산을 보류할까요?")) return;
+    const note = window.prompt("처리 메모(선택)", status === "paid" ? "수동 송금 완료" : "확인 필요") ?? "";
+    try { await runAdminRequest(() => updateAdminSettlement(id, status, note)); await loadAdminRefundRequests(); }
+    catch (error) { alert(`정산 처리 실패\n${error.message}`); }
+  }));
+  document.querySelectorAll("[data-payment-reconcile]").forEach((button) => button.addEventListener("click", async () => {
+    try { await runAdminRequest(() => reconcileAdminPayment(button.dataset.paymentReconcile)); await loadReservations({ promptForLogin: false, silent: true }); await loadAdminRefundRequests(); }
+    catch (error) { alert(`결제 상태 확인 실패\n${error.message}`); }
+  }));
 }
 
 function renderRefundAdminPanel() {
@@ -298,6 +347,7 @@ async function decideRefundRequest(requestId, status) {
     const updated = await updateRefundRequest(requestId, status, note);
     state.adminRefundRequests = state.adminRefundRequests.map((request) => request.id === requestId ? { ...request, ...updated } : request);
     renderRefundAdminPanel();
+    renderSettlementAdminPanel();
     await loadReservations({ promptForLogin: false, silent: true });
   } catch (error) {
     if (error.status === 401) {
@@ -445,8 +495,13 @@ function renderBookingDetail() {
       ${renderDetailItem("요청사항", booking.memo, true)}
     </div>
     ${paymentStatus(booking) === "PAID" ? `<button class="danger" type="button" id="refundPaymentBtn">전액 환불</button>` : ""}
+    ${booking.payment?.orderId && ["READY", "CONFIRMING"].includes(paymentStatus(booking)) ? `<button class="secondary" type="button" id="reconcilePaymentBtn">토스 결제 상태 확인</button>` : ""}
   `;
   $("refundPaymentBtn")?.addEventListener("click", () => refundPayment(booking));
+  $("reconcilePaymentBtn")?.addEventListener("click", async () => {
+    try { await runAdminRequest(() => reconcileAdminPayment(booking.payment.orderId)); await loadReservations({ promptForLogin: false }); }
+    catch (error) { alert(`결제 상태 확인 실패\n${error.message}`); }
+  });
 }
 
 async function refundPayment(booking) {
@@ -493,6 +548,7 @@ function renderBookings() {
     $("bookingRows").innerHTML = `<tr><td colspan="7">예약 목록을 불러오는 중입니다.</td></tr>`;
     renderBookingDetail();
     renderRefundAdminPanel();
+    renderSettlementAdminPanel();
     return;
   }
   if (state.bookingLoadState === "error") {
@@ -558,6 +614,7 @@ function renderBookings() {
   });
   renderBookingDetail();
   renderRefundAdminPanel();
+  renderSettlementAdminPanel();
 }
 
   return {
@@ -573,6 +630,7 @@ function renderBookings() {
     loadReservations,
     loadAdminRefundRequests,
     renderRefundAdminPanel,
+    renderSettlementAdminPanel,
     decideRefundRequest,
     runAdminRequest,
     getFilteredBookings,

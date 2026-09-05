@@ -8,18 +8,21 @@ import {
 } from "../config.js";
 import { state, text } from "../catalog.js";
 import {
+  acceptRequiredConsents,
   deleteCurrentUser as deleteCurrentUserApi,
   fetchAccountOverview,
   fetchCurrentUser,
   loginUser,
   logoutAuthSessions,
   requestPasswordReset,
+  resendEmailVerification,
   resetPassword,
   signupUser,
   updateAccountPassword,
   updatePayoutProfile,
   updateCurrentUser,
   updateRiotAccounts,
+  verifyEmail,
   userIsAdmin,
   userIsCoach,
   userRoles,
@@ -35,8 +38,22 @@ export function createAuthAccountPage({
   renderScheduleSummaryMarkup,
   renderCoachAvailabilityPanel,
 }) {
-function showOAuthResult() {
+async function showOAuthResult() {
   const url = new URL(window.location.href);
+  const verificationToken = url.searchParams.get("verify_email");
+  if (verificationToken) {
+    try {
+      await verifyEmail(verificationToken);
+      alert("이메일 인증이 완료되었습니다.");
+      state.currentUser = await fetchCurrentUser();
+    } catch (error) {
+      alert(`이메일 인증을 완료하지 못했습니다.\n${error.message}`);
+    }
+    url.searchParams.delete("verify_email");
+    history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    renderApp();
+    return;
+  }
   if (url.searchParams.get("reset_token")) {
     openAuthModal("reset");
     return;
@@ -295,6 +312,8 @@ function renderAuthMarkup(mode) {
             <button class="password-toggle" type="button" data-toggle-password aria-label="비밀번호 보기" title="비밀번호 보기">보기</button>
           </span>
         </label>
+        <label class="auth-consent"><input name="termsAccepted" type="checkbox" required> <span>서비스 이용약관에 동의합니다. (필수)</span></label>
+        <label class="auth-consent"><input name="privacyAccepted" type="checkbox" required> <span>개인정보 수집·이용에 동의합니다. (필수)</span></label>
         <button class="primary" type="submit">회원가입</button>
         <span class="auth-status" id="authStatus" aria-live="polite"></span>
       </form>
@@ -386,6 +405,8 @@ function bindAuthForm(mode) {
             displayName: data.get("displayName"),
             email: data.get("email"),
             password: data.get("password"),
+            termsAccepted: data.get("termsAccepted") === "on",
+            privacyAccepted: data.get("privacyAccepted") === "on",
           })
         : await loginUser({
             email: data.get("email"),
@@ -633,6 +654,15 @@ function renderAccountPanelMarkup() {
         : `<button class="secondary account-coach-link" type="button" id="accountStudentQuickBtn">내 수강</button>`}
     </section>
 
+    ${!user.emailVerified || !user.termsAccepted || !user.privacyAccepted ? `
+      <section class="student-panel account-panel account-required-actions">
+        <div class="account-section-head settings"><div><span>필수 확인</span><strong>결제 전 완료해주세요</strong></div></div>
+        ${!user.emailVerified ? `<button class="secondary" type="button" id="resendVerificationBtn">인증 메일 다시 보내기</button>` : ""}
+        ${!user.termsAccepted || !user.privacyAccepted ? `<button class="primary" type="button" id="acceptConsentsBtn">이용약관·개인정보 필수 동의</button>` : ""}
+        <span class="save-status" id="accountRequiredStatus" aria-live="polite"></span>
+      </section>
+    ` : ""}
+
     ${renderAccountDashboardMarkup()}
 
     ${isCoachUser() ? `
@@ -704,6 +734,8 @@ function mountAccountPanel(container) {
   $("accountRiotForm")?.addEventListener("submit", saveAccountRiotId);
   $("accountPasswordForm")?.addEventListener("submit", saveAccountPassword);
   $("accountPayoutForm")?.addEventListener("submit", saveAccountPayout);
+  $("resendVerificationBtn")?.addEventListener("click", resendAccountVerification);
+  $("acceptConsentsBtn")?.addEventListener("click", acceptAccountConsents);
   document.querySelectorAll("[data-account-oauth]").forEach((button) => button.addEventListener("click", () => startAccountOAuth(button.dataset.accountOauth)));
   const openCoachCenter = () => { state.coachSelfKey = getFallbackCoachKey(); state.activeView = "coachSelf"; renderApp(); };
   const openStudentCenter = () => { state.activeView = "student"; renderApp(); };
@@ -725,6 +757,27 @@ function mountAccountPanel(container) {
   $("accountStudentQuickBtn")?.addEventListener("click", openStudentCenter);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
   if (state.accountOverviewLoadState === "idle") loadAccountOverview();
+}
+
+async function resendAccountVerification() {
+  const status = $("accountRequiredStatus");
+  try {
+    const result = await resendEmailVerification();
+    if (status) status.textContent = result.delivered ? "인증 메일을 보냈습니다." : "SMTP 설정을 확인해주세요.";
+  } catch (error) {
+    if (status) status.textContent = `전송 실패: ${error.message}`;
+  }
+}
+
+async function acceptAccountConsents() {
+  const status = $("accountRequiredStatus");
+  try {
+    await acceptRequiredConsents();
+    state.currentUser = await fetchCurrentUser();
+    renderApp();
+  } catch (error) {
+    if (status) status.textContent = `저장 실패: ${error.message}`;
+  }
 }
 
 async function loadAccountOverview() {

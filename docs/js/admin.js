@@ -33,8 +33,24 @@ export function normalizeAdminCoachSetting(item = {}, coaches = []) {
     lessonCount: Number(item.lessonCount ?? item.lesson_count ?? publicLessons.length ?? 0),
     badges: Array.isArray(item.badges) ? item.badges.filter(Boolean) : [],
     commissionRate: Number.isFinite(rate) ? rate : 0,
+    saleType: String(item.saleType || item.sale_type || "brokerage"),
     adminNote: String(item.adminNote ?? item.admin_note ?? ""),
   };
+}
+
+export async function fetchAdminSettlements(status = "") {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return requestJson(`/api/admin/settlements${query}`, { headers: getAdminHeaders() });
+}
+
+export async function updateAdminSettlement(id, status, note = "") {
+  return requestJson(`/api/admin/settlements/${encodeURIComponent(id)}`, {
+    method: "PATCH", headers: getAdminHeaders(true), body: JSON.stringify({ status, note }),
+  });
+}
+
+export function reconcileAdminPayment(orderId) {
+  return requestJson(`/api/admin/payments/${encodeURIComponent(orderId)}/reconcile`, { method: "POST", headers: getAdminHeaders(true) });
 }
 
 export async function fetchAdminCoachSettings(coaches = []) {

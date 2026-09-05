@@ -424,6 +424,7 @@ function fillCoachForm(coach) {
     : "코치 목록에서 관리할 코치를 선택하세요.";
   renderBadgePicker(setting?.badges || []);
   $("coachCommissionRate").value = setting ? formatCommissionRate(setting.commissionRate) : "";
+  $("coachSaleType").value = setting?.saleType || "brokerage";
   $("coachAdminNote").value = setting?.adminNote || "";
   $("saveCoachBtn").disabled = !setting;
 }
@@ -542,6 +543,7 @@ async function saveCoachFromForm() {
   const payload = {
     badges: getCheckedValues("coachBadgeChoice"),
     commissionRate,
+    saleType: $("coachSaleType").value,
     adminNote: $("coachAdminNote").value.trim(),
   };
   try {
@@ -611,4 +613,3 @@ async function deleteSelectedCoach() {
     deleteSelectedCoach,
   };
 }
-

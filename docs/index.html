@@ -154,6 +154,7 @@
         </div>
         <section class="booking-detail-panel" id="bookingDetail" hidden></section>
         <section class="refund-admin-panel" id="refundAdminPanel"></section>
+        <section class="refund-admin-panel" id="settlementAdminPanel"></section>
       </section>
 
       <section class="view" id="adminView">
@@ -239,6 +240,7 @@
             <div class="choice-grid" id="coachBadgeChoices"></div>
           </fieldset>
           <label><span>강의 수수료율 (%)</span><input id="coachCommissionRate" type="number" min="0" max="100" step="1" inputmode="numeric" placeholder="예: 10"></label>
+          <label><span>판매 유형</span><select id="coachSaleType"><option value="brokerage">중개판매</option><option value="direct">Lucid 직접판매</option></select></label>
           <label class="wide"><span>특이사항</span><textarea id="coachAdminNote" rows="4" maxlength="2000" placeholder="관리자만 보는 메모"></textarea></label>
           <label class="wide" hidden><span id="labelBio"></span><textarea id="coachBio" rows="4"></textarea></label>
           <div class="form-actions">

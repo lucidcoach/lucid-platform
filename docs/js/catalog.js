@@ -231,6 +231,10 @@ export const state = {
   adminRefundRequests: [],
   refundAdminLoadState: "idle",
   refundAdminLoadError: "",
+  adminSettlements: [],
+  settlementTotals: { gross: 0, fees: 0, payout: 0 },
+  settlementAdminLoadState: "idle",
+  settlementAdminLoadError: "",
   reviewsByCoach: {},
   submittedReviewIds: [],
 };

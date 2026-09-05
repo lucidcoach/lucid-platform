@@ -90,6 +90,9 @@ async function requestAccountAction(path, payload, method = "POST") {
 
 export const requestPasswordReset = (email) => requestAccountAction("/api/auth/password/forgot", { email });
 export const resetPassword = (token, password) => requestAccountAction("/api/auth/password/reset", { token, password });
+export const resendEmailVerification = () => requestAccountAction("/api/auth/email/resend", {});
+export const verifyEmail = (token) => requestAccountAction("/api/auth/email/verify", { token });
+export const acceptRequiredConsents = () => requestAccountAction("/api/account/consents", { termsAccepted: true, privacyAccepted: true }, "PATCH");
 export const updateAccountPassword = (currentPassword, password) => requestAccountAction(
   "/api/account/password",
   { currentPassword, password },

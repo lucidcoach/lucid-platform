@@ -1,5 +1,5 @@
 import { state } from "../catalog.js";
-import { confirmCoachReservationRequest, paymentStatus, paymentStatusLabel, refundRequestLabel } from "../reservations.js";
+import { paymentStatus, paymentStatusLabel, refundRequestLabel, runCoachReservationAction, runStudentReservationAction } from "../reservations.js";
 import { byId as $, escapeHtml, formatWon, parseReservationPrice } from "../utils.js";
 
 export function createStudentDashboardPage({
@@ -68,6 +68,8 @@ function renderStudentHome() {
                 ${["신규", "상담중", "결제대기", "코치확정대기", "예약확정"].includes(row.status) && !["PAID", "PARTIALLY_REFUNDED", "CANCELED", "REFUNDED"].includes(paymentStatus(row)) ? `<button class="primary mini" type="button" data-pay-reservation="${escapeHtml(row.id)}">결제하기</button>` : ""}
                 ${!['완료', '취소'].includes(row.status) && !getRefundRequestFor(row) ? `<button class="secondary mini" type="button" data-cancel-request="${escapeHtml(row.id)}">취소·환불 요청</button>` : ""}
                 ${getRefundRequestFor(row) ? `<small class="student-review-state">${escapeHtml(refundRequestLabel(getRefundRequestFor(row)))}</small>` : ""}
+                ${row.status === "일정변경대기" ? `<small class="student-review-state">변경 제안: ${escapeHtml(row.proposedTime || "시간 확인 필요")}</small><button class="primary mini" type="button" data-student-action="accept-reschedule" data-reservation-id="${escapeHtml(row.id)}">변경 승인</button><button class="secondary mini" type="button" data-student-action="reject-reschedule" data-reservation-id="${escapeHtml(row.id)}">거절</button>` : ""}
+                ${row.status === "완료확정대기" ? `<button class="primary mini" type="button" data-student-action="confirm-complete" data-reservation-id="${escapeHtml(row.id)}">수업 완료 확인</button>` : ""}
               </div>
             </div>
           `).join("") || `
@@ -128,6 +130,9 @@ function renderStudentHome() {
       event.preventDefault();
       submitReservationReview(form.dataset.reviewForm, form);
     });
+  });
+  document.querySelectorAll("[data-student-action]").forEach((button) => {
+    button.addEventListener("click", () => handleStudentReservationAction(button));
   });
 }
 
@@ -196,7 +201,11 @@ function renderCoachDashboard(container) {
             <em>${escapeHtml(booking.status || "신규")}</em>
             <span><strong>${escapeHtml(booking.student || "수강생")}</strong><small>${escapeHtml(booking.lesson || booking.coachName || "강의")} · ${escapeHtml(booking.time || "시간 미정")} · ${escapeHtml(booking.contact || "연락처 없음")}</small></span>
             <small>${escapeHtml(booking.createdAtText || "-")} · ${escapeHtml(booking.coachPrice || "가격 상담")}</small>
-            ${booking.status === "코치확정대기" && paymentStatus(booking) === "PAID" ? `<button class="primary mini" type="button" data-coach-confirm-reservation="${escapeHtml(booking.id)}">구매 확정</button>` : ""}
+            <div class="student-actions">
+              ${!["예약확정", "완료확정대기", "완료", "취소"].includes(booking.status) ? `<button class="primary mini" type="button" data-coach-action="accept" data-reservation-id="${escapeHtml(booking.id)}">수락</button>` : ""}
+              ${!["완료", "취소"].includes(booking.status) ? `<button class="secondary mini" type="button" data-coach-action="reschedule" data-reservation-id="${escapeHtml(booking.id)}">일정 변경</button><button class="secondary mini" type="button" data-coach-action="reject" data-reservation-id="${escapeHtml(booking.id)}">거절</button>` : ""}
+              ${booking.status === "예약확정" && paymentStatus(booking) === "PAID" ? `<button class="primary mini" type="button" data-coach-action="complete" data-reservation-id="${escapeHtml(booking.id)}">완료 요청</button>` : ""}
+            </div>
           </div>
         `).join("") : `
           <div class="student-empty"><strong>예약 내역이 없습니다.</strong><span>예약이 접수되면 이곳에서 수강생과 상태를 확인할 수 있습니다.</span></div>
@@ -204,27 +213,50 @@ function renderCoachDashboard(container) {
       </div>
     </section>
   `;
-  document.querySelectorAll("[data-coach-confirm-reservation]").forEach((button) => {
-    button.addEventListener("click", () => confirmCoachReservation(button.dataset.coachConfirmReservation, button));
+  document.querySelectorAll("[data-coach-action]").forEach((button) => {
+    button.addEventListener("click", () => handleCoachReservationAction(button));
   });
 }
 
-async function confirmCoachReservation(reservationId, button) {
-  if (!reservationId || !window.confirm("이 강의 일정과 구매를 확정할까요?")) return;
+async function handleCoachReservationAction(button) {
+  const reservationId = button.dataset.reservationId;
+  const action = button.dataset.coachAction;
+  let payload = {};
+  if (action === "reschedule") {
+    const proposedTime = window.prompt("수강생에게 제안할 새 일정을 입력하세요.", "");
+    if (!proposedTime) return;
+    payload = { proposedTime };
+  } else if (action === "reject") {
+    const reason = window.prompt("거절 사유를 입력하세요. 결제된 건은 관리자 환불 요청으로 접수됩니다.", "일정 진행 불가");
+    if (!reason) return;
+    payload = { reason };
+  } else if (!window.confirm(action === "complete" ? "수강생에게 수업 완료 확인을 요청할까요?" : "이 예약을 수락할까요?")) return;
   const originalText = button.textContent;
   button.disabled = true;
-  button.textContent = "확정 중";
+  button.textContent = "처리 중";
   try {
-    await confirmCoachReservationRequest(reservationId);
+    await runCoachReservationAction(reservationId, action, payload);
     await loadCoachReservations();
-    alert("구매와 일정이 확정되었습니다.");
+    alert(action === "reject" ? "거절 처리가 접수되었습니다." : "예약을 처리했습니다.");
   } catch (error) {
-    alert(`구매를 확정하지 못했습니다.\n${error.message}`);
+    alert(`예약을 처리하지 못했습니다.\n${error.message}`);
     button.disabled = false;
     button.textContent = originalText;
   }
 }
 
-  return { renderStudentHome, setStudentHeader, renderCoachDashboard, confirmCoachReservation };
+async function handleStudentReservationAction(button) {
+  const label = button.dataset.studentAction === "confirm-complete" ? "수업 완료를 확인할까요?" : "일정 변경 요청을 처리할까요?";
+  if (!window.confirm(label)) return;
+  button.disabled = true;
+  try {
+    await runStudentReservationAction(button.dataset.reservationId, button.dataset.studentAction);
+    await loadStudentReservations();
+  } catch (error) {
+    alert(`요청을 처리하지 못했습니다.\n${error.message}`);
+    button.disabled = false;
+  }
 }
 
+  return { renderStudentHome, setStudentHeader, renderCoachDashboard, handleCoachReservationAction, handleStudentReservationAction };
+}

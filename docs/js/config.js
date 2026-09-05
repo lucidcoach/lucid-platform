@@ -8,5 +8,5 @@ export const THEME_KEY = "coach-theme";
 export const EMAIL_MAX_LENGTH = 254;
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
-export const RESERVATION_STATUSES = ["신규", "결제대기", "코치확정대기", "상담중", "예약확정", "완료", "취소"];
+export const RESERVATION_STATUSES = ["신규", "상담중", "결제대기", "코치확정대기", "일정변경대기", "예약확정", "완료확정대기", "완료", "취소"];
 export const COACH_API_TIMEOUT_MS = 60000;
