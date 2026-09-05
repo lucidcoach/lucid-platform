@@ -720,7 +720,7 @@ function renderLessonDetailMarkup(coach) {
         ${state.currentUser ? "" : `
           <div class="booking-route">
             <button class="primary" type="button" data-open-auth="login">강의 구매</button>
-            <button class="secondary" type="button" data-open-auth="guest">비회원 강의 구매</button>
+            <button class="secondary" type="button" data-open-auth="guest">비회원 상담 문의</button>
           </div>
         `}
         <div id="lessonBookingMount"></div>

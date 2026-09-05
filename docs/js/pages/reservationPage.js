@@ -415,7 +415,7 @@ function renderBookingDetail() {
     const selected = booking.feedback?.selected_lesson || {};
     panel.hidden = false;
     panel.innerHTML = `
-      <h3>비회원 강의 구매 문의</h3>
+      <h3>비회원 상담 문의</h3>
       <div class="booking-detail-grid">
         ${renderDetailItem("접수 시간", booking.createdAtText)}
         ${renderDetailItem("Riot 닉네임#태그", booking.studentName)}

@@ -9,11 +9,17 @@ import {
 import { state, text } from "../catalog.js";
 import {
   deleteCurrentUser as deleteCurrentUserApi,
+  fetchAccountOverview,
   fetchCurrentUser,
   loginUser,
   logoutAuthSessions,
+  requestPasswordReset,
+  resetPassword,
   signupUser,
+  updateAccountPassword,
+  updatePayoutProfile,
   updateCurrentUser,
+  updateRiotAccounts,
   userIsAdmin,
   userIsCoach,
   userRoles,
@@ -31,6 +37,10 @@ export function createAuthAccountPage({
 }) {
 function showOAuthResult() {
   const url = new URL(window.location.href);
+  if (url.searchParams.get("reset_token")) {
+    openAuthModal("reset");
+    return;
+  }
   const error = url.searchParams.get("oauth_error");
   const success = url.searchParams.get("oauth") === "success";
   if (!error && !success) return;
@@ -151,7 +161,7 @@ function renderUserActions() {
     loginButton.title = "로그인";
     loginButton.setAttribute("aria-label", "로그인");
     loginButton.classList.remove("active-user");
-    guestButton.textContent = "비회원 강의 구매";
+    guestButton.textContent = "비회원 상담 문의";
     if (discordButton) {
       discordButton.hidden = false;
       discordButton.textContent = "Discord로 계속하기";
@@ -217,7 +227,7 @@ function openAuthModal(mode = "login") {
   const modal = $("authModal");
   const body = $("authBody");
   if (!modal || !body) return;
-  const nextMode = ["login", "signup", "guest"].includes(mode) ? mode : "login";
+  const nextMode = ["login", "signup", "guest", "forgot", "reset"].includes(mode) ? mode : "login";
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.classList.toggle("active", button.dataset.authMode === nextMode);
   });
@@ -242,6 +252,35 @@ function bindPasswordToggles(root = document) {
 }
 
 function renderAuthMarkup(mode) {
+  if (mode === "forgot") {
+    return `
+      <form class="auth-content" id="authForm">
+        <span class="eyebrow">계정 복구</span>
+        <h2 id="authTitle">비밀번호 찾기</h2>
+        <p>가입한 이메일로 30분 동안 사용할 수 있는 재설정 링크를 보냅니다.</p>
+        <label>이메일<input name="email" type="email" required maxlength="${EMAIL_MAX_LENGTH}" autocomplete="email"></label>
+        <button class="primary" type="submit">재설정 링크 보내기</button>
+        <button class="secondary" type="button" id="backToLoginBtn">로그인으로 돌아가기</button>
+        <span class="auth-status" id="authStatus" aria-live="polite"></span>
+      </form>
+    `;
+  }
+  if (mode === "reset") {
+    return `
+      <form class="auth-content" id="authForm">
+        <span class="eyebrow">계정 복구</span>
+        <h2 id="authTitle">새 비밀번호 설정</h2>
+        <label>새 비밀번호
+          <span class="password-field">
+            <input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="8자 이상, 128자 이하">
+            <button class="password-toggle" type="button" data-toggle-password>보기</button>
+          </span>
+        </label>
+        <button class="primary" type="submit">비밀번호 변경</button>
+        <span class="auth-status" id="authStatus" aria-live="polite"></span>
+      </form>
+    `;
+  }
   if (mode === "signup") {
     return `
       <form class="auth-content" id="authForm">
@@ -265,15 +304,15 @@ function renderAuthMarkup(mode) {
     const selected = state.coaches.find((coach) => coach.id === state.selectedCoachId);
     return `
       <form class="auth-content" id="guestConsultForm">
-        <span class="eyebrow">비회원 강의 구매</span>
-        <h2 id="authTitle">비회원으로 강의 구매</h2>
-        <p>로그인 없이 Riot ID와 연락처를 남기면 운영진이 확인 후 구매 일정을 안내합니다.</p>
+        <span class="eyebrow">비회원 상담 문의</span>
+        <h2 id="authTitle">로그인 없이 상담 문의</h2>
+        <p>Riot ID와 연락처를 남기면 운영진이 확인 후 구매 방법과 일정을 안내합니다. 이 단계에서는 결제되지 않습니다.</p>
         ${selected ? `<div class="guest-selected"><span>선택 강의</span><strong>${escapeHtml(selected.name)}</strong><em>${escapeHtml(selected.price)}</em></div>` : ""}
         <label>Riot 닉네임#태그<input name="riotId" required placeholder="Riot 닉네임#태그"></label>
         <label>연락처<input name="contact" required placeholder="디스코드 또는 이메일"></label>
         <label>받고싶은 피드백 라인 및 포인트<textarea name="feedbackPoint" required rows="4" placeholder="예: 탑 라인, 가렌 1/5/10 게임 라인전이 잘 안풀려서 피드백 받고 싶습니다."></textarea></label>
         <label>강의 방식<textarea name="lessonStyle" required rows="3" placeholder="예: 주2회 한달 강의 희망합니다."></textarea></label>
-        <button class="primary" type="submit">비회원 강의 구매</button>
+        <button class="primary" type="submit">상담 문의 보내기</button>
         <span class="auth-status" id="guestConsultStatus" aria-live="polite"></span>
       </form>
     `;
@@ -291,6 +330,7 @@ function renderAuthMarkup(mode) {
         </span>
       </label>
       <button class="primary" type="submit">로그인</button>
+      <button class="secondary" type="button" id="forgotPasswordBtn">비밀번호를 잊으셨나요?</button>
       <div class="auth-divider"><span>또는 소셜 계정으로</span></div>
       <div class="social-auth" aria-label="소셜 로그인">
         <button class="google" type="button" data-oauth-provider="google"><img src="assets/google-logo.jpg" alt=""><span>Google로 계속하기</span></button>
@@ -309,6 +349,8 @@ function bindAuthForm(mode) {
   }
   const form = $("authForm");
   if (!form) return;
+  $("forgotPasswordBtn")?.addEventListener("click", () => openAuthModal("forgot"));
+  $("backToLoginBtn")?.addEventListener("click", () => openAuthModal("login"));
   form.querySelectorAll("[data-oauth-provider]").forEach((button) => {
     button.addEventListener("click", () => {
       window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${button.dataset.oauthProvider}/start`);
@@ -320,10 +362,25 @@ function bindAuthForm(mode) {
     const status = $("authStatus");
     const originalText = button.textContent;
     button.disabled = true;
-    button.textContent = mode === "signup" ? "가입 중" : "로그인 중";
+    button.textContent = mode === "signup" ? "가입 중" : (mode === "forgot" ? "전송 중" : (mode === "reset" ? "변경 중" : "로그인 중"));
     if (status) status.textContent = "";
     const data = new FormData(form);
     try {
+      if (mode === "forgot") {
+        await requestPasswordReset(data.get("email"));
+        if (status) status.textContent = "가입된 이메일이면 재설정 링크를 보냈습니다.";
+        return;
+      }
+      if (mode === "reset") {
+        const url = new URL(window.location.href);
+        const token = url.searchParams.get("reset_token") || "";
+        await resetPassword(token, data.get("password"));
+        url.searchParams.delete("reset_token");
+        history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+        alert("비밀번호를 변경했습니다. 새 비밀번호로 로그인해주세요.");
+        openAuthModal("login");
+        return;
+      }
       const user = mode === "signup"
         ? await signupUser({
             displayName: data.get("displayName"),
@@ -335,6 +392,8 @@ function bindAuthForm(mode) {
             password: data.get("password"),
           });
       state.currentUser = user;
+      state.accountOverview = null;
+      state.accountOverviewLoadState = "idle";
       if (state.currentUser?.coachKey) state.coachSelfKey = state.currentUser.coachKey;
       state.coachDashboardLoadState = "idle";
       state.coachDashboardLoadError = "";
@@ -380,7 +439,7 @@ function bindGuestConsultForm() {
       });
       form.reset();
       closeAuthModal();
-       alert("비회원 강의 구매 문의가 접수되었습니다. 운영진이 연락드릴게요.");
+      alert("비회원 상담 문의가 접수되었습니다. 운영진이 연락드릴게요.");
     } catch (error) {
       if (status) status.textContent = error.message || "문의를 접수하지 못했습니다.";
     } finally {
@@ -551,12 +610,16 @@ function renderAccountPanelMarkup() {
   if (!state.currentUser) return "";
   const user = state.currentUser;
   const nickname = user.displayName || user.nickname || "";
-  const riotId = user.riotId || user.riot_id || "";
+  const riotId = user.riotId || user.riot_id || user.riotAccounts?.[0] || "";
   const availableAt = user.nicknameChangeAvailableAt || user.nickname_change_available_at || "";
   const availableText = availableAt ? formatDateTime(availableAt) : "변경 가능";
   const needsNickname = Boolean(user.needsNickname || user.nicknameSetupRequired || user.nickname_setup_required);
   const roleLabel = isAdminUser() ? "관리자 계정" : (isCoachUser() ? "코치 계정" : "수강생 계정");
   const discordConnected = Boolean(user.discordConnected || user.discord_connected || user.discordDisplayName || user.discord_display_name);
+  const overview = state.accountOverview || {};
+  const payout = overview.payout || {};
+  const income = overview.income || {};
+  const incomeEntries = Array.isArray(income.entries) ? income.entries.slice(0, 10) : [];
   return `
     <section class="account-overview">
       <div class="account-avatar">${escapeHtml((nickname || "L").slice(0, 1).toUpperCase())}</div>
@@ -571,6 +634,31 @@ function renderAccountPanelMarkup() {
     </section>
 
     ${renderAccountDashboardMarkup()}
+
+    ${isCoachUser() ? `
+      <section class="student-panel account-panel">
+        <div class="account-section-head settings">
+          <div><span>정산 관리</span><strong>수동 정산용 매출 근거</strong></div>
+        </div>
+        ${state.accountOverviewLoadState === "error" ? `<p class="account-required">정산 정보를 불러오지 못했습니다.</p>` : `
+          <div class="account-kpi-row">
+            <article><span>이번 달 결제액</span><strong>${formatWon(income.monthGross || 0)}</strong></article>
+            <article><span>예상 정산액</span><strong>${formatWon(income.monthNet || 0)}</strong></article>
+            <article><span>중개 수수료</span><strong>${Number(income.commissionRate || 0)}%</strong></article>
+          </div>
+          <form class="account-setting-card" id="accountPayoutForm">
+            <div><span>정산 계좌</span><small>관리자 수동 송금용</small></div>
+            <input name="bankName" required maxlength="40" placeholder="은행명" value="${escapeHtml(payout.bankName || "")}">
+            <input name="accountNumber" required maxlength="80" inputmode="numeric" placeholder="계좌번호" value="${escapeHtml(payout.accountNumber || "")}">
+            <div class="account-inline-field"><input name="accountHolder" required maxlength="40" placeholder="예금주" value="${escapeHtml(payout.accountHolder || "")}"><button class="secondary" type="submit" id="accountPayoutSaveBtn">저장</button></div>
+            <span class="save-status" id="accountPayoutStatus" aria-live="polite"></span>
+          </form>
+          <div class="account-upcoming-list">
+            ${incomeEntries.length ? incomeEntries.map((entry) => `<div><strong>${escapeHtml(entry.date || "날짜 미정")} · ${formatWon(entry.net || 0)}</strong><p>${escapeHtml(entry.lesson || "강의")} · 결제 ${formatWon(entry.gross || 0)} · 수수료 ${formatWon(entry.fee || 0)} · ${escapeHtml(entry.status || "정산 예정")}</p></div>`).join("") : `<div><strong>정산 예정 내역 없음</strong><p>결제가 승인되면 여기에 표시됩니다.</p></div>`}
+          </div>
+        `}
+      </section>
+    ` : ""}
 
     <section class="student-panel account-panel" id="accountPanel">
       <div class="account-section-head settings">
@@ -587,6 +675,12 @@ function renderAccountPanelMarkup() {
           <div><span>Riot ID</span><small>게임이름#태그</small></div>
           <div class="account-inline-field"><input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"><button class="secondary" type="submit" id="accountRiotSaveBtn">저장</button></div>
           <span class="save-status" id="accountRiotStatus" aria-live="polite"></span>
+        </form>
+        <form class="account-setting-card" id="accountPasswordForm">
+          <div><span>비밀번호</span><small>8자 이상</small></div>
+          <input name="currentPassword" type="password" autocomplete="current-password" placeholder="현재 비밀번호 (소셜 전용 계정은 비워두기)">
+          <div class="account-inline-field"><input name="password" type="password" required minlength="${PASSWORD_MIN_LENGTH}" maxlength="${PASSWORD_MAX_LENGTH}" autocomplete="new-password" placeholder="새 비밀번호"><button class="secondary" type="submit" id="accountPasswordSaveBtn">변경</button></div>
+          <span class="save-status" id="accountPasswordStatus" aria-live="polite"></span>
         </form>
       </div>
       <div class="account-link-row">
@@ -608,6 +702,8 @@ function mountAccountPanel(container) {
   container.insertAdjacentHTML("afterbegin", renderAccountPanelMarkup());
   $("accountNicknameForm")?.addEventListener("submit", saveAccountNickname);
   $("accountRiotForm")?.addEventListener("submit", saveAccountRiotId);
+  $("accountPasswordForm")?.addEventListener("submit", saveAccountPassword);
+  $("accountPayoutForm")?.addEventListener("submit", saveAccountPayout);
   document.querySelectorAll("[data-account-oauth]").forEach((button) => button.addEventListener("click", () => startAccountOAuth(button.dataset.accountOauth)));
   const openCoachCenter = () => { state.coachSelfKey = getFallbackCoachKey(); state.activeView = "coachSelf"; renderApp(); };
   const openStudentCenter = () => { state.activeView = "student"; renderApp(); };
@@ -628,6 +724,42 @@ function mountAccountPanel(container) {
   $("accountStudentCenterBtn")?.addEventListener("click", openStudentCenter);
   $("accountStudentQuickBtn")?.addEventListener("click", openStudentCenter);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
+  if (state.accountOverviewLoadState === "idle") loadAccountOverview();
+}
+
+async function loadAccountOverview() {
+  state.accountOverviewLoadState = "loading";
+  try {
+    state.accountOverview = await fetchAccountOverview();
+    state.accountOverviewLoadState = "loaded";
+  } catch {
+    state.accountOverview = null;
+    state.accountOverviewLoadState = "error";
+  }
+  if (state.activeView === "account") renderApp();
+}
+
+async function saveAccountPayout(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  const status = $("accountPayoutStatus");
+  const button = $("accountPayoutSaveBtn");
+  if (button) button.disabled = true;
+  if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
+  try {
+    const payout = await updatePayoutProfile({
+      bankName: data.get("bankName"),
+      accountNumber: data.get("accountNumber"),
+      accountHolder: data.get("accountHolder"),
+    });
+    state.accountOverview = { ...(state.accountOverview || {}), payout };
+    if (status) { status.textContent = "정산 계좌를 저장했습니다."; status.className = "save-status success"; }
+  } catch (error) {
+    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 async function saveAccountNickname(event) {
@@ -647,7 +779,9 @@ async function saveAccountNickname(event) {
   }
   try {
     const user = await updateCurrentUser({ displayName: nickname, nickname });
-    state.currentUser = user;
+      state.currentUser = user;
+      state.accountOverview = null;
+      state.accountOverviewLoadState = "idle";
     if (status) {
       status.textContent = `저장 완료 · 다음 변경 가능: ${formatDateTime(user.nicknameChangeAvailableAt || user.nickname_change_available_at || "") || "변경 가능"}`;
       status.className = "save-status success";
@@ -682,10 +816,31 @@ async function saveAccountRiotId(event) {
   if (button) button.disabled = true;
   if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
   try {
-    const user = await updateCurrentUser({ riotId });
+    const user = await updateRiotAccounts(riotId ? [riotId] : []);
     state.currentUser = user;
+    state.accountOverview = null;
+    state.accountOverviewLoadState = "idle";
     if (status) { status.textContent = "저장 완료"; status.className = "save-status success"; }
     renderApp();
+  } catch (error) {
+    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function saveAccountPassword(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = $("accountPasswordStatus");
+  const button = $("accountPasswordSaveBtn");
+  const data = new FormData(form);
+  if (button) button.disabled = true;
+  if (status) { status.textContent = "변경 중..."; status.className = "save-status loading"; }
+  try {
+    await updateAccountPassword(data.get("currentPassword"), data.get("password"));
+    form.reset();
+    if (status) { status.textContent = "비밀번호를 변경했습니다."; status.className = "save-status success"; }
   } catch (error) {
     if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
   } finally {
@@ -698,6 +853,8 @@ async function deleteCurrentAccount() {
   try {
     await deleteCurrentUserApi();
     state.currentUser = null;
+    state.accountOverview = null;
+    state.accountOverviewLoadState = "idle";
     state.activeView = "market";
     state.bookings = [];
     alert("회원탈퇴가 완료되었습니다.");
@@ -715,6 +872,8 @@ async function loadCurrentUser() {
     const user = await fetchCurrentUser();
     if (requestId !== state.authRequestId) return;
     state.currentUser = user;
+    state.accountOverview = null;
+    state.accountOverviewLoadState = "idle";
     state.coachSelfLessons = null;
     if (state.currentUser?.coachKey) state.coachSelfKey = state.currentUser.coachKey;
     state.coachSchedule = { weekly: [], overrides: [], slots: [] };
@@ -736,6 +895,8 @@ async function loadCurrentUser() {
   } catch {
     if (requestId !== state.authRequestId) return;
     state.currentUser = null;
+    state.accountOverview = null;
+    state.accountOverviewLoadState = "idle";
     state.coachSelfLessons = null;
     state.authLoadState = "error";
     renderApp();
@@ -749,6 +910,8 @@ async function logoutUser() {
   } finally {
     sessionStorage.removeItem(ADMIN_TOKEN_KEY);
     state.currentUser = null;
+    state.accountOverview = null;
+    state.accountOverviewLoadState = "idle";
     state.coachDashboardLoadState = "idle";
     state.coachDashboardLoadError = "";
     state.studentReservationLoadState = "idle";
@@ -787,6 +950,12 @@ function getAuthErrorMessage(error) {
     cannot_delete_account: "현재 계정은 회원탈퇴를 처리할 수 없습니다.",
     missing_credentials: "이메일과 비밀번호를 입력해주세요.",
     invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
+    current_password_invalid: "현재 비밀번호가 맞지 않습니다.",
+    invalid_reset_token: "재설정 링크가 만료되었거나 올바르지 않습니다.",
+    rate_limited: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+    too_many_requests: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
+    invalid_payout_profile: "은행명, 계좌번호, 예금주를 모두 입력해주세요.",
+    duplicate_riot_id: "같은 Riot ID가 중복되었습니다.",
     invalid_riot_id: "Riot ID는 게임이름#태그 형식으로 입력해주세요.",
   };
   return messages[error] || "처리하지 못했습니다. 잠시 후 다시 시도해주세요.";

@@ -213,6 +213,8 @@ export const state = {
   currentUser: null,
   authLoadState: "idle",
   authRequestId: 0,
+  accountOverview: null,
+  accountOverviewLoadState: "idle",
   availabilityByCoach: {},
   availabilityLoadStates: {},
   coachAvailability: [],

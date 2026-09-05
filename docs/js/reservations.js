@@ -73,7 +73,7 @@ export async function submitGuestConsultation({ selectedCoach, riotId, contact, 
   if (!cleanRiotId || !cleanContact || !cleanFeedbackPoint || !cleanLessonStyle) throw new Error("필수 항목을 모두 입력해주세요.");
   return submitReservation({
     coachId: selectedCoach?.id || "guest-consultation",
-    coachName: selectedCoach ? `${selectedCoach.name} 강의 구매` : "비회원 강의 구매",
+    coachName: selectedCoach ? `${selectedCoach.name} 상담 문의` : "비회원 상담 문의",
     coachCategory: selectedCoach?.category || "league",
     coachPrice: selectedCoach?.price || "가격 상담",
     student: cleanRiotId,
