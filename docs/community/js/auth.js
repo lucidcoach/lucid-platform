@@ -133,7 +133,14 @@ export async function initCommunityAuth(){
   document.getElementById("communityAuthClose")?.addEventListener("click",closeModal);
   document.getElementById("communityAuthModal")?.addEventListener("click",e=>{ if(e.target?.id==="communityAuthModal") closeModal(); });
   loginBtn?.addEventListener("click",()=>{ if(currentUser) window.dispatchEvent(new CustomEvent("lucid:open-account")); else openModal(); });
-  discordBtn?.addEventListener("click",()=>window.location.assign(apiUrl("/api/auth/oauth/discord/start")));
+  discordBtn?.addEventListener("click",()=>{
+    const connected=Boolean(currentUser?.discordConnected||currentUser?.discord_connected||currentUser?.discordDisplayName||currentUser?.discord_display_name);
+    if(currentUser && connected){
+      window.dispatchEvent(new CustomEvent("lucid:open-account"));
+      return;
+    }
+    window.location.assign(apiUrl("/api/auth/oauth/discord/start"));
+  });
   logoutBtn?.addEventListener("click",async()=>{ await logoutCommunityUser(); window.dispatchEvent(new CustomEvent("lucid:logged-out")); });
   form?.addEventListener("submit",async e=>{
     e.preventDefault(); const status=document.getElementById("communityAuthStatus");

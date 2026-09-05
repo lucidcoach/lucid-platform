@@ -9,6 +9,8 @@ const RADAR_METRICS = [["csm","성장"],["gpm","골드"],["dpm","딜량"],["kda"
 const TIER_ORDER=["I","B","S","G","P","E","D","M","GM","C"];
 const TIER_NAME={I:"아이언",B:"브론즈",S:"실버",G:"골드",P:"플래티넘",E:"에메랄드",D:"다이아몬드",M:"마스터",GM:"그랜드마스터",C:"챌린저"};
 let analysisState={tab:"overview",role:"정글",champion:""};
+let dashboardCache={key:"",loadedAt:0,matches:null,profile:null,solo:null,identity:null};
+const DASHBOARD_CACHE_TTL=5*60*1000;
 
 function tierBand(tier=""){const raw=String(tier||"");const t=raw.toUpperCase().replace(/[\s_-]+/g,"");if(t.startsWith("GRANDMASTER")||t.startsWith("GM")||raw.includes("그랜드마스터"))return"GM";if(t.startsWith("CHALLENGER")||raw.includes("챌린저"))return"C";if(t.startsWith("MASTER")||t==="M"||raw.includes("마스터"))return"M";const m=t.match(/^(D|E|P|G|S|B|I)/);return m?m[1]:"";}
 function tierName(tier){const b=tierBand(tier);return TIER_NAME[b]||String(tier||"미배치");}
@@ -55,8 +57,49 @@ function rolePanel(rows){const role=analysisState.role||"정글",mine=rows.filte
 function comparePanel(rows){const band=tierBand(rows[0]?.tier),same=rows.filter(r=>tierBand(r.tier)===band),next=TIER_ORDER[TIER_ORDER.indexOf(band)+1]||"",upper=rows.filter(r=>tierBand(r.tier)===next);const grade=METRICS.map(([k])=>pctDiff(avg(rows,k),avg(same,k))).filter(Number.isFinite);const score=grade.length?grade.reduce((a,b)=>a+b,0)/grade.length:0;const letter=score>=15?"A":score>=5?"A-":score>=-5?"B+":score>=-15?"B":"C+";return`<div class="ga-compare-layout"><section class="ga-panel ga-grade"><small>BENCHMARK</small><strong>${letter}</strong><h3>${tierName(band)} 평균 대비</h3><p>현재 저장된 내전 상세기록을 기준으로 계산한 상대 평가입니다.</p></section><section class="ga-panel"><div class="ga-panel-head"><div><small>DETAIL</small><h3>내 기록 / 같은 티어 / 한 티어 위</h3></div></div><div class="analysis-tier-table"><div class="analysis-tier-head"><span>지표</span><span>나</span><span>${tierName(band)}</span><span>${tierName(next)}</span><span>동티어 차이</span><span></span><span></span></div>${METRICS.map(([k,label,d])=>{const me=avg(rows,k),sameAvg=avg(same,k),up=avg(upper,k),diff=pctDiff(me,sameAvg);return`<div class="analysis-tier-row"><strong>${label}</strong><span>${fmt(me,d)}</span><span>${fmt(sameAvg,d)}</span><span>${fmt(up,d)}</span><span class="${diff>=0?"positive":"negative"}">${diff==null?"-":`${diff>=0?"+":""}${diff.toFixed(1)}%`}</span><span></span><span></span></div>`;}).join("")}</div></section></div>`;}
 function growthPanel(rows){const recent=[...rows].sort((a,b)=>String(a.time).localeCompare(String(b.time))).slice(-30);return`<section class="ga-panel"><div class="ga-panel-head"><div><small>GROWTH</small><h3>최근 경기 성장 변화</h3></div><div class="ga-range"><button>10경기</button><button class="active">20경기</button><button>30경기</button></div></div>${growthBlock(recent)}<div class="ga-growth-note"><strong>데이터 소스</strong><span class="active">Lucid 내전</span><span>솔로랭크 API 연결 후 함께 표시</span></div></section>`;}
 
-async function renderDashboard(){switchView("analysis");const target=$("analysisResults");if(!target)return;target.innerHTML=`<div class="analysis-loading">게임 분석 데이터를 불러오는 중...</div>`;const identity=getAnalysisIdentity();if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록하면 솔로랭크와 내전 분석을 연결할 수 있습니다.</span></div>`;return;}try{const[matches,profile,solo]=await Promise.all([loadAllMatches(),loadProfile(identity),loadSoloSummary()]);const rows=ownRows(matches,identity);const body=analysisState.tab==="champion"?championPanel(matches,rows):analysisState.tab==="role"?rolePanel(rows):analysisState.tab==="compare"?comparePanel(rows):analysisState.tab==="growth"?growthPanel(rows):overviewPanel(rows,profile,solo);target.innerHTML=`${profileHead(profile,identity,solo)}${tabs()}<div class="ga-tab-body">${body}</div>`;bindDashboardEvents(target);}catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
-function bindDashboardEvents(target){target.querySelectorAll("[data-ga-tab]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.tab=btn.dataset.gaTab;renderDashboard();}));target.querySelectorAll("[data-ga-role]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.role=btn.dataset.gaRole;renderDashboard();}));target.querySelectorAll("[data-ga-champion]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.champion=btn.dataset.gaChampion;analysisState.tab="champion";renderDashboard();}));target.querySelector("#gaChampionSelect")?.addEventListener("change",e=>{analysisState.champion=e.target.value;renderDashboard();});target.querySelector("#gaRoleSelect")?.addEventListener("change",e=>{analysisState.role=e.target.value;renderDashboard();});}
+function dashboardIdentityKey(identity){
+  const riotId=(getRiotAccounts()||[])[0]||"";
+  return `${identity?.guildId||""}:${identity?.userId||""}:${riotId}`;
+}
+function invalidateDashboardCache(){dashboardCache={key:"",loadedAt:0,matches:null,profile:null,solo:null,identity:null};}
+function dashboardCacheValid(identity){return dashboardCache.matches&&dashboardCache.key===dashboardIdentityKey(identity)&&(Date.now()-dashboardCache.loadedAt)<DASHBOARD_CACHE_TTL;}
+function renderDashboardFromData(target,matches,profile,solo,identity){
+  const rows=ownRows(matches,identity);
+  const body=analysisState.tab==="champion"?championPanel(matches,rows):analysisState.tab==="role"?rolePanel(rows):analysisState.tab==="compare"?comparePanel(rows):analysisState.tab==="growth"?growthPanel(rows):overviewPanel(rows,profile,solo);
+  target.innerHTML=`${profileHead(profile,identity,solo)}${tabs()}<div class="ga-tab-body">${body}</div>`;
+  bindDashboardEvents(target);
+}
+async function renderDashboard({forceReload=false}={}){
+  switchView("analysis");
+  const target=$("analysisResults");
+  if(!target)return;
+  const identity=getAnalysisIdentity();
+  if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록하면 솔로랭크와 내전 분석을 연결할 수 있습니다.</span></div>`;return;}
+  if(!forceReload&&dashboardCacheValid(identity)){
+    renderDashboardFromData(target,dashboardCache.matches,dashboardCache.profile,dashboardCache.solo,identity);
+    return;
+  }
+  target.innerHTML=`<div class="analysis-loading">게임 분석 데이터를 불러오는 중...</div>`;
+  try{
+    const[matches,profile,solo]=await Promise.all([loadAllMatches(),loadProfile(identity),loadSoloSummary()]);
+    dashboardCache={key:dashboardIdentityKey(identity),loadedAt:Date.now(),matches,profile,solo,identity};
+    renderDashboardFromData(target,matches,profile,solo,identity);
+  }catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+function rerenderDashboardFromCache(){
+  const target=$("analysisResults");
+  const identity=getAnalysisIdentity();
+  if(target&&dashboardCacheValid(identity)){renderDashboardFromData(target,dashboardCache.matches,dashboardCache.profile,dashboardCache.solo,identity);return true;}
+  renderDashboard();
+  return false;
+}
+function bindDashboardEvents(target){
+  target.querySelectorAll("[data-ga-tab]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.tab=btn.dataset.gaTab;rerenderDashboardFromCache();}));
+  target.querySelectorAll("[data-ga-role]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.role=btn.dataset.gaRole;rerenderDashboardFromCache();}));
+  target.querySelectorAll("[data-ga-champion]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.champion=btn.dataset.gaChampion;analysisState.tab="champion";rerenderDashboardFromCache();}));
+  target.querySelector("#gaChampionSelect")?.addEventListener("change",e=>{analysisState.champion=e.target.value;rerenderDashboardFromCache();});
+  target.querySelector("#gaRoleSelect")?.addEventListener("change",e=>{analysisState.role=e.target.value;rerenderDashboardFromCache();});
+}
 
 export async function renderCompactMatchAnalysis(detail={},target){if(!target)return;const{userId="",guildId="",matchId=""}=detail;if(!canAnalyzePlayer(userId,guildId)){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석 권한이 필요합니다.</strong><span>${canAnalyzeAllPlayers()?"":"로그인 후 내 정보에 등록한 Riot ID의 경기만 분석할 수 있습니다."}</span></div>`;return;}target.innerHTML=`<div class="compact-analysis-loading">분석 중...</div>`;try{const matches=await loadAllMatches();const match=matches.find(m=>String(m.matchId)===String(matchId));const focus=match?findFocus(match,userId):null;if(!focus)throw new Error("경기 데이터를 찾지 못했습니다.");const samples=uniquePlayerMatches(byChampionRole(matches,focus.champion,focus.role));const groups=benchmarkGroups(samples),band=tierBand(focus.tier),current=groupFor(groups,band);target.innerHTML=`<div class="compact-analysis-card"><div class="compact-analysis-title"><div><small>간단 분석</small><strong>${esc(focus.champion)} · ${esc(focus.role)}</strong><span>이번 경기 ${esc(focus.tier||"-")} → ${tierName(band)} 평균</span></div><div class="compact-analysis-legend"><i></i>내 수치 <b></b>티어 평균</div></div>${compactRadar(focus,current)}<div class="compact-analysis-messages">${compactMessages(focus,current,band).map(x=>`<p>${esc(x)}</p>`).join("")}</div><button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(userId)}" data-guild-id="${esc(guildId)}" data-match-id="${esc(matchId)}" data-champion="${esc(focus.champion||"")}" data-role="${esc(focus.role||"")}">상세 분석 보기</button></div>`;}catch(e){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(e.message)}</span></div>`;}}
 
@@ -64,4 +107,4 @@ async function renderMatchAnalysis({userId="",guildId="",matchId="",champion="",
 
 export function openAnalysisFromMatch(detail={}){const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of["userId","guildId","matchId","champion","role"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
 export function applyAnalysisRoute(params){const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||"",champion:params.get("champion")||"",role:params.get("role")||""};if(detail.matchId)return renderMatchAnalysis(detail);return renderDashboard();}
-export function bindAnalysisPage(){const btn=$("analysisRunBtn");btn?.addEventListener("click",()=>{analysisState.champion=$("analysisChampion")?.value||"";analysisState.role=$("analysisRole")?.value||"정글";analysisState.tab="champion";renderDashboard();});window.addEventListener("lucid:auth-changed",()=>{if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard();});}
+export function bindAnalysisPage(){const btn=$("analysisRunBtn");btn?.addEventListener("click",()=>{analysisState.champion=$("analysisChampion")?.value||"";analysisState.role=$("analysisRole")?.value||"정글";analysisState.tab="champion";renderDashboard();});window.addEventListener("lucid:auth-changed",()=>{invalidateDashboardCache();if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard({forceReload:true});});}
