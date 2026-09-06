@@ -245,7 +245,7 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
       <input type="hidden" id="coachSelfLessonId" value="${escapeHtml(lesson.id)}">
       <div class="coach-self-editor-head">
         <div>
-          <span>${escapeHtml(lesson.coachProfileName || "코치")}</span>
+          <span>${escapeHtml(lesson.coachProfileName || "코치")} · ${lesson.saleType === "direct" ? "Lucid 직접판매" : "중개판매"}</span>
           <h3>${escapeHtml(lesson.name)}</h3>
         </div>
         <div class="coach-self-editor-actions">
@@ -292,7 +292,7 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
       </fieldset>
       <label>상세 설명<textarea id="coachSelfBio" rows="7">${escapeHtml(lesson.bio || "")}</textarea></label>
       <div class="form-actions">
-        ${!isAdminUser() ? `<button type="button" class="danger" id="coachSelfDeleteLessonBtn">강의 삭제</button>` : ""}
+        <button type="button" class="danger" id="coachSelfDeleteLessonBtn">강의 삭제</button>
         ${isAdminUser() ? `<button type="button" class="secondary" id="coachSelfOpenFullEditBtn">전체 편집 화면에서 열기</button>` : ""}
       </div>
     </form>

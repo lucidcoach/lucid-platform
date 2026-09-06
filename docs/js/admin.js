@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "./config.js";
-import { apiFetch, getAdminHeaders } from "./api.js";
+import { apiFetch, getAdminHeaders } from "./api.js?v=20260906c";
 
 const apiUrl = (path) => `${API_BASE_URL.replace(/\/$/, "")}${path}`;
 
@@ -31,6 +31,7 @@ export function normalizeAdminCoachSetting(item = {}, coaches = []) {
     coachKey,
     name: String(item.name || item.coachProfileName || item.coach_name || first.coachProfileName || first.name || coachKey || "이름 없음"),
     lessonCount: Number(item.lessonCount ?? item.lesson_count ?? publicLessons.length ?? 0),
+    lessons: Array.isArray(item.lessons) ? item.lessons : [],
     badges: Array.isArray(item.badges) ? item.badges.filter(Boolean) : [],
     commissionRate: Number.isFinite(rate) ? rate : 0,
     saleType: String(item.saleType || item.sale_type || "brokerage"),
@@ -83,6 +84,13 @@ export async function deleteCoachFromApi(id) {
   });
 }
 
+export async function deleteCoachGroupFromApi(coachKey) {
+  return requestJson(`/api/admin/coaches/${encodeURIComponent(coachKey)}`, {
+    method: "DELETE",
+    headers: getAdminHeaders(),
+  });
+}
+
 export function resetCoachesInApi(coaches) {
   return requestJson("/api/coaches/reset", {
     method: "POST",
@@ -119,10 +127,10 @@ export async function fetchCoachRequests() {
   return result.requests || [];
 }
 
-export function decideCoachRequest(id, action) {
+export function decideCoachRequest(id, action, payload = {}) {
   return requestJson(`/api/coach-requests/${encodeURIComponent(id)}/${action}`, {
     method: "POST",
     headers: getAdminHeaders(true),
-    body: JSON.stringify({}),
+    body: JSON.stringify(payload),
   });
 }

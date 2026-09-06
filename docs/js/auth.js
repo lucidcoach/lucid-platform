@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "./config.js";
-import { apiFetch } from "./api.js";
+import { apiFetch } from "./api.js?v=20260906c";
 
 export function userRoles(user) {
   const roles = Array.isArray(user?.roles)

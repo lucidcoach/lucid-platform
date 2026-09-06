@@ -3,6 +3,7 @@ import {
   createCoachRequest,
   decideCoachRequest,
   deleteCoachFromApi,
+  deleteCoachGroupFromApi,
   fetchAdminCoachSettings,
   fetchCoachRequests,
   fetchUsers,
@@ -171,9 +172,9 @@ async function submitCoachApplication(event) {
   }
 }
 
-async function approveCoachRequest(id) {
+async function approveCoachRequest(id, saleType = "brokerage") {
   try {
-    const result = await runAdminRequest(() => decideCoachRequest(id, "approve"));
+    const result = await runAdminRequest(() => decideCoachRequest(id, "approve", { saleType }));
     state.coachRequests = state.coachRequests.map((item) => item.id === id ? result.request : item);
     if (result.user) state.users = state.users.map((item) => item.id === result.user.id ? result.user : item);
     if (result.coach) {
@@ -225,16 +226,23 @@ function renderAdmin() {
     $("retryAdminCoachSettingsBtn")?.addEventListener("click", loadAdminCoachSettings);
   } else {
     target.innerHTML = visible.length ? visible.map((coach) => `
-      <button class="admin-row admin-coach-select ${coach.coachKey === state.adminSelectedCoachKey ? "active" : ""}" type="button" data-admin-coach-key="${escapeHtml(coach.coachKey)}">
+      <div class="admin-row admin-coach-select ${coach.coachKey === state.adminSelectedCoachKey ? "active" : ""}">
         <span>
-          <h4>${escapeHtml(coach.name)}</h4>
+           <h4>${escapeHtml(coach.name)}</h4>
+           <small>${coach.saleType === "direct" ? "Lucid 직접판매" : "중개판매"}</small>
           <p>${escapeHtml(coach.coachKey)} · ${coach.lessonCount}개 강의 · 수수료 ${formatCommissionRate(coach.commissionRate)}%</p>
         </span>
-        <span class="chip">${coach.coachKey === state.adminSelectedCoachKey ? "선택됨" : "관리"}</span>
-      </button>
+        <span class="admin-coach-actions">
+          <button class="secondary mini" type="button" data-admin-coach-key="${escapeHtml(coach.coachKey)}">${coach.coachKey === state.adminSelectedCoachKey ? "선택됨" : "관리"}</button>
+          <button class="danger mini" type="button" data-admin-coach-delete-list="${escapeHtml(coach.coachKey)}">코치 삭제</button>
+        </span>
+      </div>
     `).join("") : `<div class="empty">${query ? "검색 결과가 없습니다." : "등록된 코치가 없습니다."}</div>`;
     document.querySelectorAll("[data-admin-coach-key]").forEach((row) => {
       row.addEventListener("click", () => selectAdminCoach(row.dataset.adminCoachKey));
+    });
+    document.querySelectorAll("[data-admin-coach-delete-list]").forEach((button) => {
+      button.addEventListener("click", () => deleteAdminCoachGroup(button.dataset.adminCoachDeleteList));
     });
   }
   const selected = settings.find((coach) => coach.coachKey === state.adminSelectedCoachKey);
@@ -351,7 +359,8 @@ function renderCoachRequests() {
       <td>${getCoachRequestStatusLabel(request.status)}</td>
       <td>
         ${request.status === "pending" ? `
-          <div class="booking-actions">
+           <div class="booking-actions">
+             <select class="mini" data-request-sale-type="${escapeHtml(request.id)}" aria-label="판매 유형"><option value="brokerage">중개판매</option><option value="direct">Lucid 직접판매</option></select>
             <button class="mini primary-mini" type="button" data-request-approve="${escapeHtml(request.id)}">승인</button>
             <button class="mini danger-mini" type="button" data-request-reject="${escapeHtml(request.id)}">거절</button>
           </div>
@@ -364,7 +373,10 @@ function renderCoachRequests() {
     button.addEventListener("click", async () => {
       const controls = [...(button.closest("tr")?.querySelectorAll("button") || [])];
       controls.forEach((item) => { item.disabled = true; });
-      try { await approveCoachRequest(button.dataset.requestApprove); }
+      try {
+        const saleType = button.closest("tr")?.querySelector("[data-request-sale-type]")?.value || "brokerage";
+        await approveCoachRequest(button.dataset.requestApprove, saleType);
+      }
       finally { controls.forEach((item) => { item.disabled = false; }); }
     });
   });
@@ -422,6 +434,18 @@ function fillCoachForm(coach) {
   $("adminSelectedCoach").innerHTML = setting
     ? `<strong>${escapeHtml(setting.name)}</strong><span>${escapeHtml(setting.coachKey)} · ${setting.lessonCount}개 강의</span>`
     : "코치 목록에서 관리할 코치를 선택하세요.";
+  if (setting) {
+    const lessons = Array.isArray(setting.lessons) ? setting.lessons : [];
+    $("adminSelectedCoach").innerHTML += `
+      <div class="admin-lesson-list">${lessons.map((lesson) => `
+        <div class="admin-lesson-row"><span>${escapeHtml(lesson.name || "강의")}${lesson.published === false ? " · 비공개" : ""}</span><button type="button" class="danger mini" data-admin-lesson-delete="${escapeHtml(lesson.id)}">강의 삭제</button></div>
+      `).join("") || "<small>등록된 강의가 없습니다.</small>"}</div>
+      <button type="button" class="danger mini" data-admin-coach-delete="${escapeHtml(setting.coachKey)}">코치 삭제</button>`;
+    document.querySelectorAll("[data-admin-lesson-delete]").forEach((button) => {
+      button.addEventListener("click", () => deleteAdminLesson(button.dataset.adminLessonDelete));
+    });
+    document.querySelector("[data-admin-coach-delete]")?.addEventListener("click", () => deleteAdminCoachGroup(setting.coachKey));
+  }
   renderBadgePicker(setting?.badges || []);
   $("coachCommissionRate").value = setting ? formatCommissionRate(setting.commissionRate) : "";
   $("coachSaleType").value = setting?.saleType || "brokerage";
@@ -548,7 +572,7 @@ async function saveCoachFromForm() {
   };
   try {
     const saved = await runAdminRequest(() => saveAdminCoachSettings(coachKey, payload, state.coaches));
-    state.adminCoachSettings = state.adminCoachSettings.map((item) => item.coachKey === coachKey ? saved : item);
+    state.adminCoachSettings = state.adminCoachSettings.map((item) => item.coachKey === coachKey ? { ...saved, lessons: saved.lessons?.length ? saved.lessons : item.lessons } : item);
     state.adminSelectedCoachKey = coachKey;
     await loadCoachesFromApi();
     renderAdmin();
@@ -564,18 +588,34 @@ async function saveCoachFromForm() {
   }
 }
 
+async function deleteAdminLesson(id) {
+  if (!id || !window.confirm("이 강의를 삭제할까요?")) return;
+  try {
+    await runAdminRequest(() => deleteCoachFromApi(id));
+    await loadCoachesFromApi();
+    await loadAdminCoachSettings();
+  } catch (error) {
+    alert(`강의를 삭제하지 못했습니다.\n${error.message}`);
+  }
+}
+
+async function deleteAdminCoachGroup(coachKey) {
+  if (!coachKey || !window.confirm("이 코치와 모든 강의를 보관 처리할까요?")) return;
+  try {
+    await runAdminRequest(() => deleteCoachGroupFromApi(coachKey));
+    state.adminSelectedCoachKey = "";
+    state.adminCoachSettings = state.adminCoachSettings.filter((item) => item.coachKey !== coachKey);
+    await loadCoachesFromApi();
+    await loadAdminCoachSettings();
+  } catch (error) {
+    alert(`코치를 삭제하지 못했습니다.\n${error.message}`);
+  }
+}
+
 async function deleteSelectedCoach() {
   const id = $("coachId").value;
   if (!id) return;
-  try {
-    await runAdminRequest(() => deleteCoachFromApi(id));
-    state.coaches = state.coaches.filter((coach) => coach.id !== id);
-    state.selectedCoachId = null;
-    fillCoachForm();
-    renderApp();
-  } catch (error) {
-    alert(`코치 정보를 삭제하지 못했습니다.\n${error.message}`);
-  }
+  return deleteAdminCoachGroup(id);
 }
 
 
@@ -611,5 +651,7 @@ async function deleteSelectedCoach() {
     updateCoachPriceValue,
     saveCoachFromForm,
     deleteSelectedCoach,
+    deleteAdminLesson,
+    deleteAdminCoachGroup,
   };
 }

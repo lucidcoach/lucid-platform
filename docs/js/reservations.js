@@ -1,5 +1,5 @@
 import { API_BASE_URL, RESERVATION_STATUSES } from "./config.js";
-import { apiFetch, getAdminHeaders } from "./api.js";
+import { apiFetch, getAdminHeaders } from "./api.js?v=20260906c";
 import { formatDateTime } from "./utils.js";
 
 async function requestJson(path, init, errorPrefix = "") {
