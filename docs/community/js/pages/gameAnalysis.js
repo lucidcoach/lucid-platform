@@ -2,7 +2,7 @@ import { apiGet } from "../api.js?v=20260905ar";
 import { championIcon } from "../assets.js?v=20260905ar";
 import { $, escapeHtml } from "../utils.js?v=20260905ar";
 import { switchView } from "../view.js?v=20260905ar";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, getRiotAccounts } from "../auth.js?v=20260905ar";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, getRiotAccounts } from "../auth.js?v=20260905admin2";
 
 const METRICS = [["csm","CS/분",1],["gpm","분당 골드",0],["dpm","DPM",0],["kda","KDA",2],["kp","킬관여",1]];
 const RADAR_METRICS = [["csm","성장"],["gpm","골드"],["dpm","딜량"],["kda","KDA"],["kp","킬관여"],["aiScore","AI"]];
