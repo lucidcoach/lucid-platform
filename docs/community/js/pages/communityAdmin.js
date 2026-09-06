@@ -1,7 +1,7 @@
 
 import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260905admin2";
 import { API_BASE_URL } from "../config.js?v=20260904d";
-import { renderMileage } from "./mileage.js?v=20260906mileage3";
+import { renderMileage } from "./mileage.js?v=20260906ops2";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let activeSection="dashboard";
@@ -99,16 +99,36 @@ function serverPanel(){
       <section class="admin-work-panel">
         <div data-server-panel="basic">
           <div class="admin-form-section"><h3>선택 서버</h3><div class="admin-setting-row"><div><strong>${esc(guild?.name||"선택된 서버 없음")}</strong><small>${guild?`Discord 서버 ID ${esc(guild.id)}`:"LucidGame이 동기화한 관리자 서버가 없습니다."}</small></div></div></div>
-          <div class="admin-draft-note">저장되지 않는 임시 입력칸은 제거했습니다. 실제 설정은 연결된 기능만 표시합니다.</div>
+          <div class="admin-form-section"><h3>최근 적용 요청</h3><div id="serverActionList" class="mileage-list"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div></div>
+          <div class="admin-draft-note">변경 요청은 DB 작업 큐에 저장되고 LucidGame이 검증한 뒤 메모리와 DB에 함께 적용합니다.</div>
         </div>
         <div data-server-panel="match" hidden>
-          <div class="admin-form-section"><h3>내전 설정</h3><div class="admin-setting-row"><div><strong>내전 빈도</strong><small>MMR 변동 폭 기준입니다. Discord의 /서버옵션에서 변경할 수 있습니다.</small></div></div><div class="admin-setting-row"><div><strong>큐 운영</strong><small>예약시간과 자동 팀 구성은 Discord 큐 패널에서 관리합니다. 의미가 불명확했던 ‘큐 진행 시간’ 입력은 제거했습니다.</small></div></div></div>
+          <div class="admin-form-section"><h3>내전 설정</h3><form id="matchFrequencyForm" class="mileage-form"><label class="wide">내전 빈도<select name="value"><option>적음</option><option>보통</option><option>많음</option></select></label><button class="wide" type="submit">변경 요청</button></form><div class="admin-setting-row"><div><strong>큐 운영</strong><small>예약시간과 자동 팀 구성은 실시간 큐 상태가 필요하므로 Discord 큐 패널에서 관리합니다.</small></div></div></div>
         </div>
-        <div data-server-panel="channels" hidden><div class="admin-form-section"><h3>채널 설정</h3><div class="admin-setting-row"><div><strong>/채널설정 일반</strong><small>공지·신고·파티 등 일반 기능 채널</small></div></div><div class="admin-setting-row"><div><strong>/채널설정 내전</strong><small>내전·기록·리그 관련 채널</small></div></div><div class="admin-setting-row"><div><strong>/채널설정 도움말</strong><small>일반 및 관리자 도움말 패널 채널</small></div></div></div></div>
-        <div data-server-panel="permissions" hidden><div class="admin-form-section"><h3>관리 권한</h3><div class="admin-setting-row"><div><strong>Discord 관리자 동기화</strong><small>서버 관리자·서버 관리 권한·내전 관리자 역할을 봇이 확인하여 홈페이지 접근 권한을 갱신합니다.</small></div></div></div></div>
+        <div data-server-panel="channels" hidden><div class="admin-form-section"><h3>채널 설정</h3><form id="serverChannelForm" class="mileage-form"><label>기능<select name="key"><option value="announcement">공지사항</option><option value="patchnote">패치노트</option><option value="match_output">내전 출력</option><option value="report">신고 접수</option><option value="league_output">리그전 출력</option></select></label><label>Discord 채널 ID<input name="channelId" required inputmode="numeric" pattern="[0-9]+"></label><button class="wide" type="submit">변경 요청</button></form><div class="admin-draft-note">참가·기록·도움말처럼 패널 메시지를 다시 만들어야 하는 채널은 현재 Discord /채널설정을 사용해주세요.</div></div></div>
+        <div data-server-panel="permissions" hidden><div class="admin-form-section"><h3>내전 관리자 역할</h3><form id="adminRoleForm" class="mileage-form"><label class="wide">Discord 역할 ID<input name="roleId" required inputmode="numeric" pattern="[0-9]+"></label><button class="wide" type="submit">변경 요청</button></form><div class="admin-setting-row"><div><strong>홈페이지 관리 권한</strong><small>Discord 관리자·서버 관리 권한·내전 관리자 역할을 봇이 주기적으로 확인합니다.</small></div></div></div></div>
+        <p id="serverActionStatus" class="mileage-status"></p>
       </section>
     </div>
   `);
+}
+
+const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할"};
+const statusLabels={pending:"대기",processing:"적용 중",completed:"완료",failed:"실패"};
+async function loadServerSettings(){
+  if(!selectedGuild)return;
+  try{
+    const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/settings`),settings=data.settings||{};
+    const frequency=document.querySelector('#matchFrequencyForm [name="value"]');if(frequency)frequency.value=settings.matchFrequency||"보통";
+    const role=document.querySelector('#adminRoleForm [name="roleId"]');if(role)role.value=settings.adminRoleId||"";
+    const list=document.getElementById("serverActionList"),actions=data.actions||[];
+    if(list)list.innerHTML=actions.length?actions.map(row=>`<div class="mileage-row"><span><strong>${esc(actionLabels[row.action]||row.action)}</strong><br><small>${esc(row.updatedAt||row.createdAt)}</small></span><b>${esc(statusLabels[row.status]||row.status)}${row.error?` · ${esc(row.error)}`:""}</b></div>`).join(""):`<div class="admin-empty-admin"><strong>아직 변경 요청이 없습니다.</strong></div>`;
+  }catch(error){const status=document.getElementById("serverActionStatus");if(status)status.textContent=error.message;}
+}
+
+async function enqueueServerAction(action,payload){
+  const status=document.getElementById("serverActionStatus");if(status)status.textContent="봇 적용 대기열에 등록 중...";
+  try{await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/actions`,{method:"POST",body:{action,payload,requestKey:crypto.randomUUID()}});if(status)status.textContent="요청을 등록했습니다. 봇이 최대 10초 안에 적용합니다.";setTimeout(loadServerSettings,1500);}catch(error){if(status)status.textContent=error.message;}
 }
 
 function mileagePanel(){
@@ -288,7 +308,7 @@ async function loadInquiries(status=""){
 function renderSection(){
   const root=document.getElementById("communityAdminRoot");
   if(!root)return;
-  if(!isCommunityAdmin()&&!guildAdminAccess){
+  if(!hasCommunityAdminAccess()){
     root.innerHTML=`<div class="admin-denied"><strong>관리자 권한이 필요합니다.</strong><span>커뮤니티 관리자에게만 보이는 페이지입니다.</span></div>`;
     return;
   }
@@ -304,6 +324,9 @@ function renderSection(){
     root.querySelectorAll("[data-server-tab]").forEach(item=>item.classList.toggle("active",item===btn));
     root.querySelectorAll("[data-server-panel]").forEach(panel=>panel.hidden=panel.dataset.serverPanel!==btn.dataset.serverTab);
   }));
+  root.querySelector("#matchFrequencyForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("set_match_frequency",{value:form.get("value")});});
+  root.querySelector("#serverChannelForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("set_channel",{key:form.get("key"),channelId:form.get("channelId")});});
+  root.querySelector("#adminRoleForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("set_admin_role",{roleId:form.get("roleId")});});
   root.querySelectorAll(".admin-subtabs button").forEach(btn=>btn.addEventListener("click",()=>{
     btn.parentElement?.querySelectorAll("button").forEach(item=>item.classList.toggle("active",item===btn));
     const feedback=root.querySelector(".admin-tab-feedback");
@@ -326,7 +349,8 @@ function renderSection(){
   });
   root.querySelector("#shopEditorBackdrop")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeShopEditor();});
 
-  if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true});
+  if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true,showAdmin:true});
+  if(activeSection==="server")loadServerSettings();
   if(activeSection==="missing"){
     loadMissingDetails();
     root.querySelector("#missingRefresh")?.addEventListener("click",loadMissingDetails);
@@ -348,7 +372,8 @@ function renderSection(){
 
 }
 
-export function hasCommunityAdminAccess(){return isCommunityAdmin()||guildAdminAccess;}
+// 서버 관리 화면은 사이트 역할명이 아니라 Discord에서 봇이 검증한 길드 관리자만 연다.
+export function hasCommunityAdminAccess(){return Boolean(getCurrentUser()&&guildAdminAccess);}
 
 export async function syncAdminAccess(){
   if(!getCurrentUser()){adminGuilds=[];guildAdminAccess=false;guildsLoaded=false;}

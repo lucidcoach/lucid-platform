@@ -69,12 +69,12 @@ function adminCards(data){
   <section class="mileage-card mileage-admin"><h2>관리자 지급 감사로그</h2><div class="mileage-list">${rows(data.transactions,"수동 지급 내역이 없습니다.",(t)=>`<div class="mileage-row"><span><strong>${esc(t.userId)}</strong><br><small>${esc(t.reason)} · 관리자 ${esc(t.administratorId)}</small></span><b class="${t.amount>0?"mileage-positive":"mileage-negative"}">${t.amount>0?"+":""}${Number(t.amount).toLocaleString()}P</b></div>`)}</div></section>`;
 }
 
-async function loadGuild(root,guild){
+async function loadGuild(root,guild,{showAdmin=false}={}){
   root.innerHTML=`<div class="mileage-page"><section class="mileage-card">불러오는 중...</section></div>`;
   const base=`/api/mileage/guilds/${encodeURIComponent(guild.guildId)}`;
   try{
-    const calls=[request(`${base}/wallet`),request(`${base}/shop`),request(`${base}/purchases`),request(`${base}/quests`)];
-    if(guild.canManage) calls.push(request(`${base}/settings`),request(`${base}/admin/purchases`),request(`${base}/admin/transactions?type=ADMIN`),request(`${base}/admin/economy`));
+    const calls=[request(`${base}/wallet`),request(`${base}/shop${showAdmin?"?includeInactive=1":""}`),request(`${base}/purchases`),request(`${base}/quests`)];
+    if(showAdmin&&guild.canManage) calls.push(request(`${base}/settings`),request(`${base}/admin/purchases`),request(`${base}/admin/transactions?type=ADMIN`),request(`${base}/admin/economy`));
     const [walletData,shopData,purchaseData,questData,settingsData,adminPurchaseData,transactionData,economyData]=await Promise.all(calls);
     const wallet=walletData.wallet;
     root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">SERVER MILEAGE</p><h1>${esc(guild.guildName)}</h1></div><label>서버 선택<select id="mileageGuildSelect">${availableGuilds.map(g=>`<option value="${esc(g.guildId)}" ${g.guildId===guild.guildId?"selected":""}>${esc(g.guildName)}${g.canManage?" · 관리":""}</option>`).join("")}</select></label><div><small>현재 잔액</small><div class="mileage-balance">${Number(wallet.balance).toLocaleString()}P</div></div></section>
@@ -82,16 +82,16 @@ async function loadGuild(root,guild){
       <section class="mileage-card"><h2>최근 거래</h2><div class="mileage-list">${rows(wallet.transactions,"거래내역이 없습니다.",(t)=>`<div class="mileage-row"><span>${esc(labels[t.type]||t.type)}<br><small>${esc(t.reason)}</small></span><b class="${t.amount>0?"mileage-positive":"mileage-negative"}">${t.amount>0?"+":""}${Number(t.amount).toLocaleString()}P</b></div>`)}</div></section>
       <section class="mileage-card"><h2>내 구매내역</h2><div class="mileage-list">${rows(purchaseData.purchases,"구매내역이 없습니다.",(p)=>`<div class="mileage-row"><span>${esc(p.itemName)}<br><small>${esc(p.status)}${p.cancellationReason?` · ${esc(p.cancellationReason)}`:""}</small></span><b>${Number(p.price).toLocaleString()}P</b></div>`)}</div></section>
       <section class="mileage-card"><h2>주간 퀘스트</h2><div class="mileage-list">${rows(questData.quests,"진행 중인 퀘스트가 없습니다.",(q)=>`<div class="mileage-row"><span>${esc(q.name)}<br><small>${esc(q.description)}</small></span><b>${Number(q.reward).toLocaleString()}P</b></div>`)}</div></section></div>
-      ${guild.canManage?`<div class="mileage-grid">${settingsCard(settingsData.settings)}${adminCards({adminPurchases:adminPurchaseData.purchases,transactions:transactionData.transactions,economy:economyData.summary})}</div>`:""}<div id="mileageStatus" class="mileage-status"></div></div>`;
-    bindGuild(root,guild);
+      ${showAdmin&&guild.canManage?`<div class="mileage-grid">${settingsCard(settingsData.settings)}${adminCards({adminPurchases:adminPurchaseData.purchases,transactions:transactionData.transactions,economy:economyData.summary})}</div>`:""}<div id="mileageStatus" class="mileage-status"></div></div>`;
+    bindGuild(root,guild,{showAdmin});
   }catch(error){root.innerHTML=`<section class="mileage-card"><h2>마일리지를 불러오지 못했습니다.</h2><p>${esc(error.message)}</p></section>`;}
 }
 
-function bindGuild(root,guild){
+function bindGuild(root,guild,{showAdmin=false}={}){
   const base=`/api/mileage/guilds/${encodeURIComponent(guild.guildId)}`;
   const status=root.querySelector("#mileageStatus");
-  const run=async(task)=>{try{if(status)status.textContent="처리 중...";await task();await loadGuild(root,guild);}catch(error){if(status)status.textContent=error.message;}};
-  root.querySelector("#mileageGuildSelect")?.addEventListener("change",(event)=>{selectedGuild=event.currentTarget.value;loadGuild(root,availableGuilds.find(g=>g.guildId===selectedGuild));});
+  const run=async(task)=>{try{if(status)status.textContent="처리 중...";await task();await loadGuild(root,guild,{showAdmin});}catch(error){if(status)status.textContent=error.message;}};
+  root.querySelector("#mileageGuildSelect")?.addEventListener("change",(event)=>{selectedGuild=event.currentTarget.value;loadGuild(root,availableGuilds.find(g=>g.guildId===selectedGuild),{showAdmin});});
   root.querySelectorAll("[data-buy]").forEach((button)=>{const requestKey=crypto.randomUUID();button.addEventListener("click",()=>{if(button.disabled||!confirm("이 상품을 구매할까요?"))return;button.disabled=true;run(()=>request(`${base}/purchases`,{method:"POST",body:{itemId:button.dataset.buy,requestKey}}));});});
   root.querySelector("#mileageSettingsForm")?.addEventListener("submit",(event)=>{event.preventDefault();const form=new FormData(event.currentTarget);const rules={};for(const key of ["daily_earn_cap","weekly_earn_cap","match_complete","match_win","event_participation","voice_daily_cap","voice_minutes_per_unit","voice_points_per_unit","voice_min_humans","voice_min_session_minutes","invite_match_target","invite_voice_minutes_target","invite_reward","invite_min_account_days","invite_min_membership_days"])rules[key]=Number(form.get(key)||0);for(const key of ["voice_enabled","voice_exclude_self_deaf","weekly_quests_enabled","invite_enabled"])rules[key]=form.get(key)==="1";rules.voice_channel_ids=String(form.get("voice_channel_ids")||"").split(",").map(x=>x.trim()).filter(Boolean);run(()=>request(`${base}/settings`,{method:"PATCH",body:{enabled:form.get("enabled")==="1",shopEnabled:form.get("shopEnabled")==="1",rules}}));});
   root.querySelector("#mileageAdjustForm")?.addEventListener("submit",(event)=>{event.preventDefault();const form=new FormData(event.currentTarget),amount=Number(form.get("amount")||0);if(Math.abs(amount)>=10000&&!confirm(`${amount.toLocaleString()}P를 반영합니다. 계속할까요?`))return;run(()=>request(`${base}/admin/adjustments`,{method:"POST",body:{userId:form.get("userId"),amount,reason:form.get("reason"),requestKey:crypto.randomUUID()}}));});
@@ -104,7 +104,7 @@ function renderGuestPreview(root){
   root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">SERVER MILEAGE SHOP</p><h1>마일리지 상점 미리보기</h1><p class="mileage-muted">로그인하고 Discord를 연결하면 서버별 잔액과 실제 판매 상품이 표시됩니다.</p></div><div><small>예시 잔액</small><div class="mileage-balance">1,420P</div></div></section><div class="mileage-grid"><section class="mileage-card"><h2>판매 상품</h2><div class="mileage-list">${previewItems.map(item=>`<div class="mileage-row"><span><strong>${esc(item.name)}</strong><br><small>${esc(item.description)} · 재고 ${item.stock??"무제한"} · ${esc(item.limit)}</small></span><span><b>${item.price.toLocaleString()}P</b> <button class="mileage-buy" disabled title="로그인 후 구매할 수 있습니다">구매</button></span></div>`).join("")}</div><p class="mileage-muted">위 2개는 소비자 화면 확인용 테스트 상품이며 실제 구매·차감은 되지 않습니다.</p></section><section class="mileage-card"><h2>이용 방법</h2><div class="mileage-list"><div class="mileage-row"><span>1. 홈페이지 로그인</span></div><div class="mileage-row"><span>2. Discord 계정 연결</span></div><div class="mileage-row"><span>3. 서버 선택 후 상품 구매</span></div><div class="mileage-row"><span>4. 구매내역에서 처리 상태 확인</span></div></div></section></div></div>`;
 }
 
-export async function renderMileage({rootId="mileageRoot",initialGuild="",managersOnly=false}={}){
+export async function renderMileage({rootId="mileageRoot",initialGuild="",managersOnly=false,showAdmin=false}={}){
   const root=document.getElementById(rootId);if(!root)return;
   const user=getCurrentUser();
   if(!user){renderGuestPreview(root);return;}
@@ -115,6 +115,6 @@ export async function renderMileage({rootId="mileageRoot",initialGuild="",manage
     if(!guilds.length){root.innerHTML=`<section class="mileage-card"><h2>사용 가능한 서버가 없습니다.</h2><p class="mileage-muted">Discord 계정을 연결하고, 해당 서버에서 마일리지를 한 번 이상 받거나 서버 관리자로 등록되어야 합니다.</p></section>`;return;}
     if(initialGuild&&guilds.some(g=>g.guildId===String(initialGuild)))selectedGuild=String(initialGuild);
     if(!guilds.some(g=>g.guildId===selectedGuild))selectedGuild=guilds[0].guildId;
-    await loadGuild(root,guilds.find(g=>g.guildId===selectedGuild));
+    await loadGuild(root,guilds.find(g=>g.guildId===selectedGuild),{showAdmin});
   }catch(error){root.innerHTML=`<section class="mileage-card"><h2>Discord 연결을 확인해주세요.</h2><p>${esc(error.message)}</p></section>`;}
 }
