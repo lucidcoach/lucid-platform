@@ -14,6 +14,7 @@ const apiUrl=path=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
 async function adminRequest(path,{method="GET",body}={}){const response=await fetch(apiUrl(path),{method,credentials:"include",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||"요청에 실패했습니다.");return data;}
 
 const sections = [
+  ["members","회원 관리","가입 회원·권한·Discord 연결 상태 확인","U"],
   ["server","서버 설정","서버별 내전·채널·권한 설정","⚙"],
   ["mileage","마일리지 관리","지급 규칙·상점·주문·감사로그","M"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
@@ -130,6 +131,69 @@ async function loadServerSettings(){
 async function enqueueServerAction(action,payload){
   const status=document.getElementById("serverActionStatus");if(status)status.textContent="봇 적용 대기열에 등록 중...";
   try{await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/actions`,{method:"POST",body:{action,payload,requestKey:crypto.randomUUID()}});if(status)status.textContent="요청을 등록했습니다. 봇이 최대 10초 안에 적용합니다.";setTimeout(loadServerSettings,1500);}catch(error){if(status)status.textContent=error.message;}
+}
+
+
+function friendlyMemberName(user={}){
+  const raw=String(user.displayName||user.display_name||user.nickname||"").trim();
+  if(raw && !/^oauth\s*user$/i.test(raw))return raw;
+  const discord=String(user.discordDisplayName||user.discord_display_name||"").trim();
+  if(discord)return discord;
+  const email=String(user.email||"").trim();
+  if(email)return email.split("@")[0]||"소셜 로그인 회원";
+  return "소셜 로그인 회원";
+}
+function memberRoleLabel(user={}){
+  const roles=new Set([...(Array.isArray(user.roles)?user.roles:[]),user.role].filter(Boolean).map(v=>String(v).toLowerCase()));
+  const labels=[];
+  if(roles.has("admin")||roles.has("administrator"))labels.push("관리자");
+  if(roles.has("coach"))labels.push("코치");
+  return labels.length?labels.join(" · "):"일반 회원";
+}
+function memberPanel(){
+  return shell(`
+    ${panelTitle("회원 관리","코칭 사이트와 연결된 가입 회원, 권한, Discord 연결 상태를 한눈에 확인합니다.")}
+    <section class="admin-member-summary" id="memberSummary">
+      <article><span>전체 회원</span><strong id="memberTotal">-</strong><small>가입 계정</small></article>
+      <article><span>Discord 연결</span><strong id="memberDiscord">-</strong><small>연동 완료</small></article>
+      <article><span>코치</span><strong id="memberCoaches">-</strong><small>코치 권한</small></article>
+      <article><span>관리자</span><strong id="memberAdmins">-</strong><small>관리자 권한</small></article>
+    </section>
+    <section class="admin-work-panel">
+      <div class="admin-toolbar admin-member-toolbar"><div><strong>가입 회원</strong><small>‘OAuth user’는 소셜 로그인 과정에서 닉네임이 아직 정리되지 않은 계정 표시였습니다. 여기서는 읽기 쉬운 이름으로 표시합니다.</small></div><button id="memberRefresh" class="admin-primary" type="button">새로고침</button></div>
+      <div class="admin-member-search"><input id="memberSearch" type="search" placeholder="닉네임, 이메일, Discord, 권한 검색"></div>
+      <div class="admin-member-table">
+        <div class="admin-member-head"><span>회원</span><span>이메일</span><span>권한</span><span>Discord</span></div>
+        <div id="memberList"><div class="admin-empty-admin"><strong>회원 목록을 불러오는 중...</strong></div></div>
+      </div>
+      <div class="admin-draft-note">회원 권한 변경은 코칭 사이트의 회원 관리에서 그대로 사용할 수 있습니다. 이 화면은 우선 운영 현황을 빠르게 확인하는 통합 보기입니다.</div>
+    </section>
+  `);
+}
+let memberRows=[];
+function renderMemberRows(){
+  const target=document.getElementById("memberList");if(!target)return;
+  const q=String(document.getElementById("memberSearch")?.value||"").trim().toLowerCase();
+  const rows=memberRows.filter(user=>!q||[friendlyMemberName(user),user.email,user.discordDisplayName,user.discord_display_name,memberRoleLabel(user)].filter(Boolean).join(" ").toLowerCase().includes(q));
+  target.innerHTML=rows.length?rows.map(user=>{
+    const discord=Boolean(user.discordConnected||user.discord_connected||user.discordDisplayName||user.discord_display_name);
+    const name=friendlyMemberName(user);
+    const raw=String(user.displayName||user.display_name||"").trim();
+    return `<div class="admin-member-row"><span><strong>${esc(name)}</strong><small>${/^oauth\s*user$/i.test(raw)?"소셜 로그인 계정":esc(user.id||"")}</small></span><span>${esc(user.email||"-")}</span><span><b class="admin-member-role">${esc(memberRoleLabel(user))}</b></span><span><i class="admin-member-discord ${discord?"connected":""}">${discord?"연결됨":"미연결"}</i>${discord?`<small>${esc(user.discordDisplayName||user.discord_display_name||"")}</small>`:""}</span></div>`;
+  }).join(""):`<div class="admin-empty-admin"><strong>${q?"검색 결과가 없습니다.":"가입 회원이 없습니다."}</strong></div>`;
+}
+async function loadMembers(){
+  const target=document.getElementById("memberList");if(target)target.innerHTML=`<div class="admin-empty-admin"><strong>회원 목록을 불러오는 중...</strong></div>`;
+  try{
+    const data=await adminRequest("/api/users");memberRows=data.users||[];
+    const roles=user=>new Set([...(Array.isArray(user.roles)?user.roles:[]),user.role].filter(Boolean).map(v=>String(v).toLowerCase()));
+    const discord=memberRows.filter(user=>user.discordConnected||user.discord_connected||user.discordDisplayName||user.discord_display_name).length;
+    const coaches=memberRows.filter(user=>roles(user).has("coach")).length;
+    const admins=memberRows.filter(user=>roles(user).has("admin")||roles(user).has("administrator")).length;
+    const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=Number(value).toLocaleString();};
+    set("memberTotal",memberRows.length);set("memberDiscord",discord);set("memberCoaches",coaches);set("memberAdmins",admins);
+    renderMemberRows();
+  }catch(error){if(target)target.innerHTML=`<div class="admin-empty-admin"><strong>회원 목록을 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 
 function mileagePanel(){
@@ -319,7 +383,7 @@ function renderSection(){
     root.innerHTML=`<div class="admin-denied"><strong>관리자 권한이 필요합니다.</strong><span>커뮤니티 관리자에게만 보이는 페이지입니다.</span></div>`;
     return;
   }
-  const pages={dashboard,server:serverPanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  const pages={dashboard,members:memberPanel,server:serverPanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
@@ -356,6 +420,7 @@ function renderSection(){
   });
   root.querySelector("#shopEditorBackdrop")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeShopEditor();});
 
+  if(activeSection==="members"){loadMembers();root.querySelector("#memberRefresh")?.addEventListener("click",loadMembers);root.querySelector("#memberSearch")?.addEventListener("input",renderMemberRows);}
   if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true,showAdmin:true});
   if(activeSection==="server")loadServerSettings();
   if(activeSection==="missing"){
