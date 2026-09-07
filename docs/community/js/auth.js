@@ -29,12 +29,31 @@ export function isCommunityCoach(){
     || roles.includes("coach") || roles.includes("코치")
     || Boolean(currentUser?.isCoach || currentUser?.is_coach);
 }
-export function canAnalyzeAllPlayers(){ return isCommunityAdmin() || isCommunityCoach(); }
+export function isCommunityServerAdmin(guildId=""){
+  if(!currentUser) return false;
+  const roles=Array.isArray(currentUser?.roles)?currentUser.roles.map(x=>String(x).toLowerCase()):[];
+  const role=String(currentUser?.role||"").toLowerCase();
+  const hasServerAdminRole = role === "server_admin" || role === "server-admin" || role === "서버 관리자"
+    || roles.includes("server_admin") || roles.includes("server-admin") || roles.includes("서버 관리자");
+  const rawLists=[
+    currentUser?.serverAdminGuildIds,currentUser?.server_admin_guild_ids,
+    currentUser?.managedGuildIds,currentUser?.managed_guild_ids,currentUser?.serverGuildIds,
+  ];
+  const ids=[];
+  for(const list of rawLists){ if(Array.isArray(list)) ids.push(...list.map(String)); }
+  if(currentUser?.serverAdmins && typeof currentUser.serverAdmins === "object"){
+    if(Array.isArray(currentUser.serverAdmins)) ids.push(...currentUser.serverAdmins.map(x=>String(x?.guildId ?? x)));
+    else ids.push(...Object.keys(currentUser.serverAdmins).filter(key=>currentUser.serverAdmins[key]));
+  }
+  if(guildId && ids.length) return ids.includes(String(guildId));
+  return hasServerAdminRole && (!guildId || !ids.length);
+}
+export function canAnalyzeAllPlayers(guildId=""){ return isCommunityAdmin() || isCommunityCoach() || isCommunityServerAdmin(guildId); }
 export function getRiotAccounts(){ return [...riotAccounts]; }
 export function getResolvedAnalysisPlayers(){ return [...resolvedPlayers]; }
 export function getAnalysisIdentity(){ return resolvedPlayers[0] || null; }
 export function canAnalyzePlayer(userId,guildId){
-  if(canAnalyzeAllPlayers()) return true;
+  if(canAnalyzeAllPlayers(guildId)) return true;
   if(!currentUser) return false;
   return resolvedPlayers.some(row => String(row.userId)===String(userId) && String(row.guildId)===String(guildId));
 }

@@ -1,7 +1,7 @@
 import { championIcon } from "../assets.js?v=20260905ab";
 import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260905ab";
 import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260905ab";
-import { scoreboard } from "./scoreboard.js?v=20260905ae";
+import { scoreboard } from "./scoreboard.js?v=20260907matchsummary2";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
@@ -39,7 +39,7 @@ export function playerMatchCard(match, userId) {
   const rank = aiRank(match, player);
   const mmrDelta = Math.round(Number(player.mmrDelta || 0));
   const resultText = `${won ? "승리" : "패배"}${mmrDelta ? ` (${mmrDelta > 0 ? "+" : ""}${mmrDelta})` : ""}`;
-  return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}">
+  return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}" data-analysis-user-id="${escapeHtml(userId)}" data-analysis-guild-id="${escapeHtml(match.guildId || "")}" data-analysis-match-id="${escapeHtml(match.matchId || "")}" data-analysis-champion="${escapeHtml(player.champion || "")}" data-analysis-role="${escapeHtml(player.role || "")}">
     <div class="personal-summary">
       <div class="result-meta"><strong>${resultText}</strong><span>${escapeHtml(relativeTime(match.time))}</span><div>${escapeHtml(normalizeMode(match))}</div></div>
       <div class="focus-visual compact-focus-layout">
@@ -53,6 +53,6 @@ export function playerMatchCard(match, userId) {
         <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
       </div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
-      <div class="personal-actions"><button class="analysis-match-button" type="button" data-open-full-analysis data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" data-match-id="${escapeHtml(match.matchId || "")}" data-champion="${escapeHtml(player.champion || "")}" data-role="${escapeHtml(player.role || "")}" aria-label="이 경기 리포트 자세히 보기" title="경기 리포트">자세히 보기</button><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
+      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
     </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,userId)}</article>`;
 }

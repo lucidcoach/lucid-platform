@@ -1743,62 +1743,8 @@
 .server-stats-panel{margin:14px 0 18px;padding:18px;border:1px solid #25364c;border-radius:16px;background:linear-gradient(180deg,#0f1825,#0b121b);box-shadow:0 18px 50px rgba(0,0,0,.16)}
 .server-stats-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}.server-stats-head small{display:block;color:#73a7e8;font-size:10px;font-weight:900;letter-spacing:.12em}.server-stats-head h2{margin:4px 0 3px;font-size:19px}.server-stats-head p{margin:0;color:#788da9;font-size:11px}.server-stats-head>span{padding:6px 9px;border:1px solid #31465f;border-radius:999px;background:#111d2b;color:#8eabc9;font-size:10px;white-space:nowrap}.server-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.server-stat-card{padding:13px 14px;border:1px solid #283a51;border-radius:12px;background:#0d1622}.server-stat-card>span{display:block;color:#8095b2;font-size:10px}.server-stat-card>strong{display:block;margin:5px 0 8px;font-size:22px}.server-stat-card>div{display:flex;align-items:center;justify-content:space-between;gap:8px}.server-stat-card b{color:#90aac8;font-size:11px}.server-stat-card small{color:#627995;font-size:9px;text-align:right}.server-stat-card.good{border-color:#315b66}.server-stat-card.good b{color:#62d7c5}.server-stat-card.elite{border-color:#49528a;background:linear-gradient(145deg,#111a2b,#151733)}.server-stat-card.elite b{color:#b3a8ff}.server-stat-empty{grid-column:1/-1;padding:18px;border:1px dashed #304259;border-radius:11px;text-align:center;color:#758ba8}.server-stat-empty strong{display:block;color:#dbe6f4;margin-bottom:5px}@media(max-width:850px){.server-stat-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.server-stat-grid{grid-template-columns:1fr}.server-stats-head{flex-direction:column}}
 
-
-/* v20260907 personal history filters */
-.personal-history-toolbar{
-  display:flex;
-  align-items:flex-end;
-  gap:12px;
-  margin:2px 0 10px;
-  padding:10px 12px;
-  border:1px solid var(--line-soft);
-  border-radius:11px;
-  background:var(--panel);
-}
-.personal-champion-filter,.personal-queue-filter{display:grid;gap:6px}
-.personal-champion-filter>span,.personal-filter-label{
-  color:#77869e;
-  font-size:9px;
-  font-weight:850;
-  letter-spacing:.04em;
-}
-.personal-champion-filter select{
-  min-width:170px;
-  height:34px;
-  padding:0 34px 0 10px;
-  border:1px solid var(--line-soft);
-  border-radius:8px;
-  background:#0b1018;
-  color:#e8edf6;
-  font-size:11px;
-  font-weight:800;
-  outline:none;
-}
-.personal-champion-filter select:focus{border-color:#62589a;box-shadow:0 0 0 2px rgba(137,111,255,.12)}
-.personal-queue-filter{min-width:0}
-.personal-queue-buttons{display:flex;align-items:center;gap:4px;padding:3px;border:1px solid var(--line-soft);border-radius:9px;background:#0b1018}
-.personal-queue-buttons button{
-  height:28px;
-  min-width:54px;
-  padding:0 10px;
-  border:0;
-  border-radius:6px;
-  background:transparent;
-  color:#68758a;
-  font-size:10px;
-  font-weight:850;
-}
-.personal-queue-buttons button:disabled{cursor:not-allowed;opacity:.55}
-@media (max-width:620px){
-  .personal-history-toolbar{align-items:stretch;flex-direction:column}
-  .personal-champion-filter select{width:100%}
-  .personal-queue-buttons{display:grid;grid-template-columns:repeat(4,1fr)}
-  .personal-queue-buttons button{min-width:0;padding:0 4px}
-}
-
-
-/* Admin: analyze the currently opened player from the personal-history filter row. */
-.personal-history-toolbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
-.personal-admin-analysis-button{margin-left:auto;min-height:42px;padding:0 22px;border:1px solid #3b82f6;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(37,99,235,.18)}
-.personal-admin-analysis-button:hover{background:#3b82f6;transform:translateY(-1px)}
-@media (max-width:760px){.personal-admin-analysis-button{width:100%;margin-left:0}}
+/* 2026-09-07 match compact analysis refresh */
+.personal-actions{align-self:stretch;justify-content:center}
+.personal-admin-analysis-button{margin-left:auto;min-width:92px;height:40px;border:1px solid #4b73a5;border-radius:9px;background:#173052;color:#eef6ff;font-weight:850;cursor:pointer}
+.personal-admin-analysis-button:hover{background:#21436f}
+@media(max-width:900px){.personal-admin-analysis-button{width:100%;margin-left:0}.personal-history-toolbar{flex-wrap:wrap}}

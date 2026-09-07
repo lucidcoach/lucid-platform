@@ -2,7 +2,7 @@ import { apiGet } from "../api.js?v=20260907analysis1";
 import { championIcon } from "../assets.js?v=20260907analysis1";
 import { $, escapeHtml, relativeTime } from "../utils.js?v=20260907analysis1";
 import { switchView } from "../view.js?v=20260907analysis1";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260905admin2";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260907matchsummary2";
 
 const ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
 const ROLE_METRICS = {
@@ -27,7 +27,9 @@ const metricText = (key, value) => {
 
 function firstFinite(row, keys) {
   for (const key of keys) {
-    const value = Number(row?.[key]);
+    const raw = row?.[key];
+    if (raw == null || raw === "") continue;
+    const value = Number(raw);
     if (Number.isFinite(value)) return value;
   }
   return null;
@@ -54,7 +56,7 @@ function comparisonValue(player, opponent, key) {
 }
 
 function hasAnalysisAccess(userId="", guildId="") {
-  return isCommunityAdmin() || isCommunityCoach() || canAnalyzeAllPlayers() || canAnalyzePlayer(userId, guildId);
+  return isCommunityAdmin() || isCommunityCoach() || canAnalyzeAllPlayers(guildId) || canAnalyzePlayer(userId, guildId);
 }
 
 function radarPoints(values, radius=112, cx=150, cy=140) {
@@ -85,7 +87,7 @@ function roleButtons() {
 }
 
 function serverMetricPanel(metrics={}) {
-  const order = metrics.metricOrder || ROLE_METRICS[dashboard.role];
+  const order = dashboard.role === "탑" ? ROLE_METRICS["탑"] : (metrics.metricOrder || ROLE_METRICS[dashboard.role]);
   const values = order.map(item => metricRankScore(metrics.metrics?.[item.key || item[0]]));
   return `<section class="server-analysis-card radar-card">
     <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
@@ -144,11 +146,10 @@ async function renderDashboardBody(target) {
   }
 }
 
-async function renderDashboard({forceReload=false, identityOverride=null}={}) {
+async function renderDashboard({forceReload=false}={}) {
   switchView("analysis"); const target=$("analysisResults"); if(!target)return;
-  const identity=identityOverride || getAnalysisIdentity();
-  if(identityOverride && !isCommunityAdmin()){target.innerHTML=`<div class="analysis-empty-inline"><strong>관리자 권한이 필요합니다.</strong><span>다른 회원 분석은 관리자만 사용할 수 있습니다.</span></div>`;return;}
-  if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록해주세요.</span></div>`;return;}
+  const identity=getAnalysisIdentity();
+  if(!identity&&!canAnalyzeAllPlayers(identity?.guildId||"")){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록해주세요.</span></div>`;return;}
   if(!identity){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>개인전적에서 유저를 선택한 뒤 분석할 수 있습니다.</span></div>`;return;}
   if(forceReload||dashboard.identity?.userId!==identity.userId||dashboard.identity?.guildId!==identity.guildId){
     target.innerHTML=`<div class="server-analysis-loading">내전 기록을 불러오는 중...</div>`;
@@ -164,13 +165,7 @@ function opponentFor(match, focus) {
 
 function backToDashboard() {
   const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","analysis");
-  const selected = dashboard.identity;
-  if(selected?.userId && selected?.guildId && isCommunityAdmin()){
-    url.searchParams.set("userId", selected.userId);
-    url.searchParams.set("guildId", selected.guildId);
-  }
-  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);
-  return renderDashboard({identityOverride:selected && isCommunityAdmin() ? selected : null});
+  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`); return renderDashboard();
 }
 
 function opponentComparison(match,focus,opponent) {
@@ -196,23 +191,69 @@ async function renderMatchAnalysis({userId="",guildId="",matchId=""}={}) {
   catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>경기를 분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 
+function comparisonRows(focus,opponent) {
+  const metrics=ROLE_METRICS[focus.role]||ROLE_METRICS.전체;
+  return metrics.map(([key,label])=>{
+    const mine=comparisonValue(focus,opponent,key), other=comparisonValue(opponent,focus,key);
+    let delta=null, score=null;
+    if(Number.isFinite(mine)&&Number.isFinite(other)){
+      if(TOP_SCORE_KEYS.has(key)||["kp","winRate"].includes(key)){
+        delta=mine-other; score=delta;
+      }else if(other!==0){
+        delta=(mine-other)/Math.abs(other)*100; score=delta;
+      }
+    }
+    return {key,label,mine,other,delta,score};
+  });
+}
+
+function compactDeltaText(row){
+  if(!Number.isFinite(row?.delta)) return "비교 데이터 없음";
+  const sign=row.delta>0?"+":"";
+  if(TOP_SCORE_KEYS.has(row.key)||["kp","winRate"].includes(row.key)) return `${sign}${row.delta.toFixed(1)}점`;
+  return `${sign}${row.delta.toFixed(1)}%`;
+}
+
+function compactSummary(rows, opponentName){
+  const usable=rows.filter(row=>Number.isFinite(row.score));
+  const positives=[...usable].filter(row=>row.score>0).sort((a,b)=>b.score-a.score).slice(0,2);
+  const negatives=[...usable].filter(row=>row.score<0).sort((a,b)=>a.score-b.score).slice(0,2);
+  const balanced=usable.filter(row=>Math.abs(row.score)<=2).slice(0,2);
+  const line=(title,items,cls)=>items.length?`<div class="compact-matchup-line ${cls}"><span>${title}</span><strong>${items.map(row=>`${esc(row.label)} ${compactDeltaText(row)}`).join(" · ")}</strong></div>`:"";
+  return `<div class="compact-matchup-summary">
+    ${line("우세",positives,"good")}
+    ${line("열세",negatives,"weak")}
+    ${!positives.length&&!negatives.length&&balanced.length?line("비슷",balanced,"even"):""}
+    ${!usable.length?`<div class="compact-matchup-line even"><span>비교</span><strong>육각형 지표 데이터가 아직 부족합니다.</strong></div>`:""}
+    <p>${esc(opponentName)}와 같은 라인 기준으로 이번 경기 차이를 요약했습니다.</p>
+  </div>`;
+}
+
 export async function renderCompactMatchAnalysis(detail={},target) {
-  if(!target)return; target.innerHTML=`<div class="compact-analysis-loading">상대 라이너와 비교하는 중...</div>`;
-  try {const data=await apiGet(`/api/community/matches/${encodeURIComponent(detail.matchId)}?guildId=${encodeURIComponent(detail.guildId)}`),focus=focusPlayer(data.match,detail.userId),opponent=focus&&opponentFor(data.match,focus);if(!focus||!opponent)throw new Error("상대 기록 없음");const metrics=ROLE_METRICS[focus.role]||ROLE_METRICS.전체,own=metrics.map(([key])=>{const a=comparisonValue(focus,opponent,key),b=comparisonValue(opponent,focus,key);return Number.isFinite(a)&&Number.isFinite(b)&&(a||b)?Math.max(.08,Math.min(.92,a/(a+b))):.5;});target.innerHTML=`<div class="compact-analysis-card"><strong>${esc(focus.name)} vs ${esc(opponent.name)}</strong>${radar(metrics.map(row=>row[1]),own,own.map(value=>1-value),opponent.name)}<button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(detail.userId)}" data-guild-id="${esc(detail.guildId)}" data-match-id="${esc(detail.matchId)}">상세 분석 보기</button></div>`;}catch(error){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+  if(!target)return;
+  if(!hasAnalysisAccess(detail.userId,detail.guildId)){
+    target.innerHTML=`<div class="compact-analysis-empty"><strong>분석 권한이 필요합니다.</strong><span>본인 경기 또는 관리 권한이 있는 서버의 회원만 분석할 수 있습니다.</span></div>`;
+    return;
+  }
+  target.innerHTML=`<div class="compact-analysis-loading">상대 라이너와 비교하는 중...</div>`;
+  try {
+    const data=await apiGet(`/api/community/matches/${encodeURIComponent(detail.matchId)}?guildId=${encodeURIComponent(detail.guildId)}`);
+    const focus=focusPlayer(data.match,detail.userId), opponent=focus&&opponentFor(data.match,focus);
+    if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");
+    const rows=comparisonRows(focus,opponent), metrics=ROLE_METRICS[focus.role]||ROLE_METRICS.전체;
+    const own=rows.map(row=>Number.isFinite(row.mine)&&Number.isFinite(row.other)&&(row.mine||row.other)?Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1))):.5);
+    const enemy=own.map(value=>1-value);
+    target.innerHTML=`<div class="compact-analysis-card compact-matchup-card">
+      <div class="compact-matchup-head"><div><small>간단 분석</small><strong>${esc(focus.name)} <i>vs</i> ${esc(opponent.name)}</strong><span>${esc(focus.role)} · ${esc(focus.champion)} vs ${esc(opponent.champion||"-")}</span></div></div>
+      ${radar(metrics.map(row=>row[1]),own,enemy,opponent.name)}
+      ${compactSummary(rows,opponent.name)}
+      <button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(detail.userId)}" data-guild-id="${esc(detail.guildId)}" data-match-id="${esc(detail.matchId)}">자세히 보기</button>
+    </div>`;
+  }catch(error){
+    target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;
+  }
 }
 
 export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
-export function applyAnalysisRoute(params) {
-  const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};
-  if(detail.matchId) return renderMatchAnalysis(detail);
-  const identityOverride = detail.userId && detail.guildId ? {userId:detail.userId,guildId:detail.guildId,name:""} : null;
-  return renderDashboard({forceReload:Boolean(identityOverride), identityOverride});
-}
-export function bindAnalysisPage() {
-  window.addEventListener("lucid:analyze-player", (event)=>{
-    const detail=event.detail||{};
-    if(!detail.userId||!detail.guildId) return;
-    renderDashboard({forceReload:true,identityOverride:{userId:String(detail.userId),guildId:String(detail.guildId),name:String(detail.name||"")}});
-  });
-  window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))applyAnalysisRoute(new URLSearchParams(window.location.search));});
-}
+export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};return detail.matchId?renderMatchAnalysis(detail):renderDashboard();}
+export function bindAnalysisPage() {window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard({forceReload:true});});}

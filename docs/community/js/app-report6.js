@@ -3,12 +3,12 @@ import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260906ops1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260907adminanalysis1";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260907adminanalysis1";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260907matchsummary2";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260907matchsummary2";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260907members2";
 import { renderMileage } from "./pages/mileage.js?v=20260906ops2";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905admin2";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907matchsummary2";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260907current1";
 
@@ -273,6 +273,21 @@ function bindEvents() {
     });
   });
   document.addEventListener("click", (event) => {
+    const personalExpand = event.target.closest(".personal-expand");
+    if (personalExpand) {
+      const card = personalExpand.closest(".personal-match");
+      if (card?.classList.contains("expanded")) {
+        const detail={
+          userId:card.dataset.analysisUserId||"", guildId:card.dataset.analysisGuildId||"",
+          matchId:card.dataset.analysisMatchId||"", champion:card.dataset.analysisChampion||"", role:card.dataset.analysisRole||"",
+        };
+        const target=card.querySelector("[data-compact-analysis]");
+        if(target && !target.dataset.analysisLoaded){
+          target.dataset.analysisLoaded="1";
+          renderCompactMatchAnalysis(detail,target);
+        }
+      }
+    }
     const fullAnalysisTrigger = event.target.closest("[data-open-full-analysis]");
     if (fullAnalysisTrigger) {
       event.preventDefault(); event.stopPropagation();

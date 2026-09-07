@@ -3,9 +3,9 @@ import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260905ai";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260906report1";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904v";
-import { isCommunityAdmin } from "../auth.js?v=20260907adminanalysis1";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907matchsummary2";
+import { bindExpanders } from "../components/scoreboard.js?v=20260907matchsummary2";
+import { canAnalyzeAllPlayers } from "../auth.js?v=20260907matchsummary2";
 
 
 function updateUrl(params, mode = "push") {
@@ -235,7 +235,7 @@ function personalHistoryFilters(matches = [], userId, guildId) {
         <button type="button" disabled title="Riot API 연동 후 지원">칼바람</button>
       </div>
     </div>
-    ${isCommunityAdmin() ? `<button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}">분석하기</button>` : ""}
+    ${canAnalyzeAllPlayers(guildId) ? `<button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}">분석하기</button>` : ""}
   </div>`;
 }
 
