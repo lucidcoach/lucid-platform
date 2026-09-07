@@ -97,6 +97,11 @@ async function loadCurrentUser(){
 
 function openModal(){ document.getElementById("communityAuthModal")?.removeAttribute("hidden"); }
 function closeModal(){ document.getElementById("communityAuthModal")?.setAttribute("hidden",""); }
+function startOAuth(provider){
+  const start=new URL(apiUrl(`/api/auth/oauth/${provider}/start`));
+  start.searchParams.set("returnTo",`${window.location.origin}${window.location.pathname}`);
+  window.location.assign(start.toString());
+}
 
 async function login(email,password){
   const res=await fetch(apiUrl("/api/auth/login"),{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
@@ -129,11 +134,9 @@ export async function initCommunityAuth(){
       window.dispatchEvent(new CustomEvent("lucid:open-account"));
       return;
     }
-    const start=new URL(apiUrl("/api/auth/oauth/discord/start"));
-    start.searchParams.set("source","community");
-    start.searchParams.set("returnTo",`${window.location.origin}${window.location.pathname}`);
-    window.location.assign(start.toString());
+    startOAuth("discord");
   });
+  document.querySelectorAll("[data-community-oauth]").forEach(button=>button.addEventListener("click",()=>startOAuth(button.dataset.communityOauth)));
   logoutBtn?.addEventListener("click",async()=>{ await logoutCommunityUser(); window.dispatchEvent(new CustomEvent("lucid:logged-out")); });
   form?.addEventListener("submit",async e=>{
     e.preventDefault(); const status=document.getElementById("communityAuthStatus");

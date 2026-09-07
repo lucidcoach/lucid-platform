@@ -8,7 +8,7 @@ import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderComp
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260907accountfix1";
 import { renderMileage } from "./pages/mileage.js?v=20260907permissions1";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907accountsource1";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907oauth1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260907current1";
 
