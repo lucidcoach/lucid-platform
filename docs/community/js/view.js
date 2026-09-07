@@ -18,7 +18,7 @@ export function switchView(view) {
   document.body.classList.toggle("community-admin-mode", view === "admin");
   if ($("clearSearchBtn")) $("clearSearchBtn").hidden = view !== "search";
   document.querySelectorAll(".nav-tab[data-view]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.view === view);
+    button.classList.toggle("active", button.dataset.view === (view === "search" ? "recent" : view));
   });
 }
 

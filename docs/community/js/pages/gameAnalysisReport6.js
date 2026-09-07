@@ -14,7 +14,7 @@ const ROLE_METRICS = {
   "서폿": [["kp","킬관여"],["visionPerMin","시야/분"],["ccPerMin","CC/분"],["allyCarePerMin","힐·실드/분"],["kda","KDA"],["winRate","승률"]],
 };
 
-let dashboard = { role:"전체", tab:"scrim", identity:null, profile:null, metrics:new Map() };
+let dashboard = { role:"전체", tab:"scrim", section:"matches", identity:null, profile:null, metrics:new Map() };
 const esc = (value) => escapeHtml(String(value ?? ""));
 const number = (value, digits=1) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "-";
 const SCORE_KEYS = new Set(["lanePhaseScore","teamfightScore","macroScore","influenceScore","jungleGrowthScore","gankScore","skirmishScore","objectiveScore","jungleDamageScore","jungleMacroScore"]);
@@ -82,7 +82,7 @@ function radar(labels, own=null, compare=null, legend="서버 내 순위") {
     const x = 150 + Math.cos(angle) * 137, y = 140 + Math.sin(angle) * 137;
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${esc(label)}</text>`;
   }).join("");
-  return `<div class="server-radar-wrap"><div class="server-radar-legend">${own?`<span><i></i>나</span>`:""}${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${own?esc(legend):"데이터 부족"}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}${own?`<polygon points="${radarPoints(own)}" class="server-radar-own"/>`:""}${axes}</svg></div>`;
+  return `<div class="server-radar-wrap"><div class="server-radar-legend">${own?`<span><i></i>나</span>`:""}${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${own?esc(legend):"데이터 부족"}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}${own?`<polygon points="${radarPoints(own)}" class="server-radar-own"/>`:""}${axes}</svg>${!own&&!compare?`<strong class="server-radar-empty">비교 가능한 경기 데이터가 부족합니다.</strong>`:""}</div>`;
 }
 
 function metricRankScore(metric={}) {
@@ -101,33 +101,6 @@ function serverMetricPanel(metrics={}) {
     <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
     ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values.every(Number.isFinite)?values:null)}
     <div class="server-rank-list">${order.map(item=>{const key=item.key||item[0],label=item.label||item[1],row=metrics.metrics?.[key]||{};return `<div><span>${esc(label)}</span><strong>${metricText(key,row.value)}</strong><small>${row.rank?`${row.rank}위 / ${row.total}명 · 상위 ${row.topPercent}%`:`비교 기록 없음`}</small></div>`;}).join("")}</div>
-  </section>`;
-}
-
-function personalMetricPanel(profile={}) {
-  const userId=String(profile.player?.userId||dashboard.identity?.userId||"");
-  const metricRows=ROLE_METRICS[dashboard.role]||ROLE_METRICS.전체;
-  const samples=metricRows.map(()=>[]), opponentSamples=metricRows.map(()=>[]);
-  let games=0;
-  for(const match of (profile.matches||[])){
-    const focus=focusPlayer(match,userId);
-    if(!focus||(dashboard.role!=="전체"&&focus.role!==dashboard.role))continue;
-    const opponent=opponentFor(match,focus);if(!opponent)continue;
-    metricRows.forEach(([key],index)=>{
-      const mine=comparisonValue(focus,opponent,key),other=comparisonValue(opponent,focus,key);
-      if(Number.isFinite(mine)&&Number.isFinite(other)&&mine+other>0){
-        if(SCORE_KEYS.has(key)){samples[index].push(Math.max(.06,Math.min(1,mine/100)));opponentSamples[index].push(Math.max(.06,Math.min(1,other/100)));}
-        else {const ratio=Math.max(.08,Math.min(.92,mine/(mine+other)));samples[index].push(ratio);opponentSamples[index].push(1-ratio);}
-      }
-    });
-    games+=1;
-  }
-  const complete=samples.every(rows=>rows.length)&&opponentSamples.every(rows=>rows.length);
-  const own=complete?samples.map(rows=>rows.reduce((sum,value)=>sum+value,0)/rows.length):null;
-  const opponent=complete?opponentSamples.map(rows=>rows.reduce((sum,value)=>sum+value,0)/rows.length):null;
-  return `<section class="server-analysis-card radar-card personal-radar-card">
-    <div class="server-card-head"><div><small>PERSONAL ANALYSIS</small><h2>${esc(profile.player?.name||dashboard.identity?.name||"분석 대상")} 개인 육각형</h2></div><span>최근 맞라이너 ${games}경기 비교</span></div>
-    ${radar(metricRows.map(row=>row[1]),own,opponent,"맞라이너 평균")}
   </section>`;
 }
 
@@ -171,24 +144,31 @@ async function loadServerMetrics(role) {
 }
 
 async function renderDashboardBody(target) {
+  document.querySelectorAll("[data-analysis-section]").forEach(button=>button.classList.toggle("active",button.dataset.analysisSection===dashboard.section));
+  if(dashboard.section==="matches"){
+    target.innerHTML=`<div class="server-analysis-user"><span>${esc(dashboard.profile.player?.name||dashboard.identity?.name||"분석 대상")}</span><strong>경기 분석</strong></div><div class="server-analysis-layout">${sourcePanel(dashboard.profile)}</div>`;
+    bindDashboard(target);
+    return;
+  }
   target.innerHTML=`<div class="server-analysis-loading">서버 통계를 불러오는 중...</div>`;
   try {
     const metrics=await loadServerMetrics(dashboard.role);
-    target.innerHTML=`<div class="server-analysis-user"><span>${esc(dashboard.profile.player?.name||dashboard.identity?.name||"분석 대상")}</span><strong>게임 분석 <em>(서버 기준)</em></strong></div><div class="server-analysis-layout">${personalMetricPanel(dashboard.profile)}${serverMetricPanel(metrics)}${sourcePanel(dashboard.profile)}</div>`;
+    target.innerHTML=`<div class="server-analysis-user"><span>${esc(dashboard.profile.player?.name||dashboard.identity?.name||"분석 대상")}</span><strong>서버 지표 <em>(서버 기준)</em></strong></div><div class="server-analysis-layout">${serverMetricPanel(metrics)}</div>`;
     bindDashboard(target);
   } catch(error) {
     target.innerHTML=`<div class="analysis-empty-inline"><strong>서버 통계를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;
   }
 }
 
-async function renderDashboard({forceReload=false,identity:requestedIdentity=null}={}) {
+async function renderDashboard({forceReload=false,identity:requestedIdentity=null,section=dashboard.section}={}) {
   switchView("analysis"); const target=$("analysisResults"); if(!target)return;
+  document.querySelectorAll("[data-analysis-section]").forEach(button=>button.classList.toggle("active",button.dataset.analysisSection===section));
   const identity=requestedIdentity?.userId&&requestedIdentity?.guildId?requestedIdentity:getAnalysisIdentity();
   if(!identity&&!canAnalyzeAllPlayers(identity?.guildId||"")){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>${analysisAccessMessage()}</span></div>`;return;}
   if(!identity){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>개인전적에서 유저를 선택한 뒤 분석할 수 있습니다.</span></div>`;return;}
   if(forceReload||dashboard.identity?.userId!==identity.userId||dashboard.identity?.guildId!==identity.guildId){
     target.innerHTML=`<div class="server-analysis-loading">내전 기록을 불러오는 중...</div>`;
-    try { dashboard={role:"전체",tab:"scrim",identity,profile:await apiGet(`/api/community/analysis/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`),metrics:new Map()}; }
+    try { dashboard={role:"전체",tab:"scrim",section,identity,profile:await apiGet(`/api/community/analysis/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`),metrics:new Map()}; }
     catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;return;}
   }
   await renderDashboardBody(target);
@@ -198,7 +178,8 @@ function opponentFor(match, focus) {
   return (match.players||[]).find(row => row.team!==focus.team && row.role===focus.role);
 }
 
-function backToDashboard(identity={}) {
+function backToDashboard(identity={},originView="") {
+  if(originView==="player"){history.back();return;}
   const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","analysis");
   if(identity.userId)url.searchParams.set("userId",identity.userId);
   if(identity.guildId)url.searchParams.set("guildId",identity.guildId);
@@ -221,11 +202,11 @@ function opponentComparison(match,focus,opponent) {
   </div>`;
 }
 
-async function renderMatchAnalysis({userId="",guildId="",matchId=""}={}) {
+async function renderMatchAnalysis({userId="",guildId="",matchId="",originView=""}={}) {
   switchView("analysis"); const target=$("analysisResults");
   if(!hasAnalysisAccess(userId,guildId)){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>${analysisAccessMessage()}</span></div>`;return;}
   target.innerHTML=`<div class="server-analysis-loading">상대 라이너와 비교하는 중...</div>`;
-  try {const [,data]=await Promise.all([apiGet(`/api/community/analysis/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=1`),apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`)]),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",()=>backToDashboard({userId,guildId}));}
+  try {const [,data]=await Promise.all([apiGet(`/api/community/analysis/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=1`),apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`)]),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",()=>backToDashboard({userId,guildId},originView));}
   catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>경기를 분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 
@@ -293,6 +274,9 @@ export async function renderCompactMatchAnalysis(detail={},target) {
   }
 }
 
-export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId","riotId"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
-export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||"",riotId:params.get("riotId")||""};if(detail.riotId)detail.name=detail.riotId;return detail.matchId?renderMatchAnalysis(detail):renderDashboard({identity:detail.userId&&detail.guildId?detail:null});}
-export function bindAnalysisPage() {window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))applyAnalysisRoute(new URLSearchParams(window.location.search));});}
+export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId","riotId","originView"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
+export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||"",riotId:params.get("riotId")||"",originView:params.get("originView")||""};if(detail.riotId)detail.name=detail.riotId;const section=params.get("section")==="server"?"server":"matches";dashboard.section=section;return detail.matchId?renderMatchAnalysis(detail):renderDashboard({identity:detail.userId&&detail.guildId?detail:null,section});}
+export function bindAnalysisPage() {
+  document.querySelectorAll("[data-analysis-section]").forEach(button=>button.addEventListener("click",()=>{const url=new URL(window.location.href),identity=dashboard.identity;url.search="";url.searchParams.set("view","analysis");if(button.dataset.analysisSection==="server")url.searchParams.set("section","server");if(identity?.userId)url.searchParams.set("userId",identity.userId);if(identity?.guildId)url.searchParams.set("guildId",identity.guildId);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);dashboard.section=button.dataset.analysisSection;renderDashboard({identity,section:dashboard.section});}));
+  window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))applyAnalysisRoute(new URLSearchParams(window.location.search));});
+}

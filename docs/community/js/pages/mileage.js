@@ -25,7 +25,7 @@ function purchaseLimitText(item){const limit=Number(item.perUserLimit||0);if(!li
 function settingsCard(settings){
   const r=settings.rules||{};
   return `<section class="mileage-card mileage-admin"><h2>서버 적립 규칙</h2><p class="mileage-muted">초기 권장: 내전 완료 20P · 승리 5P · 음성 30분당 5P. 승리 보너스는 완료 보상의 20~30%가 안정적입니다.</p><form id="mileageSettingsForm" class="mileage-form">
-    <label><span>마일리지 기능</span><select name="enabled"><option value="1" ${settings.enabled?"selected":""}>사용</option><option value="0" ${!settings.enabled?"selected":""}>중지</option></select></label>
+    <label><span>포인트 기능</span><select name="enabled"><option value="1" ${settings.enabled?"selected":""}>사용</option><option value="0" ${!settings.enabled?"selected":""}>중지</option></select></label>
     <label><span>상점</span><select name="shopEnabled"><option value="1" ${settings.shopEnabled?"selected":""}>사용</option><option value="0" ${!settings.shopEnabled?"selected":""}>중지</option></select></label>
     ${numberInput("daily_earn_cap","일일 자동 획득 상한 (0=무제한)",r.daily_earn_cap)}${numberInput("weekly_earn_cap","주간 자동 획득 상한 (0=무제한)",r.weekly_earn_cap)}
     ${numberInput("match_complete","내전 완료",r.match_complete)}${numberInput("match_win","승리 보너스",r.match_win)}
@@ -84,7 +84,7 @@ async function loadGuild(root,guild,{showAdmin=false}={}){
       <section class="mileage-card"><h2>주간 퀘스트</h2><div class="mileage-list">${rows(questData.quests,"진행 중인 퀘스트가 없습니다.",(q)=>`<div class="mileage-row"><span>${esc(q.name)}<br><small>${esc(q.description)}</small></span><b>${Number(q.reward).toLocaleString()}P</b></div>`)}</div></section></div>
       ${showAdmin&&guild.canManage?`<div class="mileage-grid">${settingsCard(settingsData.settings)}${adminCards({adminPurchases:adminPurchaseData.purchases,transactions:transactionData.transactions,economy:economyData.summary})}</div>`:""}<div id="mileageStatus" class="mileage-status"></div></div>`;
     bindGuild(root,guild,{showAdmin});
-  }catch(error){root.innerHTML=`<section class="mileage-card"><h2>마일리지를 불러오지 못했습니다.</h2><p>${esc(error.message)}</p></section>`;}
+  }catch(error){root.innerHTML=`<section class="mileage-card"><h2>포인트를 불러오지 못했습니다.</h2><p>${esc(error.message)}</p></section>`;}
 }
 
 function bindGuild(root,guild,{showAdmin=false}={}){
@@ -101,7 +101,7 @@ function bindGuild(root,guild,{showAdmin=false}={}){
 }
 
 function renderGuestPreview(root){
-  root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">SERVER MILEAGE SHOP</p><h1>마일리지 상점 미리보기</h1><p class="mileage-muted">로그인하고 Discord를 연결하면 서버별 잔액과 실제 판매 상품이 표시됩니다.</p></div><div><small>예시 잔액</small><div class="mileage-balance">1,420P</div></div></section><div class="mileage-grid"><section class="mileage-card"><h2>판매 상품</h2><div class="mileage-list">${previewItems.map(item=>`<div class="mileage-row"><span><strong>${esc(item.name)}</strong><br><small>${esc(item.description)} · 재고 ${item.stock??"무제한"} · ${esc(item.limit)}</small></span><span><b>${item.price.toLocaleString()}P</b> <button class="mileage-buy" disabled title="로그인 후 구매할 수 있습니다">구매</button></span></div>`).join("")}</div><p class="mileage-muted">위 2개는 소비자 화면 확인용 테스트 상품이며 실제 구매·차감은 되지 않습니다.</p></section><section class="mileage-card"><h2>이용 방법</h2><div class="mileage-list"><div class="mileage-row"><span>1. 홈페이지 로그인</span></div><div class="mileage-row"><span>2. Discord 계정 연결</span></div><div class="mileage-row"><span>3. 서버 선택 후 상품 구매</span></div><div class="mileage-row"><span>4. 구매내역에서 처리 상태 확인</span></div></div></section></div></div>`;
+  root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">SERVER POINT SHOP</p><h1>포인트 상점 미리보기</h1><p class="mileage-muted">로그인하고 Discord를 연결하면 서버별 잔액과 실제 판매 상품이 표시됩니다.</p></div><div><small>예시 잔액</small><div class="mileage-balance">1,420P</div></div></section><div class="mileage-grid"><section class="mileage-card"><h2>판매 상품</h2><div class="mileage-list">${previewItems.map(item=>`<div class="mileage-row"><span><strong>${esc(item.name)}</strong><br><small>${esc(item.description)} · 재고 ${item.stock??"무제한"} · ${esc(item.limit)}</small></span><span><b>${item.price.toLocaleString()}P</b> <button class="mileage-buy" disabled title="로그인 후 구매할 수 있습니다">구매</button></span></div>`).join("")}</div><p class="mileage-muted">위 2개는 소비자 화면 확인용 테스트 상품이며 실제 구매·차감은 되지 않습니다.</p></section><section class="mileage-card"><h2>이용 방법</h2><div class="mileage-list"><div class="mileage-row"><span>1. 홈페이지 로그인</span></div><div class="mileage-row"><span>2. Discord 계정 연결</span></div><div class="mileage-row"><span>3. 서버 선택 후 상품 구매</span></div><div class="mileage-row"><span>4. 구매내역에서 처리 상태 확인</span></div></div></section></div></div>`;
 }
 
 export async function renderMileage({rootId="mileageRoot",initialGuild="",managersOnly=false,showAdmin=false}={}){
@@ -112,7 +112,7 @@ export async function renderMileage({rootId="mileageRoot",initialGuild="",manage
     const data=await request("/api/mileage/guilds");let guilds=data.guilds||[];
     if(managersOnly)guilds=guilds.filter(g=>g.canManage);
     availableGuilds=guilds;
-    if(!guilds.length){root.innerHTML=`<section class="mileage-card"><h2>사용 가능한 서버가 없습니다.</h2><p class="mileage-muted">Discord 계정을 연결하고, 해당 서버에서 마일리지를 한 번 이상 받거나 서버 관리자로 등록되어야 합니다.</p></section>`;return;}
+    if(!guilds.length){root.innerHTML=`<section class="mileage-card"><h2>사용 가능한 서버가 없습니다.</h2><p class="mileage-muted">Discord 계정을 연결하고, 해당 서버에서 포인트를 한 번 이상 받거나 서버 관리자로 등록되어야 합니다.</p></section>`;return;}
     if(initialGuild&&guilds.some(g=>g.guildId===String(initialGuild)))selectedGuild=String(initialGuild);
     if(!guilds.some(g=>g.guildId===selectedGuild))selectedGuild=guilds[0].guildId;
     await loadGuild(root,guilds.find(g=>g.guildId===selectedGuild),{showAdmin});

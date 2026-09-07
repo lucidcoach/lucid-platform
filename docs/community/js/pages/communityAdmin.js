@@ -16,10 +16,10 @@ async function adminRequest(path,{method="GET",body}={}){const response=await fe
 const sections = [
   ["members","회원 관리","가입 회원·권한·Discord 연결 상태 확인","U"],
   ["server","서버 설정","서버별 내전·채널·권한 설정","⚙"],
-  ["mileage","마일리지 관리","지급 규칙·상점·주문·감사로그","M"],
+  ["mileage","포인트 관리","지급 규칙·상점·주문·감사로그","M"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
   ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
-  ["logs","운영 로그","채팅·관리자 작업·신고·마일리지 로그","≡"],
+  ["logs","운영 로그","채팅·관리자 작업·신고·포인트 로그","≡"],
   ["data","데이터 관리","서버 데이터 내보내기","⇩"],
   ["support","문의 관리","커뮤니티/봇 문의 처리","?"],
 ];
@@ -243,21 +243,21 @@ async function loadMembers(){
 
 function mileagePanel(){
   return shell(`
-    ${panelTitle("마일리지 관리","실제 지급 설정·상점·주문·환불·감사로그를 한 화면에서 관리합니다.")}
+    ${panelTitle("포인트 관리","실제 지급 설정·상점·주문·환불·감사로그를 한 화면에서 관리합니다.")}
     <div id="adminMileageRoot"></div>
   `);
 }
 
 function shopPanel(){
   return shell(`
-    ${panelTitle("상점 관리","마일리지로 구매할 상품과 주문을 관리합니다.")}
+    ${panelTitle("상점 관리","포인트로 구매할 상품과 주문을 관리합니다.")}
     <div class="shop-admin-grid">
       <section class="admin-work-panel shop-products-panel">
         <div class="admin-toolbar">
           <div class="admin-subtabs">
             <button class="active" data-shop-tab="products" data-tab-message="상품 목록입니다.">상품</button>
-            <button data-shop-tab="orders" data-tab-message="구매 처리와 환불은 실제 마일리지 관리 화면에서 처리합니다.">주문</button>
-            <button data-shop-tab="settings" data-tab-message="상점 사용 여부와 상품 설정은 실제 마일리지 관리 화면에서 처리합니다.">상점 설정</button>
+            <button data-shop-tab="orders" data-tab-message="구매 처리와 환불은 실제 포인트 관리 화면에서 처리합니다.">주문</button>
+            <button data-shop-tab="settings" data-tab-message="상점 사용 여부와 상품 설정은 실제 포인트 관리 화면에서 처리합니다.">상점 설정</button>
           </div>
           <button class="admin-primary" id="shopCreateBtn">+ 상품 등록</button>
         </div>
@@ -266,7 +266,7 @@ function shopPanel(){
           <article><span>판매중 상품</span><strong>3</strong></article>
           <article><span>오늘 주문</span><strong>7</strong></article>
           <article><span>처리 대기</span><strong>2</strong></article>
-          <article><span>오늘 사용 마일리지</span><strong>4,300 P</strong></article>
+          <article><span>오늘 사용 포인트</span><strong>4,300 P</strong></article>
         </div>
 
         <div class="shop-product-list">
@@ -304,7 +304,7 @@ function shopPanel(){
 
       <aside class="shop-preview-panel">
         <div class="shop-preview-head"><span>사용자 상점 미리보기</span><small>파라다이스 서버</small></div>
-        <div class="shop-balance-card"><span>내 마일리지</span><strong>1,420 P</strong></div>
+        <div class="shop-balance-card"><span>내 포인트</span><strong>1,420 P</strong></div>
         <div class="shop-preview-item">
           <div class="shop-preview-thumb">A</div>
           <div><strong>경기분석권</strong><small>게임 분석 상세 기능 1회</small></div>
@@ -370,7 +370,7 @@ function logsPanel(){
   return shell(`
     ${panelTitle("운영 로그","채팅로그를 포함해 관리자 작업과 주요 변경 이력을 모읍니다.")}
     <section class="admin-work-panel">
-      <div class="admin-subtabs"><button class="active" data-log-kind="chat">채팅</button><button data-log-kind="mileage">마일리지 감사</button><button data-log-kind="reports">신고</button><button data-log-kind="moderation">경고·메모</button></div>
+      <div class="admin-subtabs"><button class="active" data-log-kind="chat">채팅</button><button data-log-kind="mileage">포인트 감사</button><button data-log-kind="reports">신고</button><button data-log-kind="moderation">경고·메모</button></div>
       <form id="chatLogFilters" class="admin-filter-grid"><label>채널<input name="channel" list="chatChannelOptions" placeholder="채널명 또는 ID"><datalist id="chatChannelOptions"></datalist></label><label>유저<input name="user" placeholder="닉네임 또는 Discord ID"></label><label>내용<input name="content" placeholder="메시지 내용"></label><button class="admin-primary" type="submit">검색</button><button class="admin-select-button" type="reset">초기화</button></form>
       <p class="admin-tab-feedback">선택한 서버의 최근 채팅 로그입니다.</p>
       <div id="operationLogList" class="admin-table"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
@@ -383,7 +383,7 @@ function dataPanel(){
     ${panelTitle("데이터 관리","/서버데이터내보내기를 홈페이지 다운로드 방식으로 옮깁니다.")}
     <section class="admin-work-panel">
       <div class="admin-export-grid">
-        ${["유저 데이터","경기 기록","전적","마일리지","서버 설정","운영 로그"].map((x,i)=>`<label><input type="checkbox" ${i<5?"checked":""}><span>${x}</span></label>`).join("")}
+        ${["유저 데이터","경기 기록","전적","포인트","서버 설정","운영 로그"].map((x,i)=>`<label><input type="checkbox" ${i<5?"checked":""}><span>${x}</span></label>`).join("")}
       </div>
       <div class="admin-export-action"><div><strong>서버 데이터 파일 생성</strong><small>선택한 데이터만 묶어서 내려받는 구조</small></div><button class="admin-primary" disabled>데이터 파일 생성</button></div>
       <div class="admin-draft-note">백엔드 export endpoint 연결 후 버튼 활성화</div>

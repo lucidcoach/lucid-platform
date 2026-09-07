@@ -1,13 +1,13 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
-import { switchView } from "./view.js?v=20260906ops1";
+import { switchView } from "./view.js?v=20260907ia1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260907accountfix1";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260907jungle1";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260907ia1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
-import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260907accountfix1";
-import { renderMileage } from "./pages/mileage.js?v=20260907permissions1";
+import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260907ia1";
+import { renderMileage } from "./pages/mileage.js?v=20260907ia1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907oauth1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260907current1";
@@ -21,7 +21,7 @@ const FAVORITE_SEARCH_LIMIT = 12;
 function renderCommunitySupport(){
   const root=$("communitySupportRoot");if(!root)return;
   const user=getCurrentUser();
-  root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">CONTACT LUCID</p><h1>문의하기</h1><p class="mileage-muted">봇 이용, 내전 기록, 마일리지와 홈페이지 사용 중 생긴 문제를 남겨주세요.</p></div></section><section class="mileage-card"><form id="communityInquiryForm" class="mileage-form"><label class="wide">제목<input name="subject" required maxlength="120" placeholder="문의 제목"></label>${user?"":`<label class="wide">답변 받을 연락처<input name="contact" required maxlength="160" placeholder="이메일 또는 Discord ID"></label>`}<label class="wide">문의 내용<textarea name="message" required maxlength="3000" rows="8" placeholder="확인이 필요한 서버와 상황을 구체적으로 적어주세요."></textarea></label><button class="wide" type="submit">문의 접수</button><p id="communityInquiryStatus" class="mileage-status wide"></p></form></section></div>`;
+  root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">CONTACT LUCID</p><h1>문의하기</h1><p class="mileage-muted">봇 이용, 내전 기록, 포인트와 홈페이지 사용 중 생긴 문제를 남겨주세요.</p></div></section><section class="mileage-card"><form id="communityInquiryForm" class="mileage-form"><label class="wide">제목<input name="subject" required maxlength="120" placeholder="문의 제목"></label>${user?"":`<label class="wide">답변 받을 연락처<input name="contact" required maxlength="160" placeholder="이메일 또는 Discord ID"></label>`}<label class="wide">문의 내용<textarea name="message" required maxlength="3000" rows="8" placeholder="확인이 필요한 서버와 상황을 구체적으로 적어주세요."></textarea></label><button class="wide" type="submit">문의 접수</button><p id="communityInquiryStatus" class="mileage-status wide"></p></form></section></div>`;
   root.querySelector("#communityInquiryForm")?.addEventListener("submit",async event=>{
     event.preventDefault();const form=event.currentTarget,status=$("communityInquiryStatus"),button=form.querySelector("button");
     const values=new FormData(form);button.disabled=true;status.textContent="접수 중...";
@@ -107,6 +107,24 @@ function recentUrl() {
   return communityBaseUrl();
 }
 
+function selectScrimTab(view) {
+  document.querySelectorAll("[data-scrim-view]").forEach(button=>button.classList.toggle("active",button.dataset.scrimView===view));
+}
+
+function openMyRecords({push=true}={}) {
+  const user=getCurrentUser(), linked=Boolean(user?.discordConnected||user?.discord_connected||user?.discordDisplayName||user?.discord_display_name);
+  if(push){const url=new URL(window.location.href);url.search="";url.searchParams.set("view","my");history.pushState({view:"my"},"",`${url.pathname}${url.search}`);}
+  selectScrimTab("my");
+  const identity=getAnalysisIdentity();
+  if(identity)return openPlayer(identity.userId,identity.guildId,{historyMode:"replace"});
+  switchView("search");
+  const target=$("searchResults");
+  target.innerHTML=linked
+    ? `<div class="empty-state"><strong>Discord에서 /소환사등록을 먼저 해주세요.</strong></div>`
+    : `<div class="empty-state"><strong>Discord 연동 후 내 전적을 확인할 수 있습니다.</strong><button class="community-home-button" type="button" data-link-discord>Discord 연동</button></div>`;
+  target.querySelector("[data-link-discord]")?.addEventListener("click",()=>$("communityLinkBtn")?.click());
+}
+
 function applyRoute({ fromPop = false } = {}) {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view");
@@ -122,6 +140,7 @@ function applyRoute({ fromPop = false } = {}) {
     applyAnalysisRoute(params);
     return;
   }
+  if (view === "my") { openMyRecords({push:false}); return; }
   if (view === "ranking") {
     switchView("ranking");
     loadRankings();
@@ -150,6 +169,7 @@ function applyRoute({ fromPop = false } = {}) {
     return;
   }
   switchView("recent");
+  selectScrimTab("recent");
   if (!fromPop) loadRecent();
 }
 
@@ -157,6 +177,7 @@ function goRecent({ push = true } = {}) {
   if (push) history.pushState({ view: "recent" }, "", recentUrl());
   $("playerSearchInput").value = "";
   switchView("recent");
+  selectScrimTab("recent");
 }
 
 function renderCommunityAccount() {
@@ -209,6 +230,7 @@ function bindEvents() {
     if(query) searchPlayers(query, { historyMode: "push" });
   });
   $("communityHomeBtn").addEventListener("click",()=>goRecent());
+  $("myRecordsBtn").addEventListener("click",()=>openMyRecords());
   $("refreshMatchesBtn").addEventListener("click",()=>{loadRecent();loadLiveMatch();});
   $("loadMoreBtn").addEventListener("click",()=>loadRecent({append:true}));
   document.querySelectorAll("[data-match-category]").forEach((button) => {
@@ -284,6 +306,7 @@ function bindEvents() {
       openAnalysisFromMatch({
         userId: fullAnalysisTrigger.dataset.userId, guildId: fullAnalysisTrigger.dataset.guildId,
         matchId: fullAnalysisTrigger.dataset.matchId, champion: fullAnalysisTrigger.dataset.champion, role: fullAnalysisTrigger.dataset.role,
+        originView: document.getElementById("searchView")?.classList.contains("active") ? "player" : "analysis",
       });
       return;
     }
