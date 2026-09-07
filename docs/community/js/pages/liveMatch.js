@@ -1,6 +1,6 @@
 import { apiGet } from "../api.js?v=20260907current1";
 import { championIcon } from "../assets.js?v=20260907current1";
-import { $, escapeHtml, tierClass } from "../utils.js?v=20260907current1";
+import { $, escapeHtml } from "../utils.js?v=20260907current1";
 
 const esc = (value) => escapeHtml(String(value ?? ""));
 let currentGames = [];
@@ -41,7 +41,7 @@ function mostChampions(player) {
   if (!rows.length) return `<span class="current-no-data">기록 없음</span>`;
   return rows.map((row) => {
     const icon = championIcon(row.champion);
-    return `<span class="current-most" title="${esc(row.champion)} · ${Number(row.games || 0)}게임">${icon ? `<img src="${esc(icon)}" alt="">` : ""}<b>${esc(row.champion)}</b></span>`;
+    return `<span class="current-most" title="${esc(row.champion)} · ${Number(row.games || 0)}게임">${icon ? `<img src="${esc(icon)}" alt="${esc(row.champion)}">` : `<b>${esc(row.champion)}</b>`}</span>`;
   }).join("");
 }
 
@@ -49,13 +49,29 @@ function playerRow(player, side) {
   const rank = player.positionRank || {};
   const metricName = player.role === "원딜" ? "DPM" : "킬관여";
   const metric = player.metrics?.[player.role === "원딜" ? "dpm" : "kp"] || {};
+  const form = player.recentForm || [];
+  const wins = form.filter((value) => value === "W").length;
+  const losses = form.filter((value) => value === "L").length;
   return `<article class="current-player-row ${side}">
-    <div class="current-player-head"><span>${esc(player.role || "미정")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button>${player.mainRole ? `<small>주 ${esc(player.mainRole)}</small>` : ""}</div>
-    <div class="current-player-tier"><strong class="${tierClass(player.tier)}">${esc(player.tier || "미배치")}</strong><span>${Math.round(player.mmr || 0)} MMR</span>${rank.rank ? `<small>${esc(player.role)} ${rank.rank}위 · 상위 ${rank.topPercent}%</small>` : ""}</div>
-    <div class="current-player-recent"><span>최근 ${Number(player.recentGames || 0)}전 <strong>${Number(player.recentWinRate || 0).toFixed(0)}%</strong></span><span class="current-form">${(player.recentForm || []).map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || "기록 없음"}</span></div>
-    <div class="current-player-metrics"><span>${metricName} ${metric.value == null ? "-" : Number(metric.value).toFixed(1)}${metricName === "킬관여" ? "%" : ""}</span>${metric.rank ? `<small>${metric.rank}/${metric.total}위</small>` : ""}</div>
-    <div class="current-player-mosts">${mostChampions(player)}</div>
+    <div class="current-player-head"><span>${esc(player.role || "미정")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button><div class="current-player-tier"><strong>${esc(player.tier || "미배치")}</strong><span>${Math.round(player.mmr || 0)} MMR</span></div></div>
+    <div class="current-player-recent"><span>최근 ${Number(player.recentGames || 0)}전 <strong>${Number(player.recentWinRate || 0).toFixed(0)}%</strong>${form.length ? ` · 폼 ${wins}W ${losses}L` : ""}</span><span class="current-form">${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || "기록 없음"}</span><small>${metricName} ${metric.value == null ? "-" : Number(metric.value).toFixed(1)}${metricName === "킬관여" ? "%" : ""}</small></div>
+    <div class="current-player-foot"><div class="current-player-mosts">${mostChampions(player)}</div>${rank.rank ? `<small>${esc(player.role)} 서버 ${rank.rank}위 · 상위 ${rank.topPercent}%</small>` : player.mainRole ? `<small>주 포지션 ${esc(player.mainRole)}</small>` : ""}</div>
   </article>`;
+}
+
+function recentTeamRate(players = []) {
+  const rows = players.filter((player) => Number(player.recentGames || 0) > 0);
+  const games = rows.reduce((sum, player) => sum + Number(player.recentGames || 0), 0);
+  return games ? rows.reduce((sum, player) => sum + Number(player.recentWinRate || 0) * Number(player.recentGames || 0), 0) / games : null;
+}
+
+function gameSummary(game) {
+  const mmrGap = Math.round(Number(game.blueAverageMmr || 0) - Number(game.redAverageMmr || 0));
+  const blueRate = recentTeamRate(game.blue), redRate = recentTeamRate(game.red);
+  const formGap = blueRate == null || redRate == null ? null : blueRate - redRate;
+  const mmrText = mmrGap === 0 ? "평균 MMR 동률" : `평균 MMR ${mmrGap > 0 ? "블루" : "레드"} +${Math.abs(mmrGap)}`;
+  const formText = formGap == null ? "최근 폼 비교 데이터 부족" : Math.abs(formGap) < 1 ? "최근 폼 동률권" : `최근 폼 ${formGap > 0 ? "블루" : "레드"} +${Math.abs(formGap).toFixed(0)}%p`;
+  return `<section class="current-overview" aria-label="현재 경기 요약"><span>${mmrText}</span><span>${formText}</span></section>`;
 }
 
 function renderList() {
@@ -75,9 +91,10 @@ function renderPreview(gameId) {
   root.innerHTML = `<div class="current-preview">
     <button class="current-back-button" type="button" data-current-back>← 진행 경기 목록</button>
     <div class="current-preview-summary"><div><strong class="blue">BLUE ${Math.round(game.blueAverageMmr || 0)}</strong><span>VS</span><strong class="red">RED ${Math.round(game.redAverageMmr || 0)}</strong></div><p>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</p></div>
-    <section class="current-team-block"><h3>블루팀 <span>${esc(game.blueAverageTier || "미배치")} · 평균 ${Math.round(game.blueAverageMmr || 0)}</span></h3>${(game.blue || []).map((player) => playerRow(player, "blue")).join("")}</section>
-    <section class="current-team-block"><h3>레드팀 <span>${esc(game.redAverageTier || "미배치")} · 평균 ${Math.round(game.redAverageMmr || 0)}</span></h3>${(game.red || []).map((player) => playerRow(player, "red")).join("")}</section>
-    <section class="current-matchups"><h3>핵심 매치업</h3>${matchups.length ? matchups.map((item) => `<div><span>${esc(item.role)}</span><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></div>`).join("") : `<p>비교 가능한 포지션 기록이 없습니다.</p>`}</section>
+    <section class="current-team-block blue-team"><h3>블루팀 <span>${esc(game.blueAverageTier || "미배치")} · 평균 ${Math.round(game.blueAverageMmr || 0)}</span></h3>${(game.blue || []).map((player) => playerRow(player, "blue")).join("")}</section>
+    <section class="current-team-block red-team"><h3>레드팀 <span>${esc(game.redAverageTier || "미배치")} · 평균 ${Math.round(game.redAverageMmr || 0)}</span></h3>${(game.red || []).map((player) => playerRow(player, "red")).join("")}</section>
+    ${gameSummary(game)}
+    <section class="current-matchups"><h3>라인별 주요 우세</h3>${matchups.length ? matchups.map((item) => `<div><span>${esc(item.role)}</span><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></div>`).join("") : `<p>비교 가능한 포지션 기록이 없습니다.</p>`}</section>
     <p class="current-data-note">실시간 챔피언 픽 없이, 이 Discord 서버에 저장된 기존 내전 기록만 사용합니다.</p>
   </div>`;
   root.querySelector("[data-current-back]")?.addEventListener("click", renderList);
