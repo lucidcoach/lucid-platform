@@ -5,7 +5,7 @@ import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints,
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907matchsummary2";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907matchsummary2";
-import { canAnalyzeAllPlayers } from "../auth.js?v=20260907matchsummary2";
+import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907profilefilter3";
 
 
 function updateUrl(params, mode = "push") {
@@ -211,20 +211,34 @@ function personalMatchChampion(match, userId) {
   return String(player?.champion || "").trim();
 }
 
+function personalMatchChampion(match, userId) {
+  const player = (match?.players || []).find((row) => String(row?.userId) === String(userId));
+  return String(player?.champion || "").trim();
+}
+
+function isDiscordLinkedUser(user) {
+  return Boolean(user?.discordConnected || user?.discord_connected || user?.discordDisplayName || user?.discord_display_name || user?.discordId || user?.discord_id);
+}
+
+function canAnalyzeSearchedPlayer(userId, guildId) {
+  if (isCommunityAdmin() || isCommunityCoach() || isCommunityServerAdmin(guildId)) return { ok:true };
+  const user = getCurrentUser();
+  if (!user) return { ok:false, message:"로그인 후 Discord 연동이 필요합니다." };
+  if (!isDiscordLinkedUser(user)) return { ok:false, message:"Discord 연동 후 본인이 등록한 계정만 분석할 수 있습니다." };
+  if (!canAnalyzePlayer(userId, guildId)) return { ok:false, message:"본인이 등록한 계정만 볼 수 있습니다. 다른 회원 분석은 관리자 권한이 필요합니다." };
+  return { ok:true };
+}
+
 function personalHistoryFilters(matches = [], userId, guildId) {
   const champions = [...new Set(
     matches.map((match) => personalMatchChampion(match, userId)).filter(Boolean)
   )].sort((a, b) => a.localeCompare(b, "ko"));
-  const options = champions.map((champion) =>
-    `<option value="${escapeHtml(champion)}">${escapeHtml(champion)}</option>`
-  ).join("");
+  const options = champions.map((champion) => `<option value="${escapeHtml(champion)}"></option>`).join("");
   return `<div class="personal-history-toolbar" aria-label="개인 전적 필터">
-    <label class="personal-champion-filter">
+    <label class="personal-champion-filter personal-champion-search-filter">
       <span>챔피언</span>
-      <select data-personal-champion-filter aria-label="챔피언 필터">
-        <option value="">전체 챔피언</option>
-        ${options}
-      </select>
+      <input type="search" data-personal-champion-filter list="personalChampionOptions-${escapeHtml(userId)}" placeholder="챔피언 검색" autocomplete="off" aria-label="챔피언 검색">
+      <datalist id="personalChampionOptions-${escapeHtml(userId)}">${options}</datalist>
     </label>
     <div class="personal-queue-filter" role="group" aria-label="게임 유형 필터 준비 중">
       <span class="personal-filter-label">게임 유형</span>
@@ -235,26 +249,27 @@ function personalHistoryFilters(matches = [], userId, guildId) {
         <button type="button" disabled title="Riot API 연동 후 지원">칼바람</button>
       </div>
     </div>
-    ${canAnalyzeAllPlayers(guildId) ? `<button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}">분석하기</button>` : ""}
+    <button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}">분석하기</button>
   </div>`;
 }
 
 function bindPersonalHistoryFilters(target, matches = [], userId) {
-  const select = target.querySelector("[data-personal-champion-filter]");
+  const input = target.querySelector("[data-personal-champion-filter]");
   const feed = target.querySelector("[data-personal-match-feed]");
-  if (!select || !feed) return;
+  if (!input || !feed) return;
 
   const render = () => {
-    const selected = String(select.value || "");
-    const visible = selected
-      ? matches.filter((match) => personalMatchChampion(match, userId) === selected)
+    const query = String(input.value || "").trim().toLowerCase();
+    const visible = query
+      ? matches.filter((match) => personalMatchChampion(match, userId).toLowerCase().includes(query))
       : matches;
     feed.innerHTML = visible.map((match) => playerMatchCard(match, userId)).join("")
-      || `<div class="empty-state"><strong>${selected ? "해당 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
+      || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
     bindExpanders(feed);
   };
 
-  select.addEventListener("change", render);
+  input.addEventListener("input", render);
+  input.addEventListener("change", render);
 }
 
 export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
@@ -295,13 +310,20 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     bindPersonalHistoryFilters(target, data.matches || [], userId);
     target.querySelector("[data-admin-analyze-player]")?.addEventListener("click", (event) => {
       const button = event.currentTarget;
+      const requestedUserId = button.dataset.userId || String(userId);
+      const requestedGuildId = button.dataset.guildId || String(guildId);
+      const access = canAnalyzeSearchedPlayer(requestedUserId, requestedGuildId);
+      if (!access.ok) {
+        window.alert(access.message || "분석 권한이 필요합니다.");
+        return;
+      }
       const url = new URL(window.location.href);
       url.search = "";
       url.searchParams.set("view", "analysis");
-      url.searchParams.set("userId", button.dataset.userId || String(userId));
-      url.searchParams.set("guildId", button.dataset.guildId || String(guildId));
-      history.pushState({ view:"analysis", userId:String(userId), guildId:String(guildId) }, "", `${url.pathname}${url.search}`);
-      window.dispatchEvent(new CustomEvent("lucid:analyze-player", { detail:{ userId:String(userId), guildId:String(guildId), name:p.name || "" } }));
+      url.searchParams.set("userId", requestedUserId);
+      url.searchParams.set("guildId", requestedGuildId);
+      history.pushState({ view:"analysis", userId:requestedUserId, guildId:requestedGuildId }, "", `${url.pathname}${url.search}`);
+      window.dispatchEvent(new CustomEvent("lucid:analyze-player", { detail:{ userId:requestedUserId, guildId:requestedGuildId, name:p.name || "" } }));
     });
     bindExpanders(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {

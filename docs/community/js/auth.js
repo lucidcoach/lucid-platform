@@ -49,12 +49,13 @@ export function isCommunityServerAdmin(guildId=""){
   return hasServerAdminRole && (!guildId || !ids.length);
 }
 export function canAnalyzeAllPlayers(guildId=""){ return isCommunityAdmin() || isCommunityCoach() || isCommunityServerAdmin(guildId); }
+export function isDiscordConnected(){ return Boolean(currentUser?.discordConnected||currentUser?.discord_connected||currentUser?.discordDisplayName||currentUser?.discord_display_name||currentUser?.discordId||currentUser?.discord_id); }
 export function getRiotAccounts(){ return [...riotAccounts]; }
 export function getResolvedAnalysisPlayers(){ return [...resolvedPlayers]; }
 export function getAnalysisIdentity(){ return resolvedPlayers[0] || null; }
 export function canAnalyzePlayer(userId,guildId){
   if(canAnalyzeAllPlayers(guildId)) return true;
-  if(!currentUser) return false;
+  if(!currentUser || !isDiscordConnected()) return false;
   return resolvedPlayers.some(row => String(row.userId)===String(userId) && String(row.guildId)===String(guildId));
 }
 

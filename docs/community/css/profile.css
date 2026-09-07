@@ -1748,3 +1748,38 @@
 .personal-admin-analysis-button{margin-left:auto;min-width:92px;height:40px;border:1px solid #4b73a5;border-radius:9px;background:#173052;color:#eef6ff;font-weight:850;cursor:pointer}
 .personal-admin-analysis-button:hover{background:#21436f}
 @media(max-width:900px){.personal-admin-analysis-button{width:100%;margin-left:0}.personal-history-toolbar{flex-wrap:wrap}}
+
+/* 2026-09-07 profile filters: keep original compact card UI and pin Analyze to the far right */
+.personal-history-toolbar{
+  display:flex!important;
+  align-items:flex-end!important;
+  gap:12px!important;
+  margin:2px 0 10px!important;
+  padding:10px 12px!important;
+  border:1px solid var(--line-soft)!important;
+  border-radius:11px!important;
+  background:var(--panel)!important;
+  flex-wrap:nowrap!important;
+}
+.personal-champion-filter,.personal-queue-filter{display:grid!important;gap:6px!important}
+.personal-champion-filter>span,.personal-filter-label{color:#77869e!important;font-size:9px!important;font-weight:850!important;letter-spacing:.04em!important}
+.personal-champion-search-filter{min-width:170px!important}
+.personal-champion-search-filter input{
+  width:170px!important;height:34px!important;padding:0 10px!important;border:1px solid var(--line-soft)!important;
+  border-radius:8px!important;background:#0b1018!important;color:#e8edf6!important;font-size:11px!important;font-weight:800!important;outline:none!important;
+}
+.personal-champion-search-filter input:focus{border-color:#62589a!important;box-shadow:0 0 0 2px rgba(137,111,255,.12)!important}
+.personal-champion-search-filter input::placeholder{color:#617087!important}
+.personal-queue-filter{min-width:0!important}
+.personal-queue-buttons{display:flex!important;align-items:center!important;gap:4px!important;padding:3px!important;border:1px solid var(--line-soft)!important;border-radius:9px!important;background:#0b1018!important}
+.personal-queue-buttons button{height:28px!important;min-width:54px!important;padding:0 10px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:#68758a!important;font-size:10px!important;font-weight:850!important}
+.personal-queue-buttons button:disabled{cursor:not-allowed!important;opacity:.55!important}
+.personal-admin-analysis-button{margin-left:auto!important;min-width:92px!important;height:34px!important;padding:0 15px!important;border:1px solid #4b73a5!important;border-radius:8px!important;background:#173052!important;color:#eef6ff!important;font-weight:850!important;font-size:11px!important;cursor:pointer!important;align-self:flex-end!important}
+.personal-admin-analysis-button:hover{background:#21436f!important}
+@media(max-width:760px){
+  .personal-history-toolbar{flex-wrap:wrap!important;align-items:stretch!important}
+  .personal-champion-search-filter{flex:1 1 170px!important}
+  .personal-champion-search-filter input{width:100%!important}
+  .personal-queue-filter{flex:1 1 auto!important}
+  .personal-admin-analysis-button{margin-left:0!important;width:100%!important}
+}
