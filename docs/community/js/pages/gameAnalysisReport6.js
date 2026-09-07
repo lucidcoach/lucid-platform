@@ -1,8 +1,8 @@
-import { apiGet } from "../api.js?v=20260907analysis1";
+import { apiGet } from "../api.js?v=20260907permissions1";
 import { championIcon } from "../assets.js?v=20260907analysis1";
 import { $, escapeHtml, relativeTime } from "../utils.js?v=20260907analysis1";
 import { switchView } from "../view.js?v=20260907analysis1";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260907hotfix1";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260907permissions1";
 
 const ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
 const ROLE_METRICS = {
@@ -57,6 +57,13 @@ function comparisonValue(player, opponent, key) {
 
 function hasAnalysisAccess(userId="", guildId="") {
   return isCommunityAdmin() || isCommunityCoach() || canAnalyzeAllPlayers(guildId) || canAnalyzePlayer(userId, guildId);
+}
+
+function analysisAccessMessage() {
+  const user=getCurrentUser();
+  if(!user)return "로그인 후 Discord 연동이 필요합니다.";
+  if(!user.discordConnected&&!user.discord_connected)return "Discord 연동 후 본인이 등록한 계정만 분석할 수 있습니다.";
+  return "본인이 등록한 계정만 볼 수 있습니다. 다른 회원 분석은 관리자 권한이 필요합니다.";
 }
 
 function radarPoints(values, radius=112, cx=150, cy=140) {
@@ -149,11 +156,11 @@ async function renderDashboardBody(target) {
 async function renderDashboard({forceReload=false}={}) {
   switchView("analysis"); const target=$("analysisResults"); if(!target)return;
   const identity=getAnalysisIdentity();
-  if(!identity&&!canAnalyzeAllPlayers(identity?.guildId||"")){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록해주세요.</span></div>`;return;}
+  if(!identity&&!canAnalyzeAllPlayers(identity?.guildId||"")){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>${analysisAccessMessage()}</span></div>`;return;}
   if(!identity){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>개인전적에서 유저를 선택한 뒤 분석할 수 있습니다.</span></div>`;return;}
   if(forceReload||dashboard.identity?.userId!==identity.userId||dashboard.identity?.guildId!==identity.guildId){
     target.innerHTML=`<div class="server-analysis-loading">내전 기록을 불러오는 중...</div>`;
-    try { dashboard={role:"전체",tab:"scrim",identity,profile:await apiGet(`/api/community/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`),metrics:new Map()}; }
+    try { dashboard={role:"전체",tab:"scrim",identity,profile:await apiGet(`/api/community/analysis/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`),metrics:new Map()}; }
     catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;return;}
   }
   await renderDashboardBody(target);
@@ -185,9 +192,9 @@ function opponentComparison(match,focus,opponent) {
 
 async function renderMatchAnalysis({userId="",guildId="",matchId=""}={}) {
   switchView("analysis"); const target=$("analysisResults");
-  if(!hasAnalysisAccess(userId,guildId)){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>${getCurrentUser()?"등록한 Riot ID의 경기만 분석할 수 있습니다.":"로그인 후 사용할 수 있습니다."}</span></div>`;return;}
+  if(!hasAnalysisAccess(userId,guildId)){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>${analysisAccessMessage()}</span></div>`;return;}
   target.innerHTML=`<div class="server-analysis-loading">상대 라이너와 비교하는 중...</div>`;
-  try {const data=await apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",backToDashboard);}
+  try {const [,data]=await Promise.all([apiGet(`/api/community/analysis/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=1`),apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`)]),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",backToDashboard);}
   catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>경기를 분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 

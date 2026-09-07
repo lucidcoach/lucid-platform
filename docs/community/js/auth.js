@@ -1,5 +1,4 @@
 import { API_BASE_URL } from "./config.js";
-import { apiGet } from "./api.js";
 
 let currentUser = null;
 let riotAccounts = [];
@@ -7,14 +6,6 @@ let resolvedPlayers = [];
 
 function apiUrl(path){ return `${API_BASE_URL.replace(/\/$/, "")}${path}`; }
 function normalizeRiotId(value){ return String(value || "").trim().replace(/＃/g, "#"); }
-function validRiotId(value){
-  const text = normalizeRiotId(value);
-  const split = text.lastIndexOf("#");
-  if(split <= 0 || split >= text.length - 1) return false;
-  const gameName = text.slice(0, split).trim();
-  const tagLine = text.slice(split + 1).trim();
-  return Boolean(gameName && tagLine && gameName.length <= 32 && tagLine.length <= 16);
-}
 
 export function getCurrentUser(){ return currentUser; }
 export function isCommunityAdmin(){
@@ -45,8 +36,8 @@ export function isCommunityServerAdmin(guildId=""){
     if(Array.isArray(currentUser.serverAdmins)) ids.push(...currentUser.serverAdmins.map(x=>String(x?.guildId ?? x)));
     else ids.push(...Object.keys(currentUser.serverAdmins).filter(key=>currentUser.serverAdmins[key]));
   }
-  if(guildId && ids.length) return ids.includes(String(guildId));
-  return hasServerAdminRole && (!guildId || !ids.length);
+  if(guildId) return ids.includes(String(guildId));
+  return hasServerAdminRole && ids.length > 0;
 }
 export function canAnalyzeAllPlayers(guildId=""){ return isCommunityAdmin() || isCommunityCoach() || isCommunityServerAdmin(guildId); }
 export function getRiotAccounts(){ return [...riotAccounts]; }
@@ -59,23 +50,11 @@ export function canAnalyzePlayer(userId,guildId){
 }
 
 async function resolveRegisteredPlayers(){
-  if(!currentUser || !riotAccounts.length){ resolvedPlayers=[]; return resolvedPlayers; }
-  const found=[];
-  const seen=new Set();
-  await Promise.all(riotAccounts.map(async (riotId) => {
-    try{
-      const data=await apiGet(`/api/community/search?q=${encodeURIComponent(riotId)}&limit=20`);
-      for(const row of (data.players||[])){
-        const names=[row.name,row.matchedName].map(x=>normalizeRiotId(x).toLowerCase());
-        if(!names.includes(normalizeRiotId(riotId).toLowerCase())) continue;
-        const key=`${row.guildId}:${row.userId}`;
-        if(seen.has(key)) continue;
-        seen.add(key);
-        found.push({userId:String(row.userId),guildId:String(row.guildId),name:String(row.name||riotId),riotId});
-      }
-    }catch(_){ }
-  }));
-  resolvedPlayers=found;
+  const rows=Array.isArray(currentUser?.analysisPlayers)?currentUser.analysisPlayers:[];
+  resolvedPlayers=rows.map(row=>({
+    userId:String(row.userId||""), guildId:String(row.guildId||""),
+    name:String(row.name||row.riotId||""), riotId:String(row.riotId||row.name||""),
+  })).filter(row=>row.userId&&row.guildId);
   return resolvedPlayers;
 }
 
@@ -109,7 +88,7 @@ async function loadCurrentUser(){
     const data=await res.json().catch(()=>({}));
     currentUser=res.ok&&data.ok?data.user:null;
   }catch(_){ currentUser=null; }
-  riotAccounts=Array.isArray(currentUser?.riotAccounts) ? currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean).slice(0,5) : [];
+  riotAccounts=Array.isArray(currentUser?.riotAccounts) ? currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean) : [];
   await resolveRegisteredPlayers();
   renderAuthActions();
   return currentUser;
@@ -122,11 +101,7 @@ async function login(email,password){
   const res=await fetch(apiUrl("/api/auth/login"),{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
   const data=await res.json().catch(()=>({}));
   if(!res.ok||!data.ok) throw new Error(data.error||"로그인에 실패했습니다.");
-  currentUser=data.user||null;
-  riotAccounts=Array.isArray(currentUser?.riotAccounts) ? currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean).slice(0,5) : [];
-  await resolveRegisteredPlayers();
-  renderAuthActions();
-  return currentUser;
+  return loadCurrentUser();
 }
 
 export async function logoutCommunityUser(){
@@ -135,23 +110,8 @@ export async function logoutCommunityUser(){
 }
 
 export async function saveRiotAccounts(values=[]){
-  if(!currentUser) throw new Error("로그인이 필요합니다.");
-  const clean=[];
-  for(const raw of values.slice(0,5)){
-    const value=normalizeRiotId(raw);
-    if(!value) continue;
-    if(!validRiotId(value)) throw new Error(`Riot ID는 닉네임#태그 형식으로 입력해주세요: ${value}`);
-    if(clean.some(x=>x.toLowerCase()===value.toLowerCase())) throw new Error("같은 Riot ID를 중복 등록할 수 없습니다.");
-    clean.push(value);
-  }
-  const res=await fetch(apiUrl("/api/auth/riot-accounts"),{method:"PUT",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({accounts:clean})});
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok||!data.ok) throw new Error(data.error==="invalid_riot_id"?"Riot ID 형식을 확인해주세요.":data.error||"Riot ID 저장에 실패했습니다.");
-  currentUser=data.user||currentUser;
-  riotAccounts=Array.isArray(currentUser?.riotAccounts)?currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean).slice(0,5):clean;
-  await resolveRegisteredPlayers();
-  renderAuthActions();
-  return getRiotAccounts();
+  void values;
+  throw new Error("Riot ID는 Discord 봇의 소환사등록 정보에서 자동으로 가져옵니다.");
 }
 
 export async function initCommunityAuth(){

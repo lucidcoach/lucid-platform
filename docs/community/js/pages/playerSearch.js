@@ -1,11 +1,11 @@
-import { apiGet } from "../api.js?v=20260904r";
+import { apiGet } from "../api.js?v=20260907permissions1";
 import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260905ai";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907hotfix1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
-import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907hotfix1";
+import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907permissions1";
 
 
 function updateUrl(params, mode = "push") {

@@ -1,5 +1,5 @@
 
-import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260905admin2";
+import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260907permissions1";
 import { API_BASE_URL } from "../config.js?v=20260904d";
 import { renderMileage } from "./mileage.js?v=20260906ops2";
 

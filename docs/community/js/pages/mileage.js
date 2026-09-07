@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../config.js?v=20260904d";
-import { getCurrentUser } from "../auth.js?v=20260905admin2";
+import { getCurrentUser } from "../auth.js?v=20260907permissions1";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,(ch)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const apiUrl=(path)=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
