@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260906report5">
+  <link rel="stylesheet" href="styles.css?v=20260907current1">
 </head>
 <body>
   <header class="community-header">
@@ -56,26 +56,31 @@
     <section id="statusBanner" class="status-banner" hidden></section>
 
     <section id="recentView" class="content-view active">
-      <section id="liveMatchSection" class="live-match-section" hidden aria-live="polite">
-        <div id="liveMatchRoot"></div>
-      </section>
-      <div class="section-heading recent-heading">
-        <div>
-          <p class="section-kicker">MATCH HISTORY</p>
-          <h1>파라다이스 서버 내전 기록</h1>
-        </div>
-        <div class="recent-heading-actions">
-          <div class="match-category-tabs" role="tablist" aria-label="내전 유형 필터">
-            <button class="match-category-tab active" type="button" data-match-category="all">전체</button>
-            <button class="match-category-tab" type="button" data-match-category="scrim">내전</button>
-            <button class="match-category-tab" type="button" data-match-category="league">리그전</button>
-            <button class="match-category-tab" type="button" data-match-category="aram">칼바람</button>
+      <div class="recent-live-layout">
+        <div class="recent-history-column">
+          <div class="section-heading recent-heading">
+            <div>
+              <p class="section-kicker">MATCH HISTORY</p>
+              <h1>파라다이스 서버 내전 기록</h1>
+            </div>
+            <div class="recent-heading-actions">
+              <div class="match-category-tabs" role="tablist" aria-label="내전 유형 필터">
+                <button class="match-category-tab active" type="button" data-match-category="all">전체</button>
+                <button class="match-category-tab" type="button" data-match-category="scrim">내전</button>
+                <button class="match-category-tab" type="button" data-match-category="league">리그전</button>
+                <button class="match-category-tab" type="button" data-match-category="aram">칼바람</button>
+              </div>
+              <button class="ghost-button" id="refreshMatchesBtn" type="button">새로고침</button>
+            </div>
           </div>
-          <button class="ghost-button" id="refreshMatchesBtn" type="button">새로고침</button>
+          <div id="recentMatches" class="match-feed" aria-live="polite"></div>
+          <button class="load-more" id="loadMoreBtn" type="button" hidden>더 보기</button>
         </div>
+        <aside id="liveMatchSection" class="current-games-panel" aria-live="polite">
+          <div class="current-panel-title"><span class="current-status-dot"></span><div><p class="section-kicker">IN PROGRESS</p><h2>현재 진행 중인 내전</h2></div></div>
+          <div id="liveMatchRoot"><p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p></div>
+        </aside>
       </div>
-      <div id="recentMatches" class="match-feed" aria-live="polite"></div>
-      <button class="load-more" id="loadMoreBtn" type="button" hidden>더 보기</button>
     </section>
 
     <section id="searchView" class="content-view">
@@ -166,6 +171,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js"></script>
+  <script type="module" src="js/app-report6.js?v=20260907current1"></script>
 </body>
 </html>
