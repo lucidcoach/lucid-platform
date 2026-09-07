@@ -93,8 +93,8 @@ import {
 import { createMarketPage } from "./js/pages/market.js";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
 import { createReservationPage } from "./js/pages/reservationPage.js";
-import { createAuthAccountPage } from "./js/pages/authAccount.js";
-import { createAdminDashboardPage } from "./js/pages/adminDashboard.js";
+import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260907accountfix1";
+import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260907accountfix1";
 import { createCoachSelfPage } from "./js/pages/coachSelf.js";
 import { createImageCropController } from "./js/components/imageCrop.js";
 

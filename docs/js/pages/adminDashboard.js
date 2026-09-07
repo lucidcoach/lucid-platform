@@ -281,13 +281,13 @@ function renderUsers() {
   const query = state.userQuery;
   const visibleUsers = state.users.filter((user) => {
     const coachName = coachOptions.find((coach) => coach.key === user.coachKey)?.name || "";
-    return !query || [user.displayName, user.email, user.coachKey, coachName, user.role, user.discordDisplayName, ...(user.roles || [])].join(" ").toLowerCase().includes(query);
+    return !query || [adminUserDisplayName(user), user.email, user.coachKey, coachName, user.role, user.discordDisplayName, ...(user.roles || [])].join(" ").toLowerCase().includes(query);
   });
   target.innerHTML = visibleUsers.length ? visibleUsers.map((user) => {
     const flags = getUserRoleFlags(user);
     return `
     <tr>
-      <td>${escapeHtml(user.displayName || "-")}</td>
+      <td>${escapeHtml(adminUserDisplayName(user))}</td>
       <td>${escapeHtml(user.email || "-")}</td>
       <td>
         <div class="user-role-checks">
@@ -654,4 +654,10 @@ async function deleteSelectedCoach() {
     deleteAdminLesson,
     deleteAdminCoachGroup,
   };
+}
+function adminUserDisplayName(user = {}) {
+  const riotAccounts = Array.isArray(user.riotAccounts) ? user.riotAccounts : [];
+  const raw = String(user.displayName || user.display_name || "").trim();
+  return String(user.preferredDisplayName || riotAccounts[0] || user.discordDisplayName || user.discord_display_name
+    || (!/^oauth\s*user$/i.test(raw) ? raw : "") || String(user.email || "").split("@")[0] || "회원");
 }
