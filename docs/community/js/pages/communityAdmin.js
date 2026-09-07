@@ -115,7 +115,7 @@ function serverPanel(){
   `);
 }
 
-const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할"};
+const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할",set_member_server_admin:"서버 관리자 권한"};
 const statusLabels={pending:"대기",processing:"적용 중",completed:"완료",failed:"실패"};
 async function loadServerSettings(){
   if(!selectedGuild)return;
@@ -134,39 +134,55 @@ async function enqueueServerAction(action,payload){
 }
 
 
+function memberRiotId(user={}){
+  const accounts = Array.isArray(user.riotAccounts) ? user.riotAccounts : (Array.isArray(user.riot_accounts) ? user.riot_accounts : []);
+  return String(user.riotId||user.riot_id||accounts[0]||"").trim();
+}
 function friendlyMemberName(user={}){
+  const riotId=memberRiotId(user);
+  if(riotId)return riotId;
   const raw=String(user.displayName||user.display_name||user.nickname||"").trim();
   if(raw && !/^oauth\s*user$/i.test(raw))return raw;
   const discord=String(user.discordDisplayName||user.discord_display_name||"").trim();
   if(discord)return discord;
   const email=String(user.email||"").trim();
-  if(email)return email.split("@")[0]||"소셜 로그인 회원";
-  return "소셜 로그인 회원";
+  if(email)return email.split("@")[0]||"회원";
+  return "회원";
+}
+function memberRoleFlags(user={}){
+  const roles=new Set([...(Array.isArray(user.roles)?user.roles:[]),user.role].filter(Boolean).map(v=>String(v).toLowerCase()));
+  return {
+    coach:roles.has("coach")||Boolean(user.isCoach||user.is_coach),
+    admin:roles.has("admin")||roles.has("administrator")||Boolean(user.isAdmin||user.is_admin),
+  };
 }
 function memberRoleLabel(user={}){
-  const roles=new Set([...(Array.isArray(user.roles)?user.roles:[]),user.role].filter(Boolean).map(v=>String(v).toLowerCase()));
-  const labels=[];
-  if(roles.has("admin")||roles.has("administrator"))labels.push("관리자");
-  if(roles.has("coach"))labels.push("코치");
+  const flags=memberRoleFlags(user),labels=[];
+  if(flags.admin)labels.push("관리자");
+  if(flags.coach)labels.push("코치");
   return labels.length?labels.join(" · "):"일반 회원";
+}
+function memberServerAdminGuilds(user={}){
+  const raw=user.serverAdminGuildIds||user.server_admin_guild_ids||user.managedGuildIds||user.managed_guild_ids||user.guildAdminIds||user.guild_admin_ids||[];
+  return new Set((Array.isArray(raw)?raw:[]).map(String));
 }
 function memberPanel(){
   return shell(`
-    ${panelTitle("회원 관리","코칭 사이트와 연결된 가입 회원, 권한, Discord 연결 상태를 한눈에 확인합니다.")}
+    ${panelTitle("회원 관리","가입 회원과 권한을 관리합니다.")}
     <section class="admin-member-summary" id="memberSummary">
       <article><span>전체 회원</span><strong id="memberTotal">-</strong><small>가입 계정</small></article>
       <article><span>Discord 연결</span><strong id="memberDiscord">-</strong><small>연동 완료</small></article>
       <article><span>코치</span><strong id="memberCoaches">-</strong><small>코치 권한</small></article>
-      <article><span>관리자</span><strong id="memberAdmins">-</strong><small>관리자 권한</small></article>
+      <article><span>관리자</span><strong id="memberAdmins">-</strong><small>전체 관리자</small></article>
     </section>
     <section class="admin-work-panel">
-      <div class="admin-toolbar admin-member-toolbar"><div><strong>가입 회원</strong><small>‘OAuth user’는 소셜 로그인 과정에서 닉네임이 아직 정리되지 않은 계정 표시였습니다. 여기서는 읽기 쉬운 이름으로 표시합니다.</small></div><button id="memberRefresh" class="admin-primary" type="button">새로고침</button></div>
-      <div class="admin-member-search"><input id="memberSearch" type="search" placeholder="닉네임, 이메일, Discord, 권한 검색"></div>
+      <div class="admin-toolbar admin-member-toolbar"><div><strong>가입 회원</strong></div><button id="memberRefresh" class="admin-primary" type="button">새로고침</button></div>
+      <div class="admin-member-search"><input id="memberSearch" type="search" placeholder="Riot ID, 이메일, Discord, 권한 검색"></div>
       <div class="admin-member-table">
-        <div class="admin-member-head"><span>회원</span><span>이메일</span><span>권한</span><span>Discord</span></div>
+        <div class="admin-member-head"><span>회원</span><span>이메일</span><span>권한</span><span>Discord</span><span>설정</span></div>
         <div id="memberList"><div class="admin-empty-admin"><strong>회원 목록을 불러오는 중...</strong></div></div>
       </div>
-      <div class="admin-draft-note">회원 권한 변경은 코칭 사이트의 회원 관리에서 그대로 사용할 수 있습니다. 이 화면은 우선 운영 현황을 빠르게 확인하는 통합 보기입니다.</div>
+      <p id="memberActionStatus" class="mileage-status"></p>
     </section>
   `);
 }
@@ -174,22 +190,58 @@ let memberRows=[];
 function renderMemberRows(){
   const target=document.getElementById("memberList");if(!target)return;
   const q=String(document.getElementById("memberSearch")?.value||"").trim().toLowerCase();
-  const rows=memberRows.filter(user=>!q||[friendlyMemberName(user),user.email,user.discordDisplayName,user.discord_display_name,memberRoleLabel(user)].filter(Boolean).join(" ").toLowerCase().includes(q));
+  const rows=memberRows.filter(user=>!q||[friendlyMemberName(user),memberRiotId(user),user.email,user.discordDisplayName,user.discord_display_name,memberRoleLabel(user)].filter(Boolean).join(" ").toLowerCase().includes(q));
   target.innerHTML=rows.length?rows.map(user=>{
     const discord=Boolean(user.discordConnected||user.discord_connected||user.discordDisplayName||user.discord_display_name);
-    const name=friendlyMemberName(user);
-    const raw=String(user.displayName||user.display_name||"").trim();
-    return `<div class="admin-member-row"><span><strong>${esc(name)}</strong><small>${/^oauth\s*user$/i.test(raw)?"소셜 로그인 계정":esc(user.id||"")}</small></span><span>${esc(user.email||"-")}</span><span><b class="admin-member-role">${esc(memberRoleLabel(user))}</b></span><span><i class="admin-member-discord ${discord?"connected":""}">${discord?"연결됨":"미연결"}</i>${discord?`<small>${esc(user.discordDisplayName||user.discord_display_name||"")}</small>`:""}</span></div>`;
+    const name=friendlyMemberName(user),riotId=memberRiotId(user),flags=memberRoleFlags(user),guildAdmins=memberServerAdminGuilds(user);
+    const userId=String(user.id||user.userId||user.user_id||"");
+    const isServerAdmin=selectedGuild?guildAdmins.has(String(selectedGuild)):false;
+    return `<div class="admin-member-row" data-member-id="${esc(userId)}">
+      <span><strong>${esc(name)}</strong>${riotId?`<small>Riot ID</small>`:""}</span>
+      <span>${esc(user.email||"-")}</span>
+      <span><b class="admin-member-role">${esc(memberRoleLabel(user))}</b>${selectedGuild&&isServerAdmin?`<small>${esc(uniqueGuilds().find(g=>g.id===selectedGuild)?.name||"선택 서버")} 관리자</small>`:""}</span>
+      <span><i class="admin-member-discord ${discord?"connected":""}">${discord?"연결됨":"미연결"}</i>${discord?`<small>${esc(user.discordDisplayName||user.discord_display_name||"")}</small>`:""}</span>
+      <span class="admin-member-actions">
+        <label><input type="checkbox" data-member-coach ${flags.coach?"checked":""}> 코치</label>
+        <label><input type="checkbox" data-member-admin ${flags.admin?"checked":""}> 관리자</label>
+        <label class="server-admin-check" title="현재 선택한 서버에만 적용"><input type="checkbox" data-member-server-admin ${isServerAdmin?"checked":""} ${selectedGuild?"":"disabled"}> 서버 관리자</label>
+        <button type="button" data-member-save>저장</button>
+      </span>
+    </div>`;
   }).join(""):`<div class="admin-empty-admin"><strong>${q?"검색 결과가 없습니다.":"가입 회원이 없습니다."}</strong></div>`;
+  target.querySelectorAll("[data-member-save]").forEach(btn=>btn.addEventListener("click",()=>saveMemberPermissions(btn.closest("[data-member-id]"))));
+}
+async function saveMemberPermissions(row){
+  if(!row)return;
+  const userId=String(row.dataset.memberId||"");if(!userId)return;
+  const coach=Boolean(row.querySelector("[data-member-coach]")?.checked);
+  const admin=Boolean(row.querySelector("[data-member-admin]")?.checked);
+  const serverAdmin=Boolean(row.querySelector("[data-member-server-admin]")?.checked);
+  const status=document.getElementById("memberActionStatus");if(status)status.textContent="권한 저장 중...";
+  try{
+    const roles=[...(coach?["coach"]:[]),...(admin?["admin"]:[])];
+    const role=coach?"coach":(admin?"admin":"student");
+    const global=await adminRequest(`/api/users/${encodeURIComponent(userId)}`,{method:"PATCH",body:{role,roles,isCoach:coach,isAdmin:admin}});
+    if(global?.user)memberRows=memberRows.map(item=>String(item.id||item.userId||item.user_id)===userId?{...item,...global.user}:item);
+    if(selectedGuild){
+      await enqueueServerAction("set_member_server_admin",{userId,enabled:serverAdmin});
+      memberRows=memberRows.map(item=>{
+        if(String(item.id||item.userId||item.user_id)!==userId)return item;
+        const ids=memberServerAdminGuilds(item);serverAdmin?ids.add(String(selectedGuild)):ids.delete(String(selectedGuild));
+        return {...item,serverAdminGuildIds:[...ids]};
+      });
+    }
+    if(status)status.textContent="권한을 저장했습니다.";
+    renderMemberRows();
+  }catch(error){if(status)status.textContent=error.message||"권한 저장에 실패했습니다.";}
 }
 async function loadMembers(){
   const target=document.getElementById("memberList");if(target)target.innerHTML=`<div class="admin-empty-admin"><strong>회원 목록을 불러오는 중...</strong></div>`;
   try{
     const data=await adminRequest("/api/users");memberRows=data.users||[];
-    const roles=user=>new Set([...(Array.isArray(user.roles)?user.roles:[]),user.role].filter(Boolean).map(v=>String(v).toLowerCase()));
     const discord=memberRows.filter(user=>user.discordConnected||user.discord_connected||user.discordDisplayName||user.discord_display_name).length;
-    const coaches=memberRows.filter(user=>roles(user).has("coach")).length;
-    const admins=memberRows.filter(user=>roles(user).has("admin")||roles(user).has("administrator")).length;
+    const coaches=memberRows.filter(user=>memberRoleFlags(user).coach).length;
+    const admins=memberRows.filter(user=>memberRoleFlags(user).admin).length;
     const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=Number(value).toLocaleString();};
     set("memberTotal",memberRows.length);set("memberDiscord",discord);set("memberCoaches",coaches);set("memberAdmins",admins);
     renderMemberRows();
