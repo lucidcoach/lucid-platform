@@ -21,7 +21,6 @@ import {
   updateAccountPassword,
   updatePayoutProfile,
   updateCurrentUser,
-  updateRiotAccounts,
   verifyEmail,
   userIsAdmin,
   userIsCoach,
@@ -631,7 +630,8 @@ function renderAccountPanelMarkup() {
   if (!state.currentUser) return "";
   const user = state.currentUser;
   const nickname = user.displayName || user.nickname || "";
-  const riotId = user.riotId || user.riot_id || user.riotAccounts?.[0] || "";
+  const riotAccounts = Array.isArray(user.riotAccounts) ? user.riotAccounts : [];
+  const unverifiedRiotAccounts = Array.isArray(user.unverifiedRiotAccounts) ? user.unverifiedRiotAccounts : [];
   const availableAt = user.nicknameChangeAvailableAt || user.nickname_change_available_at || "";
   const availableText = availableAt ? formatDateTime(availableAt) : "변경 가능";
   const needsNickname = Boolean(user.needsNickname || user.nicknameSetupRequired || user.nickname_setup_required);
@@ -701,11 +701,13 @@ function renderAccountPanelMarkup() {
           <div class="account-inline-field"><input id="accountNickname" name="nickname" required minlength="1" maxlength="12" pattern=".{1,12}" value="${escapeHtml(nickname)}"><button class="secondary" type="submit" id="accountNicknameSaveBtn">저장</button></div>
           <span class="save-status" id="accountNicknameStatus" aria-live="polite"></span>
         </form>
-        <form class="account-setting-card" id="accountRiotForm">
-          <div><span>Riot ID</span><small>게임이름#태그</small></div>
-          <div class="account-inline-field"><input id="accountRiotId" name="riotId" maxlength="40" placeholder="예: Lucid#KR1" value="${escapeHtml(riotId)}"><button class="secondary" type="submit" id="accountRiotSaveBtn">저장</button></div>
-          <span class="save-status" id="accountRiotStatus" aria-live="polite"></span>
-        </form>
+        <div class="account-setting-card">
+          <div><span>Riot ID</span><small>Discord 봇 자동 연동</small></div>
+          ${discordConnected
+            ? `<div class="account-linked-list">${riotAccounts.map((riotId) => `<strong>${escapeHtml(riotId)}</strong>`).join("") || "Discord에서 /소환사등록을 완료해주세요."}</div>`
+            : `<span class="save-status">Discord 연동 후 본인이 봇에 등록한 계정만 가져옵니다.</span>`}
+          ${unverifiedRiotAccounts.length ? `<small>기존 수동 등록 계정은 소유권 미확인 상태로 보존됩니다: ${unverifiedRiotAccounts.map(escapeHtml).join(", ")}</small>` : ""}
+        </div>
         <form class="account-setting-card" id="accountPasswordForm">
           <div><span>비밀번호</span><small>8자 이상</small></div>
           <input name="currentPassword" type="password" autocomplete="current-password" placeholder="현재 비밀번호 (소셜 전용 계정은 비워두기)">
@@ -731,7 +733,6 @@ function mountAccountPanel(container) {
   if (!container || !state.currentUser) return;
   container.insertAdjacentHTML("afterbegin", renderAccountPanelMarkup());
   $("accountNicknameForm")?.addEventListener("submit", saveAccountNickname);
-  $("accountRiotForm")?.addEventListener("submit", saveAccountRiotId);
   $("accountPasswordForm")?.addEventListener("submit", saveAccountPassword);
   $("accountPayoutForm")?.addEventListener("submit", saveAccountPayout);
   $("resendVerificationBtn")?.addEventListener("click", resendAccountVerification);
@@ -854,32 +855,6 @@ async function saveAccountNickname(event) {
 function startAccountOAuth(provider) {
   if (!state.currentUser || !["google", "naver", "discord"].includes(provider)) return;
   window.location.assign(`${API_BASE_URL.replace(/\/$/, "")}/api/auth/oauth/${provider}/start`);
-}
-
-async function saveAccountRiotId(event) {
-  event.preventDefault();
-  const input = $("accountRiotId");
-  const status = $("accountRiotStatus");
-  const button = $("accountRiotSaveBtn");
-  const riotId = String(input?.value || "").trim();
-  if (riotId && (!riotId.includes("#") || riotId.startsWith("#") || riotId.endsWith("#"))) {
-    if (status) { status.textContent = "게임이름#태그 형식으로 입력해주세요."; status.className = "save-status error"; }
-    return;
-  }
-  if (button) button.disabled = true;
-  if (status) { status.textContent = "저장 중..."; status.className = "save-status loading"; }
-  try {
-    const user = await updateRiotAccounts(riotId ? [riotId] : []);
-    state.currentUser = user;
-    state.accountOverview = null;
-    state.accountOverviewLoadState = "idle";
-    if (status) { status.textContent = "저장 완료"; status.className = "save-status success"; }
-    renderApp();
-  } catch (error) {
-    if (status) { status.textContent = getAuthErrorMessage(error.message); status.className = "save-status error"; }
-  } finally {
-    if (button) button.disabled = false;
-  }
 }
 
 async function saveAccountPassword(event) {
