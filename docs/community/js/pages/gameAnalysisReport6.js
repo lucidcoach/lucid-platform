@@ -85,7 +85,7 @@ function roleButtons() {
 }
 
 function serverMetricPanel(metrics={}) {
-  const order = metrics.metricOrder || ROLE_METRICS[dashboard.role];
+  const order = dashboard.role === "탑" ? ROLE_METRICS["탑"] : (metrics.metricOrder || ROLE_METRICS[dashboard.role]);
   const values = order.map(item => metricRankScore(metrics.metrics?.[item.key || item[0]]));
   return `<section class="server-analysis-card radar-card">
     <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
