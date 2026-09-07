@@ -3,9 +3,9 @@ import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260905ai";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907matchsummary2";
-import { bindExpanders } from "../components/scoreboard.js?v=20260907matchsummary2";
-import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907profilefilter3";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907hotfix1";
+import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
+import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907hotfix1";
 
 
 function updateUrl(params, mode = "push") {
@@ -322,8 +322,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       url.searchParams.set("view", "analysis");
       url.searchParams.set("userId", requestedUserId);
       url.searchParams.set("guildId", requestedGuildId);
-      history.pushState({ view:"analysis", userId:requestedUserId, guildId:requestedGuildId }, "", `${url.pathname}${url.search}`);
-      window.dispatchEvent(new CustomEvent("lucid:analyze-player", { detail:{ userId:requestedUserId, guildId:requestedGuildId, name:p.name || "" } }));
+      window.location.assign(`${url.pathname}${url.search}`);
     });
     bindExpanders(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
