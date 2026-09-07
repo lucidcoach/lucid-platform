@@ -4,7 +4,7 @@ import { switchView } from "./view.js?v=20260906ops1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260905ak";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260907analysis1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260906ops3";
 import { renderMileage } from "./pages/mileage.js?v=20260906ops2";
@@ -232,6 +232,12 @@ function bindEvents() {
     button.addEventListener("click", () => {
       if (button.dataset.view === "recent") {
         goRecent();
+      } else if (button.dataset.view === "analysis") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("view", "analysis");
+        history.pushState({ view: "analysis" }, "", `${url.pathname}${url.search}`);
+        applyAnalysisRoute(url.searchParams);
       } else if (button.dataset.view === "ranking") {
         const url = new URL(window.location.href);
         url.search = "";

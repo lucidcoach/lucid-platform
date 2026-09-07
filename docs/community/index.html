@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260907current1">
+  <link rel="stylesheet" href="styles.css?v=20260907analysis1">
 </head>
 <body>
   <header class="community-header">
@@ -87,25 +87,14 @@
       <div id="searchResults"></div>
     </section>
     <section id="analysisView" class="content-view">
-      <div class="analysis-page-head">
+      <div class="analysis-page-head server-analysis-page-head">
         <div>
-          <p class="section-kicker">LUCID DATA · BETA</p>
-          <h1>내전 기록을 티어별 같은 챔피언과 비교하세요.</h1>
-          <p>개인전적의 경기에서 바로 이어오거나, 챔피언·포지션을 직접 선택해 Lucid 내전 표본과 비교할 수 있습니다.</p>
+          <p class="section-kicker">LUCID SERVER DATA</p>
+          <h1>게임 분석 <span>(서버 기준)</span></h1>
+          <p>서버 내 순위를 육각형 그래프로 확인하고, 각 경기에서는 같은 라인의 상대와 직접 비교합니다.</p>
         </div>
-        <div class="analysis-confidence-note"><strong>표본 신뢰도</strong><span>A 300+ · B 150+ · C 75+ · LOW 75 미만</span></div>
       </div>
-      <section class="analysis-search-shell">
-        <div class="analysis-filters">
-          <label><span>챔피언</span><input id="analysisChampion" type="search" placeholder="예: 나르, 리 신" aria-label="분석할 챔피언"></label>
-          <label><span>포지션</span><select id="analysisRole" aria-label="포지션"><option>탑</option><option selected>정글</option><option>미드</option><option>원딜</option><option>서폿</option></select></label>
-          <label><span>패치</span><select id="analysisPatch" aria-label="패치"><option>현재 저장 패치</option></select></label>
-          <button id="analysisRunBtn" class="analysis-search-button" type="button">분석</button>
-        </div>
-        <div id="analysisResults" class="analysis-results">
-          <div class="analysis-empty-state"><strong>개인전적 경기의 ‘자세히 보기’ 버튼을 눌러 경기 리포트를 확인하세요.</strong><p>경기 요약 / 게임 흐름 / 내 플레이 / 티어 비교 / 내 성장 순서로 보여줍니다.</p><div class="analysis-preview-grid"><span>이번 경기</span><span>티어 비교</span><span>내 성장</span><span>CS/min</span><span>DPM</span><span>KDA</span></div></div>
-        </div>
-      </section>
+      <div id="analysisResults" class="analysis-results server-analysis-results"><div class="server-analysis-loading">분석 정보를 불러오는 중...</div></div>
     </section>
     <section id="rankingView" class="content-view">
       <div class="section-heading ranking-heading">
@@ -171,6 +160,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js?v=20260907current1"></script>
+  <script type="module" src="js/app-report6.js?v=20260907analysis1"></script>
 </body>
 </html>

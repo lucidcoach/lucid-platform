@@ -1,182 +1,165 @@
-import { apiGet } from "../api.js?v=20260905ar";
-import { championIcon } from "../assets.js?v=20260905ar";
-import { $, escapeHtml } from "../utils.js?v=20260905ar";
-import { switchView } from "../view.js?v=20260905ar";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, getRiotAccounts, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260905admin2";
+import { apiGet } from "../api.js?v=20260907analysis1";
+import { championIcon } from "../assets.js?v=20260907analysis1";
+import { $, escapeHtml, relativeTime } from "../utils.js?v=20260907analysis1";
+import { switchView } from "../view.js?v=20260907analysis1";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260905admin2";
 
-function hasAnalysisAccess(userId="", guildId=""){
-  // 관리자/코치는 Riot ID 매핑 여부와 관계없이 모든 내전 분석 허용.
-  if(isCommunityAdmin() || isCommunityCoach() || canAnalyzeAllPlayers()) return true;
-  return canAnalyzePlayer(userId, guildId);
-}
-function analysisAccessDebug(){
-  const user=getCurrentUser();
-  return {loggedIn:Boolean(user),admin:isCommunityAdmin(),coach:isCommunityCoach(),all:canAnalyzeAllPlayers()};
-}
+const ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
+const ROLE_METRICS = {
+  "전체": [["kda","KDA"],["dpm","DPM"],["kp","킬관여"],["csm","CS/분"],["gpm","골드/분"],["winRate","승률"]],
+  "탑": [["csm","CS/분"],["gpm","골드/분"],["dpm","DPM"],["turretDpm","포탑 피해/분"],["kda","KDA"],["winRate","승률"]],
+  "정글": [["kp","킬관여"],["kda","KDA"],["objectiveDpm","오브젝트 피해/분"],["gpm","골드/분"],["dpm","DPM"],["winRate","승률"]],
+  "미드": [["dpm","DPM"],["kda","KDA"],["csm","CS/분"],["gpm","골드/분"],["kp","킬관여"],["winRate","승률"]],
+  "원딜": [["dpm","DPM"],["csm","CS/분"],["gpm","골드/분"],["kda","KDA"],["kp","킬관여"],["winRate","승률"]],
+  "서폿": [["kp","킬관여"],["visionPerMin","시야/분"],["ccPerMin","CC/분"],["allyCarePerMin","힐·실드/분"],["kda","KDA"],["winRate","승률"]],
+};
 
-const METRICS = [["csm","CS/분",1],["gpm","분당 골드",0],["dpm","DPM",0],["kda","KDA",2],["kp","킬관여",1]];
-const RADAR_METRICS = [["csm","성장"],["gpm","골드"],["dpm","딜량"],["kda","KDA"],["kp","킬관여"],["aiScore","AI"]];
-const TIER_ORDER=["I","B","S","G","P","E","D","M","GM","C"];
-const TIER_NAME={I:"아이언",B:"브론즈",S:"실버",G:"골드",P:"플래티넘",E:"에메랄드",D:"다이아몬드",M:"마스터",GM:"그랜드마스터",C:"챌린저"};
-const CACHE_TTL=5*60*1000;
-let analysisState={tab:"overview",role:"정글",champion:""};
-let dashboardCache={key:"",loadedAt:0,profile:null,solo:null};
-const benchmarkCache=new Map();
+let dashboard = { role:"전체", tab:"scrim", identity:null, profile:null, metrics:new Map() };
+const esc = (value) => escapeHtml(String(value ?? ""));
+const number = (value, digits=1) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "-";
+const metricText = (key, value) => value == null ? "-" : `${number(value, key === "kda" ? 2 : key === "dpm" ? 0 : 1)}${["kp","winRate"].includes(key) ? "%" : ""}`;
 
-function esc(v){return escapeHtml(String(v??""));}
-function tierBand(tier=""){const raw=String(tier||"");const t=raw.toUpperCase().replace(/[\s_-]+/g,"");if(t.startsWith("GRANDMASTER")||t.startsWith("GM")||raw.includes("그랜드마스터"))return"GM";if(t.startsWith("CHALLENGER")||raw.includes("챌린저"))return"C";if(t.startsWith("MASTER")||t==="M"||raw.includes("마스터"))return"M";const m=t.match(/^(D|E|P|G|S|B|I)/);return m?m[1]:"";}
-function tierName(tier){const b=tierBand(tier);return TIER_NAME[b]||String(tier||"미배치");}
-function fmt(v,d=1){return Number.isFinite(Number(v))?Number(v).toFixed(d):"-";}
-function avg(rows,key){const vals=rows.map(r=>Number(r?.[key])).filter(Number.isFinite);return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;}
-function pctDiff(value,base){const a=Number(value),b=Number(base);return Number.isFinite(a)&&Number.isFinite(b)&&b!==0?(a-b)/Math.abs(b)*100:null;}
-function metricValue(row,key){return Number(row?.[key]||0);}
-function sameChampion(a,b){const n=v=>String(v||"").trim().toLowerCase().replace(/[\s.'’_-]/g,"");return n(a)&&n(a)===n(b);}
-function winRate(rows){const played=rows.filter(r=>["win","loss"].includes(String(r.result)));return played.length?played.filter(r=>r.result==="win").length/played.length*100:0;}
-function confidence(n){if(n>=300)return["A","높음"];if(n>=150)return["B","충분"];if(n>=75)return["C","보통"];return["LOW","표본 적음"];}
-
-function identityKey(identity){return `${identity?.guildId||""}:${identity?.userId||""}:${(getRiotAccounts()||[])[0]||""}`;}
-function cacheValid(identity){return dashboardCache.profile&&dashboardCache.key===identityKey(identity)&&(Date.now()-dashboardCache.loadedAt)<CACHE_TTL;}
-function invalidateCache(){dashboardCache={key:"",loadedAt:0,profile:null,solo:null};benchmarkCache.clear();}
-
-async function loadProfile(identity){if(!identity?.userId||!identity?.guildId)return null;return apiGet(`/api/community/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`);}
-async function loadSoloSummary(){const riotId=(getRiotAccounts()||[])[0];if(!riotId)return{available:false,reason:"riot_id_missing"};try{return await apiGet(`/api/community/riot/solo-summary?riotId=${encodeURIComponent(riotId)}`);}catch(_){return{available:false,reason:"api_not_ready",riotId};}}
-async function loadBenchmark(champion,role,guildId=""){const key=`${guildId}:${champion}:${role}`.toLowerCase();const cached=benchmarkCache.get(key);if(cached&&Date.now()-cached.loadedAt<CACHE_TTL)return cached.data;const data=await apiGet(`/api/community/analysis/benchmark?champion=${encodeURIComponent(champion)}&role=${encodeURIComponent(role)}&guildId=${encodeURIComponent(guildId||"")}`);benchmarkCache.set(key,{loadedAt:Date.now(),data});return data;}
-
-function focusRows(profile){const uid=String(profile?.player?.userId||"");const out=[];for(const match of profile?.matches||[]){const row=(match.players||[]).find(p=>String(p.userId)===uid);if(row)out.push({...row,time:match.time,matchId:match.matchId,guildId:match.guildId});}return out;}
-function topChampions(rows){const map=new Map();for(const r of rows){if(!r.champion)continue;const x=map.get(r.champion)||{champion:r.champion,games:0,wins:0};x.games++;if(r.result==="win")x.wins++;map.set(r.champion,x);}return[...map.values()].sort((a,b)=>b.games-a.games).slice(0,6);}
-function benchmarkTier(data,band){return (data?.tiers||[]).find(t=>String(t.tier)===String(band))||null;}
-function benchmarkMetric(tier,key){const v=tier?.metrics?.[key];return Number.isFinite(Number(v))?Number(v):null;}
-
-function metricCardFromBenchmark(key,label,digits,focus,current,upper,currentBand,upperBand){const cv=benchmarkMetric(current,key),uv=benchmarkMetric(upper,key),diff=pctDiff(metricValue(focus,key),cv);const cls=diff==null?"":diff>=0?"positive":"negative";return `<div class="analysis-metric-card"><span>${label}</span><strong>${fmt(metricValue(focus,key),digits)}</strong><small class="${cls}">${diff==null?"동티어 표본 없음":`${diff>=0?"+":""}${diff.toFixed(1)}% · ${tierName(currentBand)} 평균 대비`}</small><div><em>${tierName(currentBand)} ${fmt(cv,digits)}</em><em>${upperBand?`${tierName(upperBand)} ${fmt(uv,digits)}`:"상위 티어 -"}</em></div></div>`;}
-function benchmarkTable(data,currentBand){const tiers=data?.tiers||[];if(!tiers.length)return`<div class="analysis-empty-inline">같은 챔피언·포지션 표본이 아직 없습니다.</div>`;return`<div class="analysis-tier-table"><div class="analysis-tier-head"><span>티어</span><span>표본</span>${METRICS.map(m=>`<span>${m[1]}</span>`).join("")}</div>${tiers.map(t=>`<div class="analysis-tier-row ${t.tier===currentBand?"is-current":""}"><strong>${tierName(t.tier)}</strong><span>${Number(t.sampleCount||0)}</span>${METRICS.map(([k,,d])=>`<span>${fmt(benchmarkMetric(t,k),d)}</span>`).join("")}</div>`).join("")}</div>`;}
-function insightFromBenchmark(focus,current,currentBand){if(!focus||!current)return"";const scored=METRICS.map(([k,label])=>({label,diff:pctDiff(metricValue(focus,k),benchmarkMetric(current,k))})).filter(x=>Number.isFinite(x.diff));const best=[...scored].sort((a,b)=>b.diff-a.diff).slice(0,2),weak=[...scored].sort((a,b)=>a.diff-b.diff).slice(0,2);return`<div class="analysis-insight-grid"><section><h3>강점</h3>${best.map(x=>`<p><strong>${x.label}</strong><span class="positive">평균보다 ${Math.abs(x.diff).toFixed(1)}% ${x.diff>=0?"높음":"낮음"}</span></p>`).join("")||"<p>표본 부족</p>"}</section><section><h3>보완 후보</h3>${weak.map(x=>`<p><strong>${x.label}</strong><span class="${x.diff<0?"negative":"positive"}">평균보다 ${Math.abs(x.diff).toFixed(1)}% ${x.diff<0?"낮음":"높음"}</span></p>`).join("")||"<p>표본 부족</p>"}</section></div>`;}
-function growthBlock(rows){const ordered=[...rows].sort((a,b)=>String(a.time).localeCompare(String(b.time)));if(ordered.length<4)return`<div class="analysis-empty-inline">기록이 ${ordered.length}경기라 성장 추세는 4경기부터 표시합니다.</div>`;const size=Math.min(5,Math.floor(ordered.length/2)),early=ordered.slice(0,size),recent=ordered.slice(-size);return`<div class="growth-grid">${METRICS.map(([k,label,d])=>{const a=avg(early,k),b=avg(recent,k),diff=pctDiff(b,a),cls=diff==null?"":diff>=0?"positive":"negative";return`<div class="growth-card"><span>${label}</span><strong>${fmt(a,d)} <b>→</b> ${fmt(b,d)}</strong><em class="${cls}">${diff==null?"-":`${diff>=0?"▲":"▼"} ${Math.abs(diff).toFixed(1)}%`}</em></div>`;}).join("")}</div><p class="analysis-footnote">초기 ${size}경기 평균과 최근 ${size}경기 평균 비교 · Lucid 내전 기록 기준</p>`;}
-
-function radarPoints(values,cx=92,cy=86,r=62){return values.map((v,i)=>{const a=-Math.PI/2+i*Math.PI/3,rr=r*Math.max(.08,Math.min(.95,v));return`${(cx+Math.cos(a)*rr).toFixed(1)},${(cy+Math.sin(a)*rr).toFixed(1)}`;}).join(" ");}
-function compactRadar(focus,current){const own=RADAR_METRICS.map(([k])=>{const b=benchmarkMetric(current,k),v=metricValue(focus,k);return b&&v?Math.max(.15,Math.min(.95,.5*(v/b))):.5;});const benchmark=RADAR_METRICS.map(()=>.5);const axes=RADAR_METRICS.map(([,label],i)=>{const a=-Math.PI/2+i*Math.PI/3,x=92+Math.cos(a)*78,y=86+Math.sin(a)*78;return`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${label}</text>`;}).join("");const grid=[.25,.5,.75].map(scale=>`<polygon points="${radarPoints(RADAR_METRICS.map(()=>scale))}" class="radar-grid"/>`).join("");return`<svg class="compact-radar" viewBox="0 0 184 172">${grid}<polygon points="${radarPoints(benchmark)}" class="radar-benchmark"/><polygon points="${radarPoints(own)}" class="radar-own"/>${axes}</svg>`;}
-function compactMessages(focus,current,currentBand){if(!current)return[`${tierName(currentBand)} 동일 챔피언·포지션 표본이 아직 부족합니다.`];const scored=METRICS.map(([k,label])=>({label,d:pctDiff(metricValue(focus,k),benchmarkMetric(current,k))})).filter(x=>Number.isFinite(x.d));if(!scored.length)return["비교 가능한 상세 지표가 부족합니다."];const best=[...scored].sort((a,b)=>b.d-a.d)[0],weak=[...scored].sort((a,b)=>a.d-b.d)[0];return[`${best.label}은 평균보다 ${Math.abs(best.d).toFixed(0)}% ${best.d>=0?"높습니다":"낮습니다"}.`,weak&&weak.label!==best.label?`${weak.label}은 평균보다 ${Math.abs(weak.d).toFixed(0)}% ${weak.d<0?"낮아 개선 후보입니다":"높습니다"}.`:"",`${tierName(currentBand)} ${focus.champion} ${focus.role} 평균과 비교했습니다.`].filter(Boolean);}
-
-function statBox(label,value,sub=""){return`<div class="ga-stat"><span>${esc(label)}</span><strong>${esc(value)}</strong>${sub?`<small>${esc(sub)}</small>`:""}</div>`;}
-function roleBars(rows){const roles=["탑","정글","미드","원딜","서폿"],total=Math.max(1,rows.length);return roles.map(role=>{const n=rows.filter(r=>r.role===role).length,p=Math.round(n/total*100);return`<div class="ga-role-row"><span>${role}</span><div><i style="width:${p}%"></i></div><b>${p}%</b></div>`;}).join("");}
-function profileHead(profile,identity,solo){const p=profile?.player||{};const riotId=getRiotAccounts()?.[0]||identity?.name||"Riot ID 미등록";return`<section class="ga-profile-head"><div class="ga-profile-id"><div class="ga-avatar">${p.profileIconUrl?`<img src="${esc(p.profileIconUrl)}" alt="">`:"L"}</div><div><small>ANALYSIS PLAYER</small><h2>${esc(riotId)}</h2><span>${identity?.name&&identity.name!==riotId?`Lucid 등록명 · ${esc(identity.name)}`:"Lucid 커뮤니티 분석"}</span></div></div><div class="ga-rank-pair"><div><span>Riot 솔로랭크</span><strong>${solo?.available!==false?esc(solo?.tier||"연동 중"):"API 연동 대기"}</strong><small>${solo?.lp!=null?`${esc(solo.lp)} LP`:"솔로랭크 API endpoint 필요"}</small></div><div><span>Lucid 내전 티어</span><strong>${esc(p.tier||"미배치")}</strong><small>${p.games||0}경기 · 승률 ${fmt(p.winRate,1)}%</small></div></div></section>`;}
-function tabs(){const items=[["overview","요약"],["champion","챔피언"],["role","포지션"],["compare","티어 비교"],["growth","성장"]];return`<div class="ga-tabs">${items.map(([id,label])=>`<button class="${analysisState.tab===id?"active":""}" data-ga-tab="${id}" type="button">${label}</button>`).join("")}<button class="ga-tab-locked" type="button" disabled title="Riot API Production Key 발급 후 제공">솔로랭크 <span>준비 중</span></button></div>`;}
-
-function overviewPanel(rows,profile,solo){const recent=rows.slice(0,20),champs=topChampions(rows);return`<div class="ga-overview-grid"><section class="ga-panel ga-span-2"><div class="ga-panel-head"><div><small>PERFORMANCE</small><h3>솔로랭크 + 내전 한눈에 보기</h3></div><span class="ga-source-pill">두 데이터 소스</span></div><div class="ga-dual-source"><div class="ga-source-card riot"><span>Riot 솔로랭크 API</span><strong>${solo?.available!==false?esc(solo?.tier||"데이터 대기"):"백엔드 연동 필요"}</strong><p>${solo?.available!==false?"솔로랭크 최근 전적과 티어 데이터":"현재는 Riot 솔로랭크 API 연동 전"}</p></div><div class="ga-source-card lucid"><span>Lucid 내전 기록</span><strong>${rows.length}경기</strong><p>개인 프로필 최근 기록만 불러와 즉시 표시</p></div></div><div class="ga-stat-grid">${statBox("최근 20경기 승률",`${fmt(winRate(recent),1)}%`)}${statBox("내전 평균 KDA",fmt(avg(recent,"kda"),2))}${statBox("내전 CS/분",fmt(avg(recent,"csm"),1))}${statBox("내전 DPM",fmt(avg(recent,"dpm"),0))}${statBox("AI Score",fmt(avg(recent,"aiScore"),1))}</div></section><section class="ga-panel"><div class="ga-panel-head"><div><small>ROLE</small><h3>주 포지션</h3></div></div><div class="ga-role-bars">${roleBars(rows)}</div></section><section class="ga-panel"><div class="ga-panel-head"><div><small>CHAMPIONS</small><h3>자주 플레이한 챔피언</h3></div></div><div class="ga-champion-list">${champs.map(c=>`<button type="button" data-ga-champion="${esc(c.champion)}"><img src="${esc(championIcon(c.champion)||"")}" alt=""><span><strong>${esc(c.champion)}</strong><small>${c.games}경기 · ${Math.round(c.wins/c.games*100)}%</small></span></button>`).join("")||"<p>내전 기록이 없습니다.</p>"}</div></section><section class="ga-panel ga-span-2"><div class="ga-panel-head"><div><small>INSIGHT</small><h3>분석 방식</h3></div></div><div class="ga-insight-list"><p><b>1</b> 첫 화면은 개인 프로필 데이터만 사용해서 빠르게 표시합니다.</p><p><b>2</b> 챔피언·비교 분석을 열 때 필요한 집계값만 백엔드에서 요청합니다.</p><p><b>3</b> 커뮤니티 전체 경기 원본을 브라우저로 내려받지 않습니다.</p></div></section></div>`;}
-function rolePanel(rows){const role=analysisState.role||"정글",mine=rows.filter(r=>r.role===role);const cards=[["판수",mine.length],["승률",`${fmt(winRate(mine),1)}%`],["KDA",fmt(avg(mine,"kda"),2)],["CS/분",fmt(avg(mine,"csm"),1)],["DPM",fmt(avg(mine,"dpm"),0)],["킬관여",`${fmt(avg(mine,"kp"),1)}%`]];return`<section class="ga-panel"><div class="ga-role-tabs">${["탑","정글","미드","원딜","서폿"].map(r=>`<button class="${r===role?"active":""}" data-ga-role="${r}">${r}</button>`).join("")}</div><div class="ga-stat-grid role">${cards.map(([l,v])=>statBox(l,v)).join("")}</div><div class="ga-growth-note"><strong>${role} 개인 기록</strong><span class="active">최근 ${mine.length}경기</span><span>챔피언별 티어 평균 비교는 챔피언 분석에서 조회</span></div></section>`;}
-function growthPanel(rows){const recent=[...rows].sort((a,b)=>String(a.time).localeCompare(String(b.time))).slice(-30);return`<section class="ga-panel"><div class="ga-panel-head"><div><small>GROWTH</small><h3>최근 경기 성장 변화</h3></div></div>${growthBlock(recent)}<div class="ga-growth-note"><strong>데이터 소스</strong><span class="active">Lucid 내전</span><span>솔로랭크 API 연결 후 함께 표시</span></div></section>`;}
-function loadingPanel(text="비교 데이터를 불러오는 중..."){return`<section class="ga-panel"><div class="analysis-loading">${esc(text)}</div></section>`;}
-
-async function renderAsyncAnalysisTab(target,profile,identity){const rows=focusRows(profile);const champs=topChampions(rows);let champion=analysisState.champion||champs[0]?.champion||"";let role=analysisState.role||rows.find(r=>sameChampion(r.champion,champion))?.role||"정글";if(!champion){target.querySelector(".ga-tab-body").innerHTML=`<div class="analysis-empty-inline">분석할 내전 챔피언 기록이 없습니다.</div>`;return;}const own=rows.filter(r=>sameChampion(r.champion,champion)&&r.role===role);const focus=own[0]||rows.find(r=>sameChampion(r.champion,champion))||rows[0];role=focus?.role||role;analysisState.champion=champion;analysisState.role=role;const body=target.querySelector(".ga-tab-body");body.innerHTML=loadingPanel();try{const data=await loadBenchmark(champion,role,identity?.guildId||"");const band=tierBand(focus?.tier),current=benchmarkTier(data,band),next=TIER_ORDER[TIER_ORDER.indexOf(band)+1]||"",upper=benchmarkTier(data,next);if(analysisState.tab==="champion"){body.innerHTML=`<section class="ga-panel"><div class="ga-filter-row"><label>챔피언<select id="gaChampionSelect">${champs.map(c=>`<option ${c.champion===champion?"selected":""}>${esc(c.champion)}</option>`).join("")}</select></label><label>포지션<select id="gaRoleSelect">${["탑","정글","미드","원딜","서폿"].map(r=>`<option ${r===role?"selected":""}>${r}</option>`).join("")}</select></label><div class="ga-filter-note">백엔드 집계 API · 전체 표본 원본 다운로드 없음</div></div><div class="ga-champion-head"><img src="${esc(championIcon(champion)||"")}" alt=""><div><small>CHAMPION DEEP DIVE</small><h3>${esc(champion)} · ${esc(role)}</h3><p>내 ${own.length}경기 · 전체 표본 ${Number(data.sampleCount||0)}경기</p></div></div><div class="analysis-metric-grid">${METRICS.map(m=>metricCardFromBenchmark(...m,focus,current,upper,band,next)).join("")}</div>${insightFromBenchmark(focus,current,band)}<div class="ga-section-gap">${benchmarkTable(data,band)}</div></section>`;}else{const mine=own.length?own:rows;const me={};for(const [k] of METRICS)me[k]=avg(mine,k);const currentMetrics=current?.metrics||{};const nextMetrics=upper?.metrics||{};const grade=METRICS.map(([k])=>pctDiff(me[k],currentMetrics[k])).filter(Number.isFinite);const score=grade.length?grade.reduce((a,b)=>a+b,0)/grade.length:0;const letter=score>=15?"A":score>=5?"A-":score>=-5?"B+":score>=-15?"B":"C+";body.innerHTML=`<div class="ga-compare-layout"><section class="ga-panel ga-grade"><small>BENCHMARK</small><strong>${letter}</strong><h3>${tierName(band)} 평균 대비</h3><p>${esc(champion)} ${esc(role)} 백엔드 집계값과 내 기록을 비교했습니다.</p></section><section class="ga-panel"><div class="ga-panel-head"><div><small>DETAIL</small><h3>내 기록 / 같은 티어 / 한 티어 위</h3></div></div><div class="analysis-tier-table"><div class="analysis-tier-head"><span>지표</span><span>나</span><span>${tierName(band)}</span><span>${tierName(next)}</span><span>동티어 차이</span><span></span><span></span></div>${METRICS.map(([k,label,d])=>{const same=currentMetrics[k],up=nextMetrics[k],diff=pctDiff(me[k],same);return`<div class="analysis-tier-row"><strong>${label}</strong><span>${fmt(me[k],d)}</span><span>${fmt(same,d)}</span><span>${fmt(up,d)}</span><span class="${diff>=0?"positive":"negative"}">${diff==null?"-":`${diff>=0?"+":""}${diff.toFixed(1)}%`}</span><span></span><span></span></div>`;}).join("")}</div></section></div>`;}bindDashboardEvents(target,profile,identity);}catch(error){body.innerHTML=`<div class="analysis-empty-inline"><strong>비교 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
-
-function renderDashboardFromData(target,profile,solo,identity){const rows=focusRows(profile);let body;if(analysisState.tab==="role")body=rolePanel(rows);else if(analysisState.tab==="growth")body=growthPanel(rows);else if(analysisState.tab==="champion"||analysisState.tab==="compare")body=loadingPanel();else body=overviewPanel(rows,profile,solo);target.innerHTML=`${profileHead(profile,identity,solo)}${tabs()}<div class="ga-tab-body">${body}</div>`;bindDashboardEvents(target,profile,identity);if(analysisState.tab==="champion"||analysisState.tab==="compare")renderAsyncAnalysisTab(target,profile,identity);}
-function bindDashboardEvents(target,profile,identity){target.querySelectorAll("[data-ga-tab]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.tab=btn.dataset.gaTab;renderDashboardFromData(target,profile,dashboardCache.solo,identity);}));target.querySelectorAll("[data-ga-role]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.role=btn.dataset.gaRole;renderDashboardFromData(target,profile,dashboardCache.solo,identity);}));target.querySelectorAll("[data-ga-champion]").forEach(btn=>btn.addEventListener("click",()=>{analysisState.champion=btn.dataset.gaChampion;analysisState.tab="champion";renderDashboardFromData(target,profile,dashboardCache.solo,identity);}));target.querySelector("#gaChampionSelect")?.addEventListener("change",e=>{analysisState.champion=e.target.value;renderDashboardFromData(target,profile,dashboardCache.solo,identity);});target.querySelector("#gaRoleSelect")?.addEventListener("change",e=>{analysisState.role=e.target.value;renderDashboardFromData(target,profile,dashboardCache.solo,identity);});}
-
-async function renderDashboard({forceReload=false}={}){switchView("analysis");const target=$("analysisResults");if(!target)return;const identity=getAnalysisIdentity();if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록하면 분석할 수 있습니다.</span></div>`;return;}if(!identity&&canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>관리자/코치는 개인전적에서 유저를 연 뒤 분석 버튼을 사용할 수 있습니다.</span></div>`;return;}if(!forceReload&&cacheValid(identity)){renderDashboardFromData(target,dashboardCache.profile,dashboardCache.solo,identity);return;}target.innerHTML=`<div class="analysis-loading">내 분석 정보를 불러오는 중...</div>`;try{const profile=await loadProfile(identity);dashboardCache={key:identityKey(identity),loadedAt:Date.now(),profile,solo:{available:false,reason:"loading"}};renderDashboardFromData(target,profile,dashboardCache.solo,identity);loadSoloSummary().then(solo=>{if(dashboardCache.key!==identityKey(identity))return;dashboardCache={...dashboardCache,solo,loadedAt:Date.now()};if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboardFromData(target,profile,solo,identity);}).catch(()=>{});}catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
-
-export async function renderCompactMatchAnalysis(detail={},target){if(!target)return;const{userId="",guildId="",matchId=""}=detail;if(!hasAnalysisAccess(userId,guildId)){const access=analysisAccessDebug();target.innerHTML=`<div class="compact-analysis-empty"><strong>분석 권한이 필요합니다.</strong><span>${access.loggedIn?"내 정보에 등록한 Riot ID의 경기만 분석할 수 있습니다.":"로그인 후 사용할 수 있습니다."}</span></div>`;return;}target.innerHTML=`<div class="compact-analysis-loading">분석 중...</div>`;try{const detailData=await apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`);const match=detailData?.match;const focus=(match?.players||[]).find(p=>String(p.userId)===String(userId));if(!focus)throw new Error("경기 데이터를 찾지 못했습니다.");const data=await loadBenchmark(focus.champion,focus.role,guildId);const band=tierBand(focus.tier),current=benchmarkTier(data,band);target.innerHTML=`<div class="compact-analysis-card"><div class="compact-analysis-title"><div><small>간단 분석</small><strong>${esc(focus.champion)} · ${esc(focus.role)}</strong><span>이번 경기 ${esc(focus.tier||"-")} → ${tierName(band)} 평균</span></div><div class="compact-analysis-legend"><i></i>내 수치 <b></b>티어 평균</div></div>${compactRadar(focus,current)}<div class="compact-analysis-messages">${compactMessages(focus,current,band).map(x=>`<p>${esc(x)}</p>`).join("")}</div><button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(userId)}" data-guild-id="${esc(guildId)}" data-match-id="${esc(matchId)}" data-champion="${esc(focus.champion||"")}" data-role="${esc(focus.role||"")}">상세 분석 보기</button></div>`;}catch(e){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(e.message)}</span></div>`;}}
-
-function reportGrade(focus,current){const rows=METRICS.map(([k,label])=>({key:k,label,diff:pctDiff(metricValue(focus,k),benchmarkMetric(current,k))})).filter(x=>Number.isFinite(x.diff));if(!rows.length)return{grade:"-",score:null,best:null,weak:null,rows:[]};const score=rows.reduce((a,b)=>a+b.diff,0)/rows.length;const grade=score>=18?"A+":score>=10?"A":score>=4?"A-":score>=-4?"B+":score>=-10?"B":score>=-18?"C+":"C";return{grade,score,best:[...rows].sort((a,b)=>b.diff-a.diff)[0],weak:[...rows].sort((a,b)=>a.diff-b.diff)[0],rows};}
-function timelineRowsFrom(raw){
-  if(!Array.isArray(raw)||!raw.length)return[];
-  return raw.map((r,i)=>{
-    if(Array.isArray(r)){
-      const minute=Number(r[0]),diff=Number(r[1]);
-      return Number.isFinite(minute)&&Number.isFinite(diff)?{minute,diff}:null;
-    }
-    const minute=Number(r?.minute??r?.timeMinutes??r?.gameMinute??r?.time??r?.timestampMinutes??(Number(r?.time_ms)/60000)??i);
-    const diff=Number(r?.gold_gap??r?.goldGap??r?.goldDiff??r?.diff??r?.lead??r?.teamGoldDiff??r?.blueGoldDiff);
-    return Number.isFinite(minute)&&Number.isFinite(diff)?{minute,diff}:null;
-  }).filter(Boolean);
-}
-function findTimeline(match,focus=null){
-  const candidates=[
-    match?.goldTimeline,match?.teamGoldTimeline,match?.goldHistory,match?.frames,
-    match?.teamFlow,match?.team_flow,match?.analysis?.goldTimeline,match?.analysis?.teamFlow,match?.analysis?.team_flow,
-    match?.rofl?.goldTimeline,match?.rofl?.teamFlow,match?.rofl?.team_flow,
-    focus?.goldTimeline,focus?.teamFlow,focus?.team_flow,focus?.analysis?.teamFlow,focus?.analysis?.team_flow,
-    match?.timeline
-  ];
-  for(const raw of candidates){const rows=timelineRowsFrom(raw);if(rows.length>=2)return rows;}
-  return[];
-}
-function timelineSummary(rows){if(rows.length<2)return null;let max=rows[0],min=rows[0];for(const r of rows){if(r.diff>max.diff)max=r;if(r.diff<min.diff)min=r;}const segments=[];let sign=Math.abs(rows[0].diff)<250?0:Math.sign(rows[0].diff),from=rows[0].minute;for(let i=1;i<rows.length;i++){const next=Math.abs(rows[i].diff)<250?0:Math.sign(rows[i].diff);if(next!==sign){segments.push({from,to:rows[i].minute,sign});from=rows[i].minute;sign=next;}}segments.push({from,to:rows.at(-1).minute,sign});return{max,min,segments};}
-function goldFlowBlock(match,focus){const rows=findTimeline(match,focus),sum=timelineSummary(rows);if(!sum)return`<div class="report-flow-empty compact"><div><strong>분 단위 골드 흐름</strong><span>이 경기의 최종 ROFL 상세값은 연결됐지만, 분 단위 team_flow 배열은 현재 경기 API에 없습니다.</span></div><p>아래 4개 분석 카드에는 저장된 ROFL 실제값을 먼저 표시합니다. team_flow가 API에 노출되면 이 자리만 자동으로 그래프로 바뀝니다.</p></div>`;const maxAbs=Math.max(1000,...rows.map(r=>Math.abs(r.diff)));const points=rows.map((r,i)=>`${(i/(rows.length-1)*100).toFixed(2)},${(50-r.diff/maxAbs*42).toFixed(2)}`).join(" ");const labels=sum.segments.map(seg=>`<span><b>${fmt(seg.from,0)}~${fmt(seg.to,0)}분</b>${seg.sign>0?"우리 팀 리드":seg.sign<0?"상대 팀 리드":"팽팽"}</span>`).join("");return`<div class="report-flow"><div class="report-flow-chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="0" y1="50" x2="100" y2="50" class="report-zero"/><polyline points="${points}" class="report-gold-line"/></svg></div><div class="report-flow-stats"><span>최대 우위 <strong class="positive">+${Math.round(Math.max(0,sum.max.diff)).toLocaleString()}</strong></span><span>최대 열세 <strong class="negative">${Math.round(Math.min(0,sum.min.diff)).toLocaleString()}</strong></span></div><div class="report-flow-segments">${labels}</div></div>`;}
-
-function statSources(obj){return [obj,obj?.stats,obj?.roflStats,obj?.rofl_stats,obj?.detail,obj?.analysis].filter(x=>x&&typeof x==="object");}
-function nval(obj,...keys){for(const src of statSources(obj)){for(const key of keys){const v=Number(src?.[key]);if(Number.isFinite(v))return v;}}return null;}
-function statText(v,d=0,suffix=""){return v==null?"-":`${fmt(v,d)}${suffix}`;}
-function flowMetric(label,value,{tone="",pending=false}={}){return `<li><span>${esc(label)}</span>${pending?`<em class="flow-pending">데이터 대기</em>`:`<strong class="${tone}">${esc(value)}</strong>`}</li>`;}
-function flowCard(title,kicker,items,note=""){return `<article class="role-flow-card"><div class="role-flow-card-head"><small>${esc(kicker)}</small><h3>${esc(title)}</h3></div><ul>${items.join("")}</ul>${note?`<p>${esc(note)}</p>`:""}</article>`;}
-function benchmarkWeakLine(focus,current){const g=reportGrade(focus,current);if(!g.weak)return flowMetric("가장 큰 보완 후보","비교 표본 부족");return flowMetric(g.weak.label,`${g.weak.diff>=0?"+":""}${g.weak.diff.toFixed(1)}% · 동티어 평균 대비`,{tone:g.weak.diff<0?"negative":"positive"});}
-function objectiveSummary(focus){
-  const d=nval(focus,"DRAGON_KILLS","dragonKills"),b=nval(focus,"BARON_KILLS","baronKills"),h=nval(focus,"RIFT_HERALD_KILLS","riftHeraldKills"),e=nval(focus,"ELDER_DRAGON_KILLS","elderDragonKills");
-  if([d,b,h,e].every(v=>v==null))return "-";
-  return `용 ${d??0} · 전령 ${h??0} · 바론 ${b??0}${(e??0)>0?` · 장로 ${e}`:""}`;
-}
-function roleFlowCards(match,focus,current,band){
-  const role=String(focus?.role||"");
-  const timeline=findTimeline(match,focus),hasTimeline=timeline.length>=2;
-  const kp=nval(focus,"kp","killParticipation","kill_participation"),dpm=nval(focus,"dpm"),csm=nval(focus,"csm"),gpm=nval(focus,"gpm"),kda=nval(focus,"kda"),deaths=nval(focus,"deaths"),gold=nval(focus,"gold","GOLD_EARNED"),xp=nval(focus,"EXP","xp"),level=nval(focus,"level","LEVEL"),damage=nval(focus,"damage","TOTAL_DAMAGE_DEALT_TO_CHAMPIONS"),objDmg=nval(focus,"TOTAL_DAMAGE_DEALT_TO_OBJECTIVES","objectiveDamage"),epicDmg=nval(focus,"TOTAL_DAMAGE_DEALT_TO_EPIC_MONSTERS","epicMonsterDamage"),turretDmg=nval(focus,"TOTAL_DAMAGE_DEALT_TO_TURRETS","turretDamage"),cc=nval(focus,"TOTAL_TIME_CROWD_CONTROL_DEALT_TO_CHAMPIONS","ccTime"),heal=nval(focus,"TOTAL_HEAL_ON_TEAMMATES","healOnTeammates"),shield=nval(focus,"TOTAL_DAMAGE_SHIELDED_ON_TEAMMATES","shieldOnTeammates"),deadTime=nval(focus,"TOTAL_TIME_SPENT_DEAD","timeSpentDead"),vision=nval(focus,"visionScore","vision_score","VISION_SCORE"),wards=nval(focus,"wardsPlaced","wardPlaced","WARD_PLACED"),cleared=nval(focus,"wardsKilled","wardKilled","WARD_KILLED"),pink=nval(focus,"visionWardsBought","controlWards","VISION_WARDS_BOUGHT_IN_GAME"),ownJg=nval(focus,"NEUTRAL_MINIONS_KILLED_YOUR_JUNGLE","ownJungleCs"),enemyJg=nval(focus,"NEUTRAL_MINIONS_KILLED_ENEMY_JUNGLE","enemyJungleCs"),neutral=nval(focus,"NEUTRAL_MINIONS_KILLED","neutralCs"),steals=nval(focus,"OBJECTIVES_STOLEN","objectivesStolen"),stealAssists=nval(focus,"OBJECTIVES_STOLEN_ASSISTS","objectiveStealAssists"),turrets=nval(focus,"TURRETS_KILLED","turretsKilled","TURRET_TAKEDOWNS");
-  const common={
-    kp:flowMetric("킬 관여",statText(kp,1,"%")),dpm:flowMetric("DPM",statText(dpm,0)),csm:flowMetric("CS/분",statText(csm,1)),gpm:flowMetric("분당 골드",statText(gpm,0)),kda:flowMetric("KDA",statText(kda,2)),deaths:flowMetric("데스",statText(deaths,0)),
-    finalGold:flowMetric("최종 획득 골드",gold==null?"-":Math.round(gold).toLocaleString()+"G"),xp:flowMetric("최종 경험치",xp==null?"-":Math.round(xp).toLocaleString()),level:flowMetric("최종 레벨",statText(level,0)),champDamage:flowMetric("챔피언 피해",damage==null?"-":Math.round(damage).toLocaleString()),objDamage:flowMetric("오브젝트 피해",objDmg==null?"-":Math.round(objDmg).toLocaleString()),
-    goldFlow:flowMetric("팀 골드격차 흐름",hasTimeline?"타임라인 연결됨":"team_flow API 대기",{pending:!hasTimeline}),weak:benchmarkWeakLine(focus,current)
-  };
-  if(role==="정글")return [
-    flowCard("초반개입","EARLY IMPACT",[flowMetric("정글 CS (아군 / 적 정글)",ownJg==null&&enemyJg==null?statText(neutral,0):`${ownJg??0} / ${enemyJg??0}`),common.level,common.goldFlow],"ROFL 저장값 + team_flow 연결 상태"),
-    flowCard("경기개입","MAP IMPACT",[common.kp,common.champDamage,common.objDamage]),
-    flowCard("오브젝트","OBJECTIVES",[flowMetric("획득 기록",objectiveSummary(focus)),flowMetric("에픽 몬스터 피해",epicDmg==null?"-":Math.round(epicDmg).toLocaleString()),flowMetric("스틸 / 스틸 관여",steals==null&&stealAssists==null?"-":`${steals??0} / ${stealAssists??0}`)]),
-    flowCard("약점","CHECK",[common.weak,common.deaths,flowMetric("총 사망 시간",statText(deadTime,0,"초"))],`${tierName(band)} 동일 챔피언·포지션 비교`)
-  ];
-  if(role==="미드")return [
-    flowCard("성장력","GROWTH",[common.csm,common.finalGold,common.level]),
-    flowCard("킬영향력","KILL IMPACT",[common.kp,common.kda,common.goldFlow]),
-    flowCard("교전력","FIGHTING",[common.champDamage,common.dpm,flowMetric("CC 시간",statText(cc,0,"초"))]),
-    flowCard("약점","CHECK",[common.weak,common.deaths,flowMetric("총 사망 시간",statText(deadTime,0,"초"))],`${tierName(band)} 동일 챔피언·포지션 비교`)
-  ];
-  if(role==="원딜")return [
-    flowCard("성장","GROWTH",[common.csm,common.finalGold,common.level]),
-    flowCard("한타 DPM","TEAMFIGHT",[common.dpm,common.champDamage,common.kp]),
-    flowCard("데스효율","DEATH VALUE",[common.deaths,flowMetric("데스당 챔피언 피해",deaths&&damage?Math.round(damage/deaths).toLocaleString():deaths===0&&damage?"무데스":"-"),flowMetric("총 사망 시간",statText(deadTime,0,"초"))]),
-    flowCard("약점","CHECK",[common.weak,common.goldFlow,flowMetric("오브젝트 피해",objDmg==null?"-":Math.round(objDmg).toLocaleString())],`${tierName(band)} 동일 챔피언·포지션 비교`)
-  ];
-  if(role==="서폿")return [
-    flowCard("라인전","LANE",[common.kda,common.kp,flowMetric("팀원 힐 / 실드",heal==null&&shield==null?"-":`${Math.round(heal??0).toLocaleString()} / ${Math.round(shield??0).toLocaleString()}`)]),
-    flowCard("시야싸움","VISION",[flowMetric("시야 점수",statText(vision,0)),flowMetric("와드 설치 / 제거",wards==null&&cleared==null?"-":`${wards??0} / ${cleared??0}`),flowMetric("제어 와드 구매",statText(pink,0))]),
-    flowCard("한타기여","TEAMFIGHT",[common.kp,flowMetric("CC 시간",statText(cc,0,"초")),common.champDamage]),
-    flowCard("약점","CHECK",[common.weak,common.deaths,flowMetric("총 사망 시간",statText(deadTime,0,"초"))],`${tierName(band)} 동일 챔피언·포지션 비교`)
-  ];
-  return [
-    flowCard("라인전","LANE",[common.csm,common.finalGold,common.level]),
-    flowCard("성장","GROWTH",[common.xp,flowMetric("포탑 피해",turretDmg==null?"-":Math.round(turretDmg).toLocaleString()),flowMetric("포탑 처치/관여",statText(turrets,0))]),
-    flowCard("교전","FIGHTING",[common.dpm,common.champDamage,common.kp]),
-    flowCard("총정리","REVIEW",[common.weak,common.deaths,common.goldFlow],`${tierName(band)} 동일 챔피언·포지션 비교`)
-  ];
-}
-function roleFlowBlock(match,focus,current,band){const cards=roleFlowCards(match,focus,current,band);const rows=findTimeline(match,focus);return `<div class="role-flow-intro"><div><strong>${esc(focus.role)} ROFL 분석</strong><span>업로드 때 저장된 실제 ROFL 상세값을 포지션별 4분류에 연결했습니다.</span></div><span class="role-flow-status ${rows.length>=2?"ready":"partial"}">${rows.length>=2?"ROFL + team_flow 연결":"ROFL 상세값 연결됨"}</span></div><div class="role-flow-grid">${cards.join("")}</div><div class="role-flow-timeline"><div class="role-flow-timeline-head"><strong>골드 리드 · 경기 흐름 타임라인</strong><span>${rows.length>=2?"저장된 team_flow를 표시합니다.":"분 단위 team_flow만 추가 연결 대기 중입니다."}</span></div>${goldFlowBlock(match,focus)}</div>`;}
-function reportIntro(focus,current,band,match){const g=reportGrade(focus,current),result=focus.result==="win"?"승리":"패배";const resultCls=focus.result==="win"?"positive":"negative";let sentence=current?`${tierName(band)} 동일 챔피언·포지션 평균과 비교했을 때 `:"비교 표본이 아직 부족합니다. ";if(g.best)sentence+=`${g.best.label}이 가장 좋았고 (${g.best.diff>=0?"+":""}${g.best.diff.toFixed(1)}%), `;if(g.weak&&g.weak!==g.best)sentence+=`${g.weak.label}이 가장 큰 보완 후보입니다 (${g.weak.diff>=0?"+":""}${g.weak.diff.toFixed(1)}%).`;return`<section class="match-report-hero"><div><small>MATCH REPORT</small><h1><span class="${resultCls}">${result}</span> · ${esc(focus.champion)} ${esc(focus.role)}</h1><p>${esc(sentence)}</p></div><div class="report-grade"><span>티어 평균 평가</span><strong>${g.grade}</strong><small>${g.score==null?"표본 부족":`${g.score>=0?"+":""}${g.score.toFixed(1)}% 종합`}</small></div></section>`;}
-
-function reportQuickFacts(match={},focus={},current=null,band=""){
-  const duration=Number(match.duration||match.gameDuration||match.durationSeconds||0);
-  const minutes=duration?`${Math.floor(duration/60)}:${String(Math.floor(duration%60)).padStart(2,"0")}`:"-";
-  const k=Number(focus.kills||0),d=Number(focus.deaths||0),a=Number(focus.assists||0);
-  const kp=Number(focus.kp||0),dpm=Number(focus.dpm||0),csm=Number(focus.csm||0);
-  const dpmBase=benchmarkMetric(current,"dpm"),kpBase=benchmarkMetric(current,"kp");
-  const dpmDiff=pctDiff(dpm,dpmBase),kpDiff=pctDiff(kp,kpBase);
-  const chip=(label,value,sub="",tone="")=>`<article class="report-quick-card ${tone}"><span>${esc(label)}</span><strong>${esc(value)}</strong>${sub?`<small>${esc(sub)}</small>`:""}</article>`;
-  return `<div class="report-quick-grid">${[
-    chip("경기 시간",minutes,"ROFL 경기 기준"),
-    chip("K / D / A",`${k} / ${d} / ${a}`,`KDA ${fmt(focus.kda,2)}`,d===0?"good":""),
-    chip("DPM",Math.round(dpm||0).toLocaleString(),dpmDiff==null?`${tierName(band)} 표본 부족`:`평균 대비 ${dpmDiff>=0?"+":""}${dpmDiff.toFixed(0)}%`,dpmDiff>=10?"good":dpmDiff<=-10?"warn":""),
-    chip("킬관여",`${fmt(kp,1)}%`,kpDiff==null?`${tierName(band)} 표본 부족`:`평균 대비 ${kpDiff>=0?"+":""}${kpDiff.toFixed(0)}%`,kpDiff>=10?"good":kpDiff<=-10?"warn":""),
-    chip("CS / 분",fmt(csm,1),`${tierName(band)} 동일 챔피언·포지션`),
-  ].join("")}</div>`;
+function hasAnalysisAccess(userId="", guildId="") {
+  return isCommunityAdmin() || isCommunityCoach() || canAnalyzeAllPlayers() || canAnalyzePlayer(userId, guildId);
 }
 
-function reportTakeaways(focus,current,band){const g=reportGrade(focus,current);if(!g.rows.length)return`<div class="report-takeaways"><article><span>분석 상태</span><strong>비교 표본 부족</strong><p>${tierName(band)} 동일 챔피언·포지션 데이터가 더 쌓이면 자동 해석이 표시됩니다.</p></article></div>`;const positives=g.rows.filter(x=>x.diff>=0).sort((a,b)=>b.diff-a.diff),negatives=g.rows.filter(x=>x.diff<0).sort((a,b)=>a.diff-b.diff);return`<div class="report-takeaways"><article class="good"><span>잘한 점</span><strong>${esc((positives[0]||g.best).label)}</strong><p>동티어 평균보다 ${Math.abs((positives[0]||g.best).diff).toFixed(1)}% ${(positives[0]||g.best).diff>=0?"높았습니다":"낮았습니다"}.</p></article><article class="watch"><span>보완 포인트</span><strong>${esc((negatives[0]||g.weak).label)}</strong><p>동티어 평균보다 ${Math.abs((negatives[0]||g.weak).diff).toFixed(1)}% ${(negatives[0]||g.weak).diff<0?"낮았습니다":"높았습니다"}.</p></article><article><span>비교 기준</span><strong>${tierName(band)} ${esc(focus.champion)}</strong><p>${esc(focus.role)} 동일 조건 기준으로 비교합니다.</p></article></div>`;}
+function radarPoints(values, radius=112, cx=150, cy=140) {
+  return values.map((value,index) => {
+    const angle = -Math.PI / 2 + index * Math.PI / 3;
+    const size = radius * Math.max(.06, Math.min(1, value));
+    return `${(cx + Math.cos(angle) * size).toFixed(1)},${(cy + Math.sin(angle) * size).toFixed(1)}`;
+  }).join(" ");
+}
 
-async function renderMatchAnalysis({userId="",guildId="",matchId=""}={}){switchView("analysis");const target=$("analysisResults");if(userId&&!hasAnalysisAccess(userId,guildId)){const access=analysisAccessDebug();target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>${access.loggedIn?"일반 계정은 등록한 Riot ID의 내전 기록만 분석할 수 있습니다.":"로그인 후 사용할 수 있습니다."}</span></div>`;return;}target.innerHTML=`<div class="analysis-loading">선택한 경기 리포트를 만드는 중...</div>`;try{const [detailData,profile]=await Promise.all([apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`),apiGet(`/api/community/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=30`)]);const match=detailData?.match,focus=(match?.players||[]).find(p=>String(p.userId)===String(userId));if(!focus)throw new Error("경기 데이터를 찾지 못했습니다.");const data=await loadBenchmark(focus.champion,focus.role,guildId);const own=focusRows(profile).filter(r=>sameChampion(r.champion,focus.champion)&&r.role===focus.role);const band=tierBand(focus.tier),current=benchmarkTier(data,band),next=TIER_ORDER[TIER_ORDER.indexOf(band)+1]||"",upper=benchmarkTier(data,next),[cc,cl]=confidence(Number(data.sampleCount||0));target.innerHTML=`${reportIntro(focus,current,band,match)}${reportQuickFacts(match,focus,current,band)}<div class="analysis-subtabs report-nav"><button class="active" type="button" data-analysis-anchor="summary">요약</button><button type="button" data-analysis-anchor="flow">게임 흐름</button><button type="button" data-analysis-anchor="performance">내 플레이</button><button type="button" data-analysis-anchor="tiers">티어 비교</button><button type="button" data-analysis-anchor="growth">내 성장</button><button type="button" class="report-solo-locked" disabled title="Riot API Production Key 발급 후 제공">솔로랭크 🔒</button><button class="report-back" type="button" data-back-dashboard>분석 메인</button></div><div class="report-tab-panels"><section id="analysisSummary" class="analysis-section report-section" data-report-panel="summary"><div class="analysis-section-head"><div><small>AT A GLANCE</small><h2>이 경기 핵심 요약</h2></div><div class="analysis-confidence-badge"><strong>${cc}</strong><span>${cl}</span></div></div>${reportTakeaways(focus,current,band)}</section><section id="analysisFlow" class="analysis-section report-section" data-report-panel="flow" hidden><div class="analysis-section-head"><div><small>GAME FLOW</small><h2>골드 리드와 경기 흐름</h2></div><span>ROFL 타임라인이 있으면 실제 분 단위 격차로 표시</span></div>${roleFlowBlock(match,focus,current,band)}</section><section id="analysisPerformance" class="analysis-section report-section" data-report-panel="performance" hidden><div class="analysis-section-head"><div><small>YOUR PERFORMANCE</small><h2>내 플레이 vs ${tierName(band)} 평균</h2></div></div><div class="analysis-metric-grid">${METRICS.map(m=>metricCardFromBenchmark(...m,focus,current,upper,band,next)).join("")}</div>${insightFromBenchmark(focus,current,band)}</section><section id="analysisTiers" class="analysis-section report-section" data-report-panel="tiers" hidden><div class="analysis-section-head"><div><small>BENCHMARK</small><h2>${esc(focus.champion)} ${esc(focus.role)} 티어별 평균</h2></div><span>동일 챔피언 + 동일 포지션 기준 · ${Number(data.sampleCount||0)}경기 표본</span></div>${benchmarkTable(data,band)}</section><section id="analysisGrowth" class="analysis-section report-section" data-report-panel="growth" hidden><div class="analysis-section-head"><div><small>GROWTH</small><h2>내 ${esc(focus.champion)} 성장 변화</h2></div></div>${growthBlock(own)}</section></div>`;target.querySelector("[data-back-dashboard]")?.addEventListener("click",()=>renderDashboard());const setReportTab=(name)=>{target.querySelectorAll("[data-report-panel]").forEach(panel=>{panel.hidden=panel.dataset.reportPanel!==name;});target.querySelectorAll("[data-analysis-anchor]").forEach(btn=>btn.classList.toggle("active",btn.dataset.analysisAnchor===name));};target.querySelectorAll("[data-analysis-anchor]").forEach(btn=>btn.addEventListener("click",()=>setReportTab(btn.dataset.analysisAnchor)));setReportTab("summary");}catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
+function radar(labels, own, compare=null, legend="서버 내 순위") {
+  const grid = [.25,.5,.75,1].map(scale => `<polygon points="${radarPoints(labels.map(() => scale))}" class="server-radar-grid"/>`).join("");
+  const axes = labels.map((label,index) => {
+    const angle = -Math.PI / 2 + index * Math.PI / 3;
+    const x = 150 + Math.cos(angle) * 137, y = 140 + Math.sin(angle) * 137;
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${esc(label)}</text>`;
+  }).join("");
+  return `<div class="server-radar-wrap"><div class="server-radar-legend"><span><i></i>나</span>${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${esc(legend)}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}<polygon points="${radarPoints(own)}" class="server-radar-own"/>${axes}</svg></div>`;
+}
 
-export function openAnalysisFromMatch(detail={}){const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of["userId","guildId","matchId","champion","role"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
-export function applyAnalysisRoute(params){const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};if(detail.matchId)return renderMatchAnalysis(detail);return renderDashboard();}
-export function bindAnalysisPage(){window.addEventListener("lucid:auth-changed",()=>{invalidateCache();if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard({forceReload:true});});}
+function metricRankScore(metric={}) {
+  const rank=Number(metric.rank), total=Number(metric.total);
+  return rank > 0 && total > 0 ? Math.max(.06, (total-rank+1)/total) : .06;
+}
+
+function roleButtons() {
+  return `<div class="server-role-tabs" role="tablist" aria-label="분석 포지션">${ROLES.map(role => `<button type="button" class="${dashboard.role===role?"active":""}" data-server-role="${role}">${role}</button>`).join("")}</div>`;
+}
+
+function serverMetricPanel(metrics={}) {
+  const order = metrics.metricOrder || ROLE_METRICS[dashboard.role];
+  const values = order.map(item => metricRankScore(metrics.metrics?.[item.key || item[0]]));
+  return `<section class="server-analysis-card radar-card">
+    <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
+    ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values)}
+    <div class="server-rank-list">${order.map(item=>{const key=item.key||item[0],label=item.label||item[1],row=metrics.metrics?.[key]||{};return `<div><span>${esc(label)}</span><strong>${metricText(key,row.value)}</strong><small>${row.rank?`${row.rank}위 / ${row.total}명 · 상위 ${row.topPercent}%`:`비교 기록 없음`}</small></div>`;}).join("")}</div>
+  </section>`;
+}
+
+function focusPlayer(match, userId) {
+  return (match.players || []).find(row => String(row.userId) === String(userId));
+}
+
+function scrimMatchCard(match, userId) {
+  const player=focusPlayer(match,userId); if(!player)return"";
+  const won=player.result==="win", delta=Math.round(Number(player.mmrDelta||0)), icon=championIcon(player.champion);
+  return `<article class="analysis-history-card ${won?"win":"loss"}">
+    <div class="analysis-history-result"><strong>${won?"승리":"패배"}${delta?` (${delta>0?"+":""}${delta})`:""}</strong><span>${esc(relativeTime(match.time))}</span><small>${esc(match.mode||"내전")}</small></div>
+    <div class="analysis-history-champion">${icon?`<img src="${esc(icon)}" alt="">`:""}<span>${Number(player.level||0)||""}</span></div>
+    <div class="analysis-history-kda"><strong>${Number(player.kills||0)} / ${Number(player.deaths||0)} / ${Number(player.assists||0)}</strong><span>${player.deaths===0?"Perfect":`${number(player.kda,2)} KDA`}</span></div>
+    <button type="button" data-open-full-analysis data-user-id="${esc(userId)}" data-guild-id="${esc(match.guildId)}" data-match-id="${esc(match.matchId)}">분석</button>
+  </article>`;
+}
+
+function sourcePanel(profile={}) {
+  const matches=profile.matches||[], userId=profile.player?.userId||dashboard.identity?.userId||"";
+  return `<section class="server-analysis-card source-card">
+    <div class="analysis-source-tabs"><button type="button" class="${dashboard.tab==="scrim"?"active":""}" data-analysis-source="scrim">내전 게임 분석</button><button type="button" class="${dashboard.tab==="solo"?"active":""}" data-analysis-source="solo">솔로랭크 분석</button></div>
+    ${dashboard.tab==="solo" ? `<div class="solo-pending"><strong>솔로랭크 분석은 준비 중입니다.</strong><span>Riot API 연결 후 전적과 분석을 제공합니다.</span></div>` : `<div class="analysis-history-list">${matches.map(match=>scrimMatchCard(match,userId)).join("")||`<div class="solo-pending"><strong>분석할 내전 기록이 없습니다.</strong></div>`}</div>`}
+  </section>`;
+}
+
+function bindDashboard(target) {
+  target.querySelectorAll("[data-server-role]").forEach(button => button.addEventListener("click", async () => {
+    dashboard.role=button.dataset.serverRole; await renderDashboardBody(target);
+  }));
+  target.querySelectorAll("[data-analysis-source]").forEach(button => button.addEventListener("click", () => {
+    dashboard.tab=button.dataset.analysisSource; renderDashboardBody(target);
+  }));
+}
+
+async function loadServerMetrics(role) {
+  if(dashboard.metrics.has(role))return dashboard.metrics.get(role);
+  const identity=dashboard.identity;
+  const data=await apiGet(`/api/community/players/${encodeURIComponent(identity.userId)}/server-metrics?guildId=${encodeURIComponent(identity.guildId)}&role=${encodeURIComponent(role)}`);
+  dashboard.metrics.set(role,data.metrics); return data.metrics;
+}
+
+async function renderDashboardBody(target) {
+  target.innerHTML=`<div class="server-analysis-loading">서버 통계를 불러오는 중...</div>`;
+  try {
+    const metrics=await loadServerMetrics(dashboard.role);
+    target.innerHTML=`<div class="server-analysis-user"><span>${esc(dashboard.profile.player?.name||dashboard.identity?.name||"내 기록")}</span><strong>게임 분석 <em>(서버 기준)</em></strong></div><div class="server-analysis-layout">${serverMetricPanel(metrics)}${sourcePanel(dashboard.profile)}</div>`;
+    bindDashboard(target);
+  } catch(error) {
+    target.innerHTML=`<div class="analysis-empty-inline"><strong>서버 통계를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;
+  }
+}
+
+async function renderDashboard({forceReload=false}={}) {
+  switchView("analysis"); const target=$("analysisResults"); if(!target)return;
+  const identity=getAnalysisIdentity();
+  if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록해주세요.</span></div>`;return;}
+  if(!identity){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>개인전적에서 유저를 선택한 뒤 분석할 수 있습니다.</span></div>`;return;}
+  if(forceReload||dashboard.identity?.userId!==identity.userId||dashboard.identity?.guildId!==identity.guildId){
+    target.innerHTML=`<div class="server-analysis-loading">내전 기록을 불러오는 중...</div>`;
+    try { dashboard={role:"전체",tab:"scrim",identity,profile:await apiGet(`/api/community/players/${encodeURIComponent(identity.userId)}?guildId=${encodeURIComponent(identity.guildId)}&limit=30`),metrics:new Map()}; }
+    catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 데이터를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;return;}
+  }
+  await renderDashboardBody(target);
+}
+
+function opponentFor(match, focus) {
+  return (match.players||[]).find(row => row.team!==focus.team && row.role===focus.role);
+}
+
+function backToDashboard() {
+  const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","analysis");
+  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`); return renderDashboard();
+}
+
+function opponentComparison(match,focus,opponent) {
+  const metrics=ROLE_METRICS[focus.role]||ROLE_METRICS["전체"];
+  const pairs=metrics.map(([key,label])=>{const mine=Number(focus[key]),other=Number(opponent?.[key]);return {key,label,mine:Number.isFinite(mine)?mine:null,other:Number.isFinite(other)?other:null,diff:Number.isFinite(mine)&&Number.isFinite(other)&&other!==0?(mine-other)/Math.abs(other)*100:null};});
+  const usable=pairs.filter(row=>Number.isFinite(row.diff));
+  const best=[...usable].sort((a,b)=>b.diff-a.diff)[0], weak=[...usable].sort((a,b)=>a.diff-b.diff)[0];
+  const own=pairs.map(row=>row.mine==null||row.other==null ? .5 : Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1))));
+  const enemy=pairs.map((_row,index)=>1-own[index]);
+  return `<div class="opponent-report">
+    <button class="report-back" type="button" data-back-dashboard>← 분석 메인</button>
+    <section class="opponent-hero"><div><small>LANE MATCHUP</small><h1>${esc(focus.name)} vs ${esc(opponent?.name||"상대 라이너")}</h1><p>${esc(focus.role)} · ${esc(focus.champion)} vs ${esc(opponent?.champion||"-")}</p></div><div><span>${focus.result==="win"?"승리":"패배"}</span><strong>${Number(focus.kills||0)} / ${Number(focus.deaths||0)} / ${Number(focus.assists||0)}</strong></div></section>
+    <div class="opponent-layout"><section class="server-analysis-card">${radar(metrics.map(row=>row[1]),own,enemy,opponent?.name||"상대")}</section><section class="server-analysis-card opponent-summary"><h2>상대 라이너 비교</h2>${best?`<article class="good"><span>잘한 부분</span><strong>${esc(best.label)} ${best.diff>=0?"+":""}${best.diff.toFixed(1)}%</strong><p>${esc(opponent.name)}보다 높았습니다.</p></article>`:""}${weak?`<article class="weak"><span>밀린 부분</span><strong>${esc(weak.label)} ${weak.diff>=0?"+":""}${weak.diff.toFixed(1)}%</strong><p>${esc(opponent.name)}보다 낮았습니다.</p></article>`:""}</section></div>
+    <section class="opponent-metric-grid">${pairs.map(row=>`<article><span>${esc(row.label)}</span><div><strong>${metricText(row.key,row.mine)}</strong><i>VS</i><b>${metricText(row.key,row.other)}</b></div><small class="${row.diff>=0?"positive":"negative"}">${row.diff==null?"비교 데이터 없음":`${row.diff>=0?"+":""}${row.diff.toFixed(1)}%`}</small></article>`).join("")}</section>
+  </div>`;
+}
+
+async function renderMatchAnalysis({userId="",guildId="",matchId=""}={}) {
+  switchView("analysis"); const target=$("analysisResults");
+  if(!hasAnalysisAccess(userId,guildId)){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>${getCurrentUser()?"등록한 Riot ID의 경기만 분석할 수 있습니다.":"로그인 후 사용할 수 있습니다."}</span></div>`;return;}
+  target.innerHTML=`<div class="server-analysis-loading">상대 라이너와 비교하는 중...</div>`;
+  try {const data=await apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",backToDashboard);}
+  catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>경기를 분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
+export async function renderCompactMatchAnalysis(detail={},target) {
+  if(!target)return; target.innerHTML=`<div class="compact-analysis-loading">상대 라이너와 비교하는 중...</div>`;
+  try {const data=await apiGet(`/api/community/matches/${encodeURIComponent(detail.matchId)}?guildId=${encodeURIComponent(detail.guildId)}`),focus=focusPlayer(data.match,detail.userId),opponent=focus&&opponentFor(data.match,focus);if(!focus||!opponent)throw new Error("상대 기록 없음");const metrics=ROLE_METRICS[focus.role]||ROLE_METRICS.전체,own=metrics.map(([key])=>{const a=Number(focus[key]||0),b=Number(opponent[key]||0);return a||b?Math.max(.08,Math.min(.92,a/(a+b))):.5;});target.innerHTML=`<div class="compact-analysis-card"><strong>${esc(focus.name)} vs ${esc(opponent.name)}</strong>${radar(metrics.map(row=>row[1]),own,own.map(value=>1-value),opponent.name)}<button class="compact-analysis-full" type="button" data-open-full-analysis data-user-id="${esc(detail.userId)}" data-guild-id="${esc(detail.guildId)}" data-match-id="${esc(detail.matchId)}">상세 분석 보기</button></div>`;}catch(error){target.innerHTML=`<div class="compact-analysis-empty"><strong>분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
+export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
+export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};return detail.matchId?renderMatchAnalysis(detail):renderDashboard();}
+export function bindAnalysisPage() {window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard({forceReload:true});});}
