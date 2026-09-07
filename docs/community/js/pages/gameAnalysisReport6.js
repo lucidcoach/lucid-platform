@@ -27,9 +27,7 @@ const metricText = (key, value) => {
 
 function firstFinite(row, keys) {
   for (const key of keys) {
-    const raw = row?.[key];
-    if (raw == null || raw === "") continue;
-    const value = Number(raw);
+    const value = Number(row?.[key]);
     if (Number.isFinite(value)) return value;
   }
   return null;
@@ -37,11 +35,11 @@ function firstFinite(row, keys) {
 
 function topMetricValue(player, opponent, key) {
   if (!player) return null;
-  if (key === "lanePhaseScore") return firstFinite(player,["lanePhaseScore","lane_phase_score","topLaneScore","top_lane_score","laneScore"]);
-  if (key === "teamfightScore") return firstFinite(player,["teamfightScore","teamfight_score","teamfightContributionScore","teamfight_contribution_score","fightScore"]);
-  if (key === "macroScore") return firstFinite(player,["macroScore","macro_score","operationScore","operation_score","sideLaneScore"]);
+  if (key === "lanePhaseScore") return firstFinite(player,["lanePhaseScore","topLaneScore","laneScore"]);
+  if (key === "teamfightScore") return firstFinite(player,["teamfightScore","teamfightContributionScore","fightScore"]);
+  if (key === "macroScore") return firstFinite(player,["macroScore","operationScore","sideLaneScore"]);
   if (key === "influenceScore") {
-    const explicit=firstFinite(player,["influenceScore","influence_score","topInfluenceScore","top_influence_score"]);
+    const explicit=firstFinite(player,["influenceScore","topInfluenceScore"]);
     if (explicit != null) return explicit;
     const mine=firstFinite(player,["kp"]), other=firstFinite(opponent,["kp"]);
     if (mine == null || other == null) return null;
