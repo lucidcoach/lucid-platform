@@ -204,6 +204,57 @@ function bindChampionStats(target, groups = {}) {
   render();
 }
 
+
+function personalMatchChampion(match, userId) {
+  const player = (match?.players || []).find((row) => String(row?.userId) === String(userId));
+  return String(player?.champion || "").trim();
+}
+
+function personalHistoryFilters(matches = [], userId) {
+  const champions = [...new Set(
+    matches.map((match) => personalMatchChampion(match, userId)).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "ko"));
+  const options = champions.map((champion) =>
+    `<option value="${escapeHtml(champion)}">${escapeHtml(champion)}</option>`
+  ).join("");
+  return `<div class="personal-history-toolbar" aria-label="개인 전적 필터">
+    <label class="personal-champion-filter">
+      <span>챔피언</span>
+      <select data-personal-champion-filter aria-label="챔피언 필터">
+        <option value="">전체 챔피언</option>
+        ${options}
+      </select>
+    </label>
+    <div class="personal-queue-filter" role="group" aria-label="게임 유형 필터 준비 중">
+      <span class="personal-filter-label">게임 유형</span>
+      <div class="personal-queue-buttons">
+        <button type="button" disabled title="Riot API 연동 후 지원">내전</button>
+        <button type="button" disabled title="Riot API 연동 후 지원">솔랭</button>
+        <button type="button" disabled title="Riot API 연동 후 지원">자랭</button>
+        <button type="button" disabled title="Riot API 연동 후 지원">칼바람</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindPersonalHistoryFilters(target, matches = [], userId) {
+  const select = target.querySelector("[data-personal-champion-filter]");
+  const feed = target.querySelector("[data-personal-match-feed]");
+  if (!select || !feed) return;
+
+  const render = () => {
+    const selected = String(select.value || "");
+    const visible = selected
+      ? matches.filter((match) => personalMatchChampion(match, userId) === selected)
+      : matches;
+    feed.innerHTML = visible.map((match) => playerMatchCard(match, userId)).join("")
+      || `<div class="empty-state"><strong>${selected ? "해당 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
+    bindExpanders(feed);
+  };
+
+  select.addEventListener("change", render);
+}
+
 export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
   updateUrl({ player: userId, guild: guildId }, historyMode);
   switchView("search");
@@ -234,10 +285,12 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       </div>
     </section>
     ${serverStats ? serverStatsPanel(serverStats) : ""}
-    <div class="match-feed personal-feed">${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
+    ${personalHistoryFilters(data.matches || [], userId)}
+    <div class="match-feed personal-feed" data-personal-match-feed>${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
     bindAssociates(target, p.recentAssociates || {});
+    bindPersonalHistoryFilters(target, data.matches || [], userId);
     bindExpanders(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
       window.dispatchEvent(new CustomEvent("lucid:favorite-toggle", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
