@@ -5,6 +5,7 @@ import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints,
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260906report1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260904v";
+import { isCommunityAdmin } from "../auth.js?v=20260907adminanalysis1";
 
 
 function updateUrl(params, mode = "push") {
@@ -210,7 +211,7 @@ function personalMatchChampion(match, userId) {
   return String(player?.champion || "").trim();
 }
 
-function personalHistoryFilters(matches = [], userId) {
+function personalHistoryFilters(matches = [], userId, guildId) {
   const champions = [...new Set(
     matches.map((match) => personalMatchChampion(match, userId)).filter(Boolean)
   )].sort((a, b) => a.localeCompare(b, "ko"));
@@ -234,6 +235,7 @@ function personalHistoryFilters(matches = [], userId) {
         <button type="button" disabled title="Riot API 연동 후 지원">칼바람</button>
       </div>
     </div>
+    ${isCommunityAdmin() ? `<button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}">분석하기</button>` : ""}
   </div>`;
 }
 
@@ -285,12 +287,22 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       </div>
     </section>
     ${serverStats ? serverStatsPanel(serverStats) : ""}
-    ${personalHistoryFilters(data.matches || [], userId)}
+    ${personalHistoryFilters(data.matches || [], userId, guildId)}
     <div class="match-feed personal-feed" data-personal-match-feed>${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
     bindAssociates(target, p.recentAssociates || {});
     bindPersonalHistoryFilters(target, data.matches || [], userId);
+    target.querySelector("[data-admin-analyze-player]")?.addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("view", "analysis");
+      url.searchParams.set("userId", button.dataset.userId || String(userId));
+      url.searchParams.set("guildId", button.dataset.guildId || String(guildId));
+      history.pushState({ view:"analysis", userId:String(userId), guildId:String(guildId) }, "", `${url.pathname}${url.search}`);
+      window.dispatchEvent(new CustomEvent("lucid:analyze-player", { detail:{ userId:String(userId), guildId:String(guildId), name:p.name || "" } }));
+    });
     bindExpanders(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
       window.dispatchEvent(new CustomEvent("lucid:favorite-toggle", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));

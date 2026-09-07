@@ -1795,3 +1795,10 @@
   .personal-queue-buttons{display:grid;grid-template-columns:repeat(4,1fr)}
   .personal-queue-buttons button{min-width:0;padding:0 4px}
 }
+
+
+/* Admin: analyze the currently opened player from the personal-history filter row. */
+.personal-history-toolbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.personal-admin-analysis-button{margin-left:auto;min-height:42px;padding:0 22px;border:1px solid #3b82f6;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(37,99,235,.18)}
+.personal-admin-analysis-button:hover{background:#3b82f6;transform:translateY(-1px)}
+@media (max-width:760px){.personal-admin-analysis-button{width:100%;margin-left:0}}

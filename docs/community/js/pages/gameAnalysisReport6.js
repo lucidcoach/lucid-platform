@@ -85,7 +85,7 @@ function roleButtons() {
 }
 
 function serverMetricPanel(metrics={}) {
-  const order = dashboard.role === "탑" ? ROLE_METRICS["탑"] : (metrics.metricOrder || ROLE_METRICS[dashboard.role]);
+  const order = metrics.metricOrder || ROLE_METRICS[dashboard.role];
   const values = order.map(item => metricRankScore(metrics.metrics?.[item.key || item[0]]));
   return `<section class="server-analysis-card radar-card">
     <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
@@ -144,9 +144,10 @@ async function renderDashboardBody(target) {
   }
 }
 
-async function renderDashboard({forceReload=false}={}) {
+async function renderDashboard({forceReload=false, identityOverride=null}={}) {
   switchView("analysis"); const target=$("analysisResults"); if(!target)return;
-  const identity=getAnalysisIdentity();
+  const identity=identityOverride || getAnalysisIdentity();
+  if(identityOverride && !isCommunityAdmin()){target.innerHTML=`<div class="analysis-empty-inline"><strong>관리자 권한이 필요합니다.</strong><span>다른 회원 분석은 관리자만 사용할 수 있습니다.</span></div>`;return;}
   if(!identity&&!canAnalyzeAllPlayers()){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>로그인 후 내 정보에 Riot ID를 등록해주세요.</span></div>`;return;}
   if(!identity){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>개인전적에서 유저를 선택한 뒤 분석할 수 있습니다.</span></div>`;return;}
   if(forceReload||dashboard.identity?.userId!==identity.userId||dashboard.identity?.guildId!==identity.guildId){
@@ -163,7 +164,13 @@ function opponentFor(match, focus) {
 
 function backToDashboard() {
   const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","analysis");
-  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`); return renderDashboard();
+  const selected = dashboard.identity;
+  if(selected?.userId && selected?.guildId && isCommunityAdmin()){
+    url.searchParams.set("userId", selected.userId);
+    url.searchParams.set("guildId", selected.guildId);
+  }
+  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);
+  return renderDashboard({identityOverride:selected && isCommunityAdmin() ? selected : null});
 }
 
 function opponentComparison(match,focus,opponent) {
@@ -195,5 +202,17 @@ export async function renderCompactMatchAnalysis(detail={},target) {
 }
 
 export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
-export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};return detail.matchId?renderMatchAnalysis(detail):renderDashboard();}
-export function bindAnalysisPage() {window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard({forceReload:true});});}
+export function applyAnalysisRoute(params) {
+  const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};
+  if(detail.matchId) return renderMatchAnalysis(detail);
+  const identityOverride = detail.userId && detail.guildId ? {userId:detail.userId,guildId:detail.guildId,name:""} : null;
+  return renderDashboard({forceReload:Boolean(identityOverride), identityOverride});
+}
+export function bindAnalysisPage() {
+  window.addEventListener("lucid:analyze-player", (event)=>{
+    const detail=event.detail||{};
+    if(!detail.userId||!detail.guildId) return;
+    renderDashboard({forceReload:true,identityOverride:{userId:String(detail.userId),guildId:String(detail.guildId),name:String(detail.name||"")}});
+  });
+  window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))applyAnalysisRoute(new URLSearchParams(window.location.search));});
+}
