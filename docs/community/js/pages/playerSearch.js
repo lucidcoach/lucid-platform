@@ -5,7 +5,7 @@ import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints,
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907hotfix1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
-import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907permissions1";
+import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907accountfix1";
 
 
 function updateUrl(params, mode = "push") {
@@ -220,11 +220,12 @@ function canAnalyzeSearchedPlayer(userId, guildId) {
   const user = getCurrentUser();
   if (!user) return { ok:false, message:"로그인 후 Discord 연동이 필요합니다." };
   if (!isDiscordLinkedUser(user)) return { ok:false, message:"Discord 연동 후 본인이 등록한 계정만 분석할 수 있습니다." };
+  if (!Array.isArray(user.analysisPlayers) || !user.analysisPlayers.length) return { ok:false, message:"Discord에서 /소환사등록을 먼저 해주세요." };
   if (!canAnalyzePlayer(userId, guildId)) return { ok:false, message:"본인이 등록한 계정만 볼 수 있습니다. 다른 회원 분석은 관리자 권한이 필요합니다." };
   return { ok:true };
 }
 
-function personalHistoryFilters(matches = [], userId, guildId) {
+function personalHistoryFilters(matches = [], userId, guildId, riotId="") {
   const champions = [...new Set(
     matches.map((match) => personalMatchChampion(match, userId)).filter(Boolean)
   )].sort((a, b) => a.localeCompare(b, "ko"));
@@ -244,7 +245,7 @@ function personalHistoryFilters(matches = [], userId, guildId) {
         <button type="button" disabled title="Riot API 연동 후 지원">칼바람</button>
       </div>
     </div>
-    <button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}">분석하기</button>
+    <button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}" data-riot-id="${escapeHtml(riotId)}">분석하기</button>
   </div>`;
 }
 
@@ -297,7 +298,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       </div>
     </section>
     ${serverStats ? serverStatsPanel(serverStats) : ""}
-    ${personalHistoryFilters(data.matches || [], userId, guildId)}
+    ${personalHistoryFilters(data.matches || [], userId, guildId, p.name || "")}
     <div class="match-feed personal-feed" data-personal-match-feed>${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
@@ -317,6 +318,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       url.searchParams.set("view", "analysis");
       url.searchParams.set("userId", requestedUserId);
       url.searchParams.set("guildId", requestedGuildId);
+      if(button.dataset.riotId)url.searchParams.set("riotId",button.dataset.riotId);
       window.location.assign(`${url.pathname}${url.search}`);
     });
     bindExpanders(target);

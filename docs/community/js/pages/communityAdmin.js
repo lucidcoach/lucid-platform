@@ -1,5 +1,5 @@
 
-import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260907permissions1";
+import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260907accountfix1";
 import { API_BASE_URL } from "../config.js?v=20260904d";
 import { renderMileage } from "./mileage.js?v=20260906ops2";
 
@@ -115,7 +115,7 @@ function serverPanel(){
   `);
 }
 
-const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할",set_member_server_admin:"서버 관리자 권한"};
+const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할"};
 const statusLabels={pending:"대기",processing:"적용 중",completed:"완료",failed:"실패"};
 async function loadServerSettings(){
   if(!selectedGuild)return;
@@ -139,12 +139,14 @@ function memberRiotId(user={}){
   return String(user.riotId||user.riot_id||accounts[0]||"").trim();
 }
 function friendlyMemberName(user={}){
+  const preferred=String(user.preferredDisplayName||user.preferred_display_name||"").trim();
+  if(preferred)return preferred;
   const riotId=memberRiotId(user);
   if(riotId)return riotId;
-  const raw=String(user.displayName||user.display_name||user.nickname||"").trim();
-  if(raw && !/^oauth\s*user$/i.test(raw))return raw;
   const discord=String(user.discordDisplayName||user.discord_display_name||"").trim();
   if(discord)return discord;
+  const raw=String(user.displayName||user.display_name||user.nickname||"").trim();
+  if(raw && !/^oauth\s*user$/i.test(raw))return raw;
   const email=String(user.email||"").trim();
   if(email)return email.split("@")[0]||"회원";
   return "회원";
@@ -204,7 +206,7 @@ function renderMemberRows(){
       <span class="admin-member-actions">
         <label><input type="checkbox" data-member-coach ${flags.coach?"checked":""}> 코치</label>
         <label><input type="checkbox" data-member-admin ${flags.admin?"checked":""}> 관리자</label>
-        <label class="server-admin-check" title="현재 선택한 서버에만 적용"><input type="checkbox" data-member-server-admin ${isServerAdmin?"checked":""} ${selectedGuild?"":"disabled"}> 서버 관리자</label>
+        <label class="server-admin-check" title="Discord 서버 관리자 권한에서 자동 동기화됩니다"><input type="checkbox" data-member-server-admin ${isServerAdmin?"checked":""} disabled> 서버 관리자</label>
         <button type="button" data-member-save>저장</button>
       </span>
     </div>`;
@@ -216,21 +218,12 @@ async function saveMemberPermissions(row){
   const userId=String(row.dataset.memberId||"");if(!userId)return;
   const coach=Boolean(row.querySelector("[data-member-coach]")?.checked);
   const admin=Boolean(row.querySelector("[data-member-admin]")?.checked);
-  const serverAdmin=Boolean(row.querySelector("[data-member-server-admin]")?.checked);
   const status=document.getElementById("memberActionStatus");if(status)status.textContent="권한 저장 중...";
   try{
     const roles=[...(coach?["coach"]:[]),...(admin?["admin"]:[])];
     const role=coach?"coach":(admin?"admin":"student");
     const global=await adminRequest(`/api/users/${encodeURIComponent(userId)}`,{method:"PATCH",body:{role,roles,isCoach:coach,isAdmin:admin}});
     if(global?.user)memberRows=memberRows.map(item=>String(item.id||item.userId||item.user_id)===userId?{...item,...global.user}:item);
-    if(selectedGuild){
-      await enqueueServerAction("set_member_server_admin",{userId,enabled:serverAdmin});
-      memberRows=memberRows.map(item=>{
-        if(String(item.id||item.userId||item.user_id)!==userId)return item;
-        const ids=memberServerAdminGuilds(item);serverAdmin?ids.add(String(selectedGuild)):ids.delete(String(selectedGuild));
-        return {...item,serverAdminGuildIds:[...ids]};
-      });
-    }
     if(status)status.textContent="권한을 저장했습니다.";
     renderMemberRows();
   }catch(error){if(status)status.textContent=error.message||"권한 저장에 실패했습니다.";}
@@ -500,7 +493,7 @@ function renderSection(){
 }
 
 // 서버 관리 화면은 사이트 역할명이 아니라 Discord에서 봇이 검증한 길드 관리자만 연다.
-export function hasCommunityAdminAccess(){return Boolean(getCurrentUser()&&guildAdminAccess);}
+export function hasCommunityAdminAccess(){return Boolean(getCurrentUser()&&(isCommunityAdmin()||guildAdminAccess));}
 
 export async function syncAdminAccess(){
   if(!getCurrentUser()){adminGuilds=[];guildAdminAccess=false;guildsLoaded=false;}

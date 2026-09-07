@@ -128,7 +128,10 @@ export async function initCommunityAuth(){
       window.dispatchEvent(new CustomEvent("lucid:open-account"));
       return;
     }
-    window.location.assign(apiUrl("/api/auth/oauth/discord/start"));
+    const start=new URL(apiUrl("/api/auth/oauth/discord/start"));
+    start.searchParams.set("source","community");
+    start.searchParams.set("returnTo",`${window.location.origin}${window.location.pathname}`);
+    window.location.assign(start.toString());
   });
   logoutBtn?.addEventListener("click",async()=>{ await logoutCommunityUser(); window.dispatchEvent(new CustomEvent("lucid:logged-out")); });
   form?.addEventListener("submit",async e=>{

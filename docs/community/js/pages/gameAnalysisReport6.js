@@ -2,7 +2,7 @@ import { apiGet } from "../api.js?v=20260907permissions1";
 import { championIcon } from "../assets.js?v=20260907analysis1";
 import { $, escapeHtml, relativeTime } from "../utils.js?v=20260907analysis1";
 import { switchView } from "../view.js?v=20260907analysis1";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260907permissions1";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260907accountfix1";
 
 const ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
 const ROLE_METRICS = {
@@ -63,6 +63,7 @@ function analysisAccessMessage() {
   const user=getCurrentUser();
   if(!user)return "로그인 후 Discord 연동이 필요합니다.";
   if(!user.discordConnected&&!user.discord_connected)return "Discord 연동 후 본인이 등록한 계정만 분석할 수 있습니다.";
+  if(!Array.isArray(user.analysisPlayers)||!user.analysisPlayers.length)return "Discord에서 /소환사등록을 먼저 해주세요.";
   return "본인이 등록한 계정만 볼 수 있습니다. 다른 회원 분석은 관리자 권한이 필요합니다.";
 }
 
@@ -100,6 +101,29 @@ function serverMetricPanel(metrics={}) {
     <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
     ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values)}
     <div class="server-rank-list">${order.map(item=>{const key=item.key||item[0],label=item.label||item[1],row=metrics.metrics?.[key]||{};return `<div><span>${esc(label)}</span><strong>${metricText(key,row.value)}</strong><small>${row.rank?`${row.rank}위 / ${row.total}명 · 상위 ${row.topPercent}%`:`비교 기록 없음`}</small></div>`;}).join("")}</div>
+  </section>`;
+}
+
+function personalMetricPanel(profile={}) {
+  const userId=String(profile.player?.userId||dashboard.identity?.userId||"");
+  const metricRows=ROLE_METRICS[dashboard.role]||ROLE_METRICS.전체;
+  const samples=metricRows.map(()=>[]);
+  let games=0;
+  for(const match of (profile.matches||[])){
+    const focus=focusPlayer(match,userId);
+    if(!focus||(dashboard.role!=="전체"&&focus.role!==dashboard.role))continue;
+    const opponent=opponentFor(match,focus);if(!opponent)continue;
+    metricRows.forEach(([key],index)=>{
+      const mine=comparisonValue(focus,opponent,key),other=comparisonValue(opponent,focus,key);
+      if(Number.isFinite(mine)&&Number.isFinite(other)&&mine+other>0)samples[index].push(Math.max(.08,Math.min(.92,mine/(mine+other))));
+    });
+    games+=1;
+  }
+  const own=samples.map(rows=>rows.length?rows.reduce((sum,value)=>sum+value,0)/rows.length:.5);
+  const opponent=own.map(value=>1-value);
+  return `<section class="server-analysis-card radar-card personal-radar-card">
+    <div class="server-card-head"><div><small>PERSONAL ANALYSIS</small><h2>${esc(profile.player?.name||dashboard.identity?.name||"분석 대상")} 개인 육각형</h2></div><span>최근 맞라이너 ${games}경기 비교</span></div>
+    ${radar(metricRows.map(row=>row[1]),own,opponent,"맞라이너 평균")}
   </section>`;
 }
 
@@ -146,16 +170,16 @@ async function renderDashboardBody(target) {
   target.innerHTML=`<div class="server-analysis-loading">서버 통계를 불러오는 중...</div>`;
   try {
     const metrics=await loadServerMetrics(dashboard.role);
-    target.innerHTML=`<div class="server-analysis-user"><span>${esc(dashboard.profile.player?.name||dashboard.identity?.name||"내 기록")}</span><strong>게임 분석 <em>(서버 기준)</em></strong></div><div class="server-analysis-layout">${serverMetricPanel(metrics)}${sourcePanel(dashboard.profile)}</div>`;
+    target.innerHTML=`<div class="server-analysis-user"><span>${esc(dashboard.profile.player?.name||dashboard.identity?.name||"분석 대상")}</span><strong>게임 분석 <em>(서버 기준)</em></strong></div><div class="server-analysis-layout">${personalMetricPanel(dashboard.profile)}${serverMetricPanel(metrics)}${sourcePanel(dashboard.profile)}</div>`;
     bindDashboard(target);
   } catch(error) {
     target.innerHTML=`<div class="analysis-empty-inline"><strong>서버 통계를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;
   }
 }
 
-async function renderDashboard({forceReload=false}={}) {
+async function renderDashboard({forceReload=false,identity:requestedIdentity=null}={}) {
   switchView("analysis"); const target=$("analysisResults"); if(!target)return;
-  const identity=getAnalysisIdentity();
+  const identity=requestedIdentity?.userId&&requestedIdentity?.guildId?requestedIdentity:getAnalysisIdentity();
   if(!identity&&!canAnalyzeAllPlayers(identity?.guildId||"")){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 Riot ID가 필요합니다.</strong><span>${analysisAccessMessage()}</span></div>`;return;}
   if(!identity){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석할 유저를 선택해주세요.</strong><span>개인전적에서 유저를 선택한 뒤 분석할 수 있습니다.</span></div>`;return;}
   if(forceReload||dashboard.identity?.userId!==identity.userId||dashboard.identity?.guildId!==identity.guildId){
@@ -170,16 +194,18 @@ function opponentFor(match, focus) {
   return (match.players||[]).find(row => row.team!==focus.team && row.role===focus.role);
 }
 
-function backToDashboard() {
+function backToDashboard(identity={}) {
   const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","analysis");
-  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`); return renderDashboard();
+  if(identity.userId)url.searchParams.set("userId",identity.userId);
+  if(identity.guildId)url.searchParams.set("guildId",identity.guildId);
+  history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`); return renderDashboard({identity});
 }
 
 function opponentComparison(match,focus,opponent) {
   const metrics=ROLE_METRICS[focus.role]||ROLE_METRICS["전체"];
   const pairs=metrics.map(([key,label])=>{const mine=comparisonValue(focus,opponent,key),other=comparisonValue(opponent,focus,key);return {key,label,mine,other,diff:Number.isFinite(mine)&&Number.isFinite(other)&&other!==0?(mine-other)/Math.abs(other)*100:null};});
   const usable=pairs.filter(row=>Number.isFinite(row.diff));
-  const best=[...usable].sort((a,b)=>b.diff-a.diff)[0], weak=[...usable].sort((a,b)=>a.diff-b.diff)[0];
+  const best=usable.filter(row=>row.diff>0).sort((a,b)=>b.diff-a.diff)[0], weak=usable.filter(row=>row.diff<0).sort((a,b)=>a.diff-b.diff)[0];
   const own=pairs.map(row=>row.mine==null||row.other==null ? .5 : Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1))));
   const enemy=pairs.map((_row,index)=>1-own[index]);
   return `<div class="opponent-report">
@@ -194,7 +220,7 @@ async function renderMatchAnalysis({userId="",guildId="",matchId=""}={}) {
   switchView("analysis"); const target=$("analysisResults");
   if(!hasAnalysisAccess(userId,guildId)){target.innerHTML=`<div class="analysis-empty-inline"><strong>분석 권한이 필요합니다.</strong><span>${analysisAccessMessage()}</span></div>`;return;}
   target.innerHTML=`<div class="server-analysis-loading">상대 라이너와 비교하는 중...</div>`;
-  try {const [,data]=await Promise.all([apiGet(`/api/community/analysis/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=1`),apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`)]),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",backToDashboard);}
+  try {const [,data]=await Promise.all([apiGet(`/api/community/analysis/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=1`),apiGet(`/api/community/matches/${encodeURIComponent(matchId)}?guildId=${encodeURIComponent(guildId)}`)]),match=data.match,focus=focusPlayer(match,userId),opponent=focus&&opponentFor(match,focus);if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");target.innerHTML=opponentComparison(match,focus,opponent);target.querySelector("[data-back-dashboard]")?.addEventListener("click",()=>backToDashboard({userId,guildId}));}
   catch(error){target.innerHTML=`<div class="analysis-empty-inline"><strong>경기를 분석하지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 
@@ -261,6 +287,6 @@ export async function renderCompactMatchAnalysis(detail={},target) {
   }
 }
 
-export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
-export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||""};return detail.matchId?renderMatchAnalysis(detail):renderDashboard();}
-export function bindAnalysisPage() {window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))renderDashboard({forceReload:true});});}
+export function openAnalysisFromMatch(detail={}) {const url=new URL(window.location.href);url.search="";url.searchParams.set("view","analysis");for(const key of ["userId","guildId","matchId","riotId"])if(detail[key])url.searchParams.set(key,detail[key]);history.pushState({view:"analysis"},"",`${url.pathname}${url.search}`);return renderMatchAnalysis(detail);}
+export function applyAnalysisRoute(params) {const detail={userId:params.get("userId")||"",guildId:params.get("guildId")||"",matchId:params.get("matchId")||"",riotId:params.get("riotId")||""};if(detail.riotId)detail.name=detail.riotId;return detail.matchId?renderMatchAnalysis(detail):renderDashboard({identity:detail.userId&&detail.guildId?detail:null});}
+export function bindAnalysisPage() {window.addEventListener("lucid:auth-changed",()=>{dashboard.identity=null;if(document.getElementById("analysisView")?.classList.contains("active"))applyAnalysisRoute(new URLSearchParams(window.location.search));});}
