@@ -290,7 +290,7 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
           ${[...adminLineOptions.league, ...adminFieldOptions.league].map((role) => `<label><input type="checkbox" name="coachSelfRoleChoice" value="${role}" ${selectedRoles.includes(role) ? "checked" : ""}> ${role}</label>`).join("")}
         </div>
       </fieldset>
-      <label>상세 설명<textarea id="coachSelfBio" rows="7">${escapeHtml(lesson.bio || "")}</textarea></label>
+      <label class="coach-self-bio-field">상세 설명<textarea id="coachSelfBio" rows="14">${escapeHtml(lesson.bio || "")}</textarea></label>
       <div class="form-actions">
         <button type="button" class="danger" id="coachSelfDeleteLessonBtn">강의 삭제</button>
         ${isAdminUser() ? `<button type="button" class="secondary" id="coachSelfOpenFullEditBtn">전체 편집 화면에서 열기</button>` : ""}

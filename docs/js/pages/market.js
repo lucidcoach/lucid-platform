@@ -691,7 +691,7 @@ function renderLessonDetailMarkup(coach) {
         <strong>★ ${coach.rating.toFixed(1)} <span>(${coach.lessons || 0})</span></strong>
         <em>${reviews.length}개 후기</em>
       </div>
-      <p>${escapeHtml(coach.bio || coach.tagline || "")}</p>
+      <p class="lesson-detail-description">${escapeHtml(coach.bio || coach.tagline || "")}</p>
       <div class="detail-summary">
         <div><span>가격</span><strong>${escapeHtml(coach.price)}</strong></div>
         <div><span>전문 분야</span><strong>${escapeHtml((coach.roles || []).slice(0, 5).join(", "))}</strong></div>
