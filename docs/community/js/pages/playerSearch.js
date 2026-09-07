@@ -211,11 +211,6 @@ function personalMatchChampion(match, userId) {
   return String(player?.champion || "").trim();
 }
 
-function personalMatchChampion(match, userId) {
-  const player = (match?.players || []).find((row) => String(row?.userId) === String(userId));
-  return String(player?.champion || "").trim();
-}
-
 function isDiscordLinkedUser(user) {
   return Boolean(user?.discordConnected || user?.discord_connected || user?.discordDisplayName || user?.discord_display_name || user?.discordId || user?.discord_id);
 }
