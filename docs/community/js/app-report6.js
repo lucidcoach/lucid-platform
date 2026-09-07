@@ -10,6 +10,7 @@ import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "
 import { renderMileage } from "./pages/mileage.js?v=20260906ops2";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, saveRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260905admin2";
 import { API_BASE_URL } from "./config.js?v=20260904d";
+import { loadLiveMatch } from "./pages/liveMatch.js?v=20260907live1";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -218,7 +219,7 @@ function bindEvents() {
     if(query) searchPlayers(query, { historyMode: "push" });
   });
   $("communityHomeBtn").addEventListener("click",()=>goRecent());
-  $("refreshMatchesBtn").addEventListener("click",()=>loadRecent());
+  $("refreshMatchesBtn").addEventListener("click",()=>{loadRecent();loadLiveMatch();});
   $("loadMoreBtn").addEventListener("click",()=>loadRecent({append:true}));
   document.querySelectorAll("[data-match-category]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -330,5 +331,5 @@ renderSearchMemory();
 await initCommunityAuth();
 await syncAdminAccess();
 await loadGameAssets();
-await loadRecent();
+await Promise.all([loadRecent(),loadLiveMatch()]);
 applyRoute();
