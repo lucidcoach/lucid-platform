@@ -8,7 +8,7 @@ const ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
 const ROLE_METRICS = {
   "전체": [["kda","KDA"],["dpm","DPM"],["kp","킬관여"],["csm","CS/분"],["gpm","골드/분"],["winRate","승률"]],
   "탑": [["lanePhaseScore","라인전"],["gpm","골드획득"],["dpm","데미지"],["teamfightScore","한타 기여도"],["macroScore","운영"],["influenceScore","영향력"]],
-  "정글": [["kp","킬관여"],["kda","KDA"],["objectiveDpm","오브젝트 피해/분"],["gpm","골드/분"],["dpm","DPM"],["winRate","승률"]],
+  "정글": [["jungleGrowthScore","성장"],["gankScore","갱킹"],["skirmishScore","교전"],["objectiveScore","오브젝트"],["jungleDamageScore","데미지"],["jungleMacroScore","운영"]],
   "미드": [["dpm","DPM"],["kda","KDA"],["csm","CS/분"],["gpm","골드/분"],["kp","킬관여"],["winRate","승률"]],
   "원딜": [["dpm","DPM"],["csm","CS/분"],["gpm","골드/분"],["kda","KDA"],["kp","킬관여"],["winRate","승률"]],
   "서폿": [["kp","킬관여"],["visionPerMin","시야/분"],["ccPerMin","CC/분"],["allyCarePerMin","힐·실드/분"],["kda","KDA"],["winRate","승률"]],
@@ -17,10 +17,10 @@ const ROLE_METRICS = {
 let dashboard = { role:"전체", tab:"scrim", identity:null, profile:null, metrics:new Map() };
 const esc = (value) => escapeHtml(String(value ?? ""));
 const number = (value, digits=1) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "-";
-const TOP_SCORE_KEYS = new Set(["lanePhaseScore","teamfightScore","macroScore","influenceScore"]);
+const SCORE_KEYS = new Set(["lanePhaseScore","teamfightScore","macroScore","influenceScore","jungleGrowthScore","gankScore","skirmishScore","objectiveScore","jungleDamageScore","jungleMacroScore"]);
 const metricText = (key, value) => {
   if (value == null) return "-";
-  if (TOP_SCORE_KEYS.has(key)) return `${number(value, 1)}점`;
+  if (SCORE_KEYS.has(key)) return `${number(value, 1)}점`;
   if (["gpm","dpm"].includes(key)) return number(value, 0);
   return `${number(value, key === "kda" ? 2 : 1)}${["kp","winRate"].includes(key) ? "%" : ""}`;
 };
@@ -75,19 +75,19 @@ function radarPoints(values, radius=112, cx=150, cy=140) {
   }).join(" ");
 }
 
-function radar(labels, own, compare=null, legend="서버 내 순위") {
+function radar(labels, own=null, compare=null, legend="서버 내 순위") {
   const grid = [.25,.5,.75,1].map(scale => `<polygon points="${radarPoints(labels.map(() => scale))}" class="server-radar-grid"/>`).join("");
   const axes = labels.map((label,index) => {
     const angle = -Math.PI / 2 + index * Math.PI / 3;
     const x = 150 + Math.cos(angle) * 137, y = 140 + Math.sin(angle) * 137;
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${esc(label)}</text>`;
   }).join("");
-  return `<div class="server-radar-wrap"><div class="server-radar-legend"><span><i></i>나</span>${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${esc(legend)}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}<polygon points="${radarPoints(own)}" class="server-radar-own"/>${axes}</svg></div>`;
+  return `<div class="server-radar-wrap"><div class="server-radar-legend">${own?`<span><i></i>나</span>`:""}${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${own?esc(legend):"데이터 부족"}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}${own?`<polygon points="${radarPoints(own)}" class="server-radar-own"/>`:""}${axes}</svg></div>`;
 }
 
 function metricRankScore(metric={}) {
   const rank=Number(metric.rank), total=Number(metric.total);
-  return rank > 0 && total > 0 ? Math.max(.06, (total-rank+1)/total) : .06;
+  return rank > 0 && total > 0 ? Math.max(.06, (total-rank+1)/total) : null;
 }
 
 function roleButtons() {
@@ -99,7 +99,7 @@ function serverMetricPanel(metrics={}) {
   const values = order.map(item => metricRankScore(metrics.metrics?.[item.key || item[0]]));
   return `<section class="server-analysis-card radar-card">
     <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
-    ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values)}
+    ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values.every(Number.isFinite)?values:null)}
     <div class="server-rank-list">${order.map(item=>{const key=item.key||item[0],label=item.label||item[1],row=metrics.metrics?.[key]||{};return `<div><span>${esc(label)}</span><strong>${metricText(key,row.value)}</strong><small>${row.rank?`${row.rank}위 / ${row.total}명 · 상위 ${row.topPercent}%`:`비교 기록 없음`}</small></div>`;}).join("")}</div>
   </section>`;
 }
@@ -107,7 +107,7 @@ function serverMetricPanel(metrics={}) {
 function personalMetricPanel(profile={}) {
   const userId=String(profile.player?.userId||dashboard.identity?.userId||"");
   const metricRows=ROLE_METRICS[dashboard.role]||ROLE_METRICS.전체;
-  const samples=metricRows.map(()=>[]);
+  const samples=metricRows.map(()=>[]), opponentSamples=metricRows.map(()=>[]);
   let games=0;
   for(const match of (profile.matches||[])){
     const focus=focusPlayer(match,userId);
@@ -115,12 +115,16 @@ function personalMetricPanel(profile={}) {
     const opponent=opponentFor(match,focus);if(!opponent)continue;
     metricRows.forEach(([key],index)=>{
       const mine=comparisonValue(focus,opponent,key),other=comparisonValue(opponent,focus,key);
-      if(Number.isFinite(mine)&&Number.isFinite(other)&&mine+other>0)samples[index].push(Math.max(.08,Math.min(.92,mine/(mine+other))));
+      if(Number.isFinite(mine)&&Number.isFinite(other)&&mine+other>0){
+        if(SCORE_KEYS.has(key)){samples[index].push(Math.max(.06,Math.min(1,mine/100)));opponentSamples[index].push(Math.max(.06,Math.min(1,other/100)));}
+        else {const ratio=Math.max(.08,Math.min(.92,mine/(mine+other)));samples[index].push(ratio);opponentSamples[index].push(1-ratio);}
+      }
     });
     games+=1;
   }
-  const own=samples.map(rows=>rows.length?rows.reduce((sum,value)=>sum+value,0)/rows.length:.5);
-  const opponent=own.map(value=>1-value);
+  const complete=samples.every(rows=>rows.length)&&opponentSamples.every(rows=>rows.length);
+  const own=complete?samples.map(rows=>rows.reduce((sum,value)=>sum+value,0)/rows.length):null;
+  const opponent=complete?opponentSamples.map(rows=>rows.reduce((sum,value)=>sum+value,0)/rows.length):null;
   return `<section class="server-analysis-card radar-card personal-radar-card">
     <div class="server-card-head"><div><small>PERSONAL ANALYSIS</small><h2>${esc(profile.player?.name||dashboard.identity?.name||"분석 대상")} 개인 육각형</h2></div><span>최근 맞라이너 ${games}경기 비교</span></div>
     ${radar(metricRows.map(row=>row[1]),own,opponent,"맞라이너 평균")}
@@ -203,16 +207,17 @@ function backToDashboard(identity={}) {
 
 function opponentComparison(match,focus,opponent) {
   const metrics=ROLE_METRICS[focus.role]||ROLE_METRICS["전체"];
-  const pairs=metrics.map(([key,label])=>{const mine=comparisonValue(focus,opponent,key),other=comparisonValue(opponent,focus,key);return {key,label,mine,other,diff:Number.isFinite(mine)&&Number.isFinite(other)&&other!==0?(mine-other)/Math.abs(other)*100:null};});
+  const pairs=metrics.map(([key,label])=>{const mine=comparisonValue(focus,opponent,key),other=comparisonValue(opponent,focus,key);return {key,label,mine,other,diff:Number.isFinite(mine)&&Number.isFinite(other)?(SCORE_KEYS.has(key)||["kp","winRate"].includes(key)?mine-other:(other!==0?(mine-other)/Math.abs(other)*100:null)):null};});
   const usable=pairs.filter(row=>Number.isFinite(row.diff));
   const best=usable.filter(row=>row.diff>0).sort((a,b)=>b.diff-a.diff)[0], weak=usable.filter(row=>row.diff<0).sort((a,b)=>a.diff-b.diff)[0];
-  const own=pairs.map(row=>row.mine==null||row.other==null ? .5 : Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1))));
-  const enemy=pairs.map((_row,index)=>1-own[index]);
+  const complete=pairs.every(row=>Number.isFinite(row.mine)&&Number.isFinite(row.other)&&(row.mine||row.other));
+  const own=complete?pairs.map(row=>SCORE_KEYS.has(row.key)?Math.max(.06,Math.min(1,row.mine/100)):Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1)))):null;
+  const enemy=complete?pairs.map(row=>SCORE_KEYS.has(row.key)?Math.max(.06,Math.min(1,row.other/100)):Math.max(.08,Math.min(.92,row.other/((row.mine+row.other)||1)))):null;
   return `<div class="opponent-report">
     <button class="report-back" type="button" data-back-dashboard>← 분석 메인</button>
     <section class="opponent-hero"><div><small>LANE MATCHUP</small><h1>${esc(focus.name)} vs ${esc(opponent?.name||"상대 라이너")}</h1><p>${esc(focus.role)} · ${esc(focus.champion)} vs ${esc(opponent?.champion||"-")}</p></div><div><span>${focus.result==="win"?"승리":"패배"}</span><strong>${Number(focus.kills||0)} / ${Number(focus.deaths||0)} / ${Number(focus.assists||0)}</strong></div></section>
-    <div class="opponent-layout"><section class="server-analysis-card">${radar(metrics.map(row=>row[1]),own,enemy,opponent?.name||"상대")}</section><section class="server-analysis-card opponent-summary"><h2>상대 라이너 비교</h2>${best?`<article class="good"><span>잘한 부분</span><strong>${esc(best.label)} ${best.diff>=0?"+":""}${best.diff.toFixed(1)}%</strong><p>${esc(opponent.name)}보다 높았습니다.</p></article>`:""}${weak?`<article class="weak"><span>밀린 부분</span><strong>${esc(weak.label)} ${weak.diff>=0?"+":""}${weak.diff.toFixed(1)}%</strong><p>${esc(opponent.name)}보다 낮았습니다.</p></article>`:""}</section></div>
-    <section class="opponent-metric-grid">${pairs.map(row=>`<article><span>${esc(row.label)}</span><div><strong>${metricText(row.key,row.mine)}</strong><i>VS</i><b>${metricText(row.key,row.other)}</b></div><small class="${row.diff>=0?"positive":"negative"}">${row.diff==null?"비교 데이터 없음":`${row.diff>=0?"+":""}${row.diff.toFixed(1)}%`}</small></article>`).join("")}</section>
+    <div class="opponent-layout"><section class="server-analysis-card">${radar(metrics.map(row=>row[1]),own,enemy,opponent?.name||"상대")}</section><section class="server-analysis-card opponent-summary"><h2>상대 라이너 비교</h2>${best?`<article class="good"><span>잘한 부분</span><strong>${esc(best.label)} ${compactDeltaText(best)}</strong><p>${esc(opponent.name)}보다 높았습니다.</p></article>`:""}${weak?`<article class="weak"><span>밀린 부분</span><strong>${esc(weak.label)} ${compactDeltaText(weak)}</strong><p>${esc(opponent.name)}보다 낮았습니다.</p></article>`:""}</section></div>
+    <section class="opponent-metric-grid">${pairs.map(row=>`<article><span>${esc(row.label)}</span><div><strong>${metricText(row.key,row.mine)}</strong><i>VS</i><b>${metricText(row.key,row.other)}</b></div><small class="${row.diff>=0?"positive":"negative"}">${compactDeltaText(row)}</small></article>`).join("")}</section>
   </div>`;
 }
 
@@ -230,7 +235,7 @@ function comparisonRows(focus,opponent) {
     const mine=comparisonValue(focus,opponent,key), other=comparisonValue(opponent,focus,key);
     let delta=null, score=null;
     if(Number.isFinite(mine)&&Number.isFinite(other)){
-      if(TOP_SCORE_KEYS.has(key)||["kp","winRate"].includes(key)){
+      if(SCORE_KEYS.has(key)||["kp","winRate"].includes(key)){
         delta=mine-other; score=delta;
       }else if(other!==0){
         delta=(mine-other)/Math.abs(other)*100; score=delta;
@@ -243,7 +248,7 @@ function comparisonRows(focus,opponent) {
 function compactDeltaText(row){
   if(!Number.isFinite(row?.delta)) return "비교 데이터 없음";
   const sign=row.delta>0?"+":"";
-  if(TOP_SCORE_KEYS.has(row.key)||["kp","winRate"].includes(row.key)) return `${sign}${row.delta.toFixed(1)}점`;
+  if(SCORE_KEYS.has(row.key)||["kp","winRate"].includes(row.key)) return `${sign}${row.delta.toFixed(1)}점`;
   return `${sign}${row.delta.toFixed(1)}%`;
 }
 
@@ -274,8 +279,9 @@ export async function renderCompactMatchAnalysis(detail={},target) {
     const focus=focusPlayer(data.match,detail.userId), opponent=focus&&opponentFor(data.match,focus);
     if(!focus||!opponent)throw new Error("같은 라인의 상대 기록을 찾지 못했습니다.");
     const rows=comparisonRows(focus,opponent), metrics=ROLE_METRICS[focus.role]||ROLE_METRICS.전체;
-    const own=rows.map(row=>Number.isFinite(row.mine)&&Number.isFinite(row.other)&&(row.mine||row.other)?Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1))):.5);
-    const enemy=own.map(value=>1-value);
+    const complete=rows.every(row=>Number.isFinite(row.mine)&&Number.isFinite(row.other)&&(row.mine||row.other));
+    const own=complete?rows.map(row=>SCORE_KEYS.has(row.key)?Math.max(.06,Math.min(1,row.mine/100)):Math.max(.08,Math.min(.92,row.mine/((row.mine+row.other)||1)))):null;
+    const enemy=complete?rows.map(row=>SCORE_KEYS.has(row.key)?Math.max(.06,Math.min(1,row.other/100)):Math.max(.08,Math.min(.92,row.other/((row.mine+row.other)||1)))):null;
     target.innerHTML=`<div class="compact-analysis-card compact-matchup-card">
       <div class="compact-matchup-head"><div><small>간단 분석</small><strong>${esc(focus.name)} <i>vs</i> ${esc(opponent.name)}</strong><span>${esc(focus.role)} · ${esc(focus.champion)} vs ${esc(opponent.champion||"-")}</span></div></div>
       ${radar(metrics.map(row=>row[1]),own,enemy,opponent.name)}
