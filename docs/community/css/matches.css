@@ -683,3 +683,34 @@
 
 /* 2026-09-07: live scrim + pre-match preview */
 .live-match-section{margin:0 0 26px}.live-shell{overflow:hidden;border:1px solid #2b3e57;border-radius:18px;background:linear-gradient(180deg,#101a28,#0a111a);box-shadow:0 22px 70px rgba(0,0,0,.22)}.live-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 20px;border-bottom:1px solid #25354b;background:linear-gradient(90deg,rgba(72,111,157,.15),transparent)}.live-head>div:first-child{display:flex;align-items:center;gap:12px}.live-dot{width:9px;height:9px;border-radius:50%;background:#ff5c72;box-shadow:0 0 0 5px rgba(255,92,114,.11);animation:livePulse 1.8s infinite}.live-head small{display:block;color:#ff7c8e;font-size:9px;font-weight:900;letter-spacing:.15em}.live-head h2{margin:2px 0;font-size:20px}.live-head p{margin:0;color:#7389a5;font-size:10px}.live-balance{text-align:right}.live-balance span{display:block;color:#7186a3;font-size:9px}.live-balance strong{font-size:15px}.live-scoreboard{display:grid;grid-template-columns:1fr 54px 1fr;gap:12px;padding:16px 18px}.live-vs{display:grid;place-items:center;color:#607792;font-size:11px;font-weight:900}.live-team-title{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px}.live-team-title strong{font-size:11px;letter-spacing:.12em}.live-team-title span{color:#7187a4;font-size:9px}.live-team-title.blue strong{color:#72adf3}.live-team-title.red strong{color:#ff8193}.live-player{display:grid;grid-template-columns:42px minmax(130px,1fr) 115px minmax(180px,1.4fr);align-items:center;gap:10px;min-height:57px;padding:7px 10px;border-top:1px solid #1f2c3e}.live-player-role{color:#7288a5;font-size:10px;font-weight:800}.live-player-main button{border:0;background:none;color:#eef4fb;padding:0;cursor:pointer;text-align:left}.live-player-main button:hover{text-decoration:underline}.live-player-main strong{font-size:12px}.live-player-main>span{display:block;margin-top:2px;font-size:9px}.live-player-form{color:#8da0ba;font-size:9px}.live-player-form strong{color:#dbe7f4}.live-player-form small{display:block;margin-top:2px;color:#6e8daf}.live-player-most{min-width:0}.live-mosts{display:flex;gap:4px;overflow:hidden}.live-mosts>span{display:flex;align-items:center;gap:3px;min-width:0;padding:3px 5px;border:1px solid #27394f;border-radius:7px;background:#0b131e}.live-mosts img{width:18px;height:18px;border-radius:5px}.live-mosts b{max-width:55px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aebdd0;font-size:8px}.live-mosts em{font-style:normal;color:#617895;font-size:7px}.live-most-empty,.live-player-most>small{color:#657c99;font-size:8px}.live-player-most>small{display:block;margin-top:3px}.live-preview{display:grid;grid-template-columns:220px 1fr;gap:16px;padding:15px 18px 18px;border-top:1px solid #223247;background:#0b131e}.live-preview-title span{display:block;color:#709fd7;font-size:9px;font-weight:900;letter-spacing:.12em}.live-preview-title strong{display:block;margin:3px 0;font-size:14px}.live-preview-title small{color:#6f849e;font-size:9px}.live-matchups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.live-matchup-card{padding:10px 12px;border:1px solid #293d56;border-radius:10px;background:#101a27}.live-matchup-card span{color:#7397c1;font-size:8px;font-weight:900}.live-matchup-card strong{display:block;margin:4px 0;font-size:11px}.live-matchup-card p{margin:0;color:#778ca7;font-size:9px;line-height:1.45}.live-matchup-card.muted{grid-column:1/-1}@keyframes livePulse{50%{opacity:.55;box-shadow:0 0 0 8px rgba(255,92,114,.03)}}@media(max-width:1100px){.live-scoreboard{grid-template-columns:1fr}.live-vs{height:24px}.live-player{grid-template-columns:42px 1fr 105px 1.2fr}.live-preview{grid-template-columns:1fr}.live-matchups{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.live-head{align-items:flex-start}.live-balance{display:none}.live-player{grid-template-columns:34px 1fr 90px}.live-player-most{grid-column:2/-1}.live-matchups{grid-template-columns:1fr}}
+
+/* Keep the expanded whole-server scoreboard inside the same edges as its summary. */
+#recentView .scoreboard-layout,
+#recentView .scoreboard-layout .scoreboard-teams{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#recentView .scoreboard-layout .score-player-row{
+  grid-template-columns:66px minmax(122px,1fr) 54px 86px 104px 86px minmax(88px,120px)!important;
+  column-gap:6px!important;
+  padding-left:8px!important;
+  padding-right:8px!important;
+}
+#recentView .scoreboard-layout .score-identity{
+  width:auto!important;
+  min-width:0!important;
+}
+#recentView .scoreboard-layout .score-damage-cell{
+  width:100%!important;
+  min-width:88px!important;
+  max-width:120px!important;
+  padding:0!important;
+}
+#recentView .scoreboard-layout .score-damage-track,
+#recentView .scoreboard-layout .score-damage-cell>strong{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
