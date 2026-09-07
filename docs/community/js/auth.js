@@ -88,7 +88,8 @@ async function loadCurrentUser(){
     const data=await res.json().catch(()=>({}));
     currentUser=res.ok&&data.ok?data.user:null;
   }catch(_){ currentUser=null; }
-  riotAccounts=Array.isArray(currentUser?.riotAccounts) ? currentUser.riotAccounts.map(normalizeRiotId).filter(Boolean) : [];
+  const verified=Array.isArray(currentUser?.verifiedRiotAccounts)?currentUser.verifiedRiotAccounts:currentUser?.riotAccounts;
+  riotAccounts=Array.isArray(verified) ? verified.map(normalizeRiotId).filter(Boolean) : [];
   await resolveRegisteredPlayers();
   renderAuthActions();
   return currentUser;

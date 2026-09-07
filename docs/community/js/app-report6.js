@@ -8,7 +8,7 @@ import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderComp
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260907accountfix1";
 import { renderMileage } from "./pages/mileage.js?v=20260907permissions1";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907accountfix1";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907accountsource1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260907current1";
 
@@ -168,7 +168,9 @@ function renderCommunityAccount() {
     return;
   }
   const accounts = getRiotAccounts();
+  const legacy = Array.isArray(user.legacyRiotAccounts) ? user.legacyRiotAccounts : [];
   const unverified = Array.isArray(user.unverifiedRiotAccounts) ? user.unverifiedRiotAccounts : [];
+  const verifiedKeys = new Set(accounts.map(value=>String(value).trim().toLowerCase()));
   const discordName = user.discordDisplayName || user.discord_display_name || "";
   const discordConnected = Boolean(user.discordConnected || user.discord_connected || discordName);
   target.innerHTML = `<div class="community-account-shell">
@@ -184,10 +186,11 @@ function renderCommunityAccount() {
     <section class="community-account-card">
       <h2>내 Riot ID</h2>
       ${discordConnected
-        ? `<div class="riot-account-form">${accounts.length
+        ? `<div class="riot-account-form"><p class="riot-account-help"><strong>Discord 확인 계정</strong> · 봇의 /소환사등록 기준</p>${accounts.length
             ? accounts.map((value,i)=>`<div class="riot-account-row"><span>${i===0 ? "본계정" : `부계정 ${i}`}</span><strong>${esc(value)}</strong></div>`).join("")
             : `<p class="riot-account-help">Discord 봇에서 /소환사등록을 완료하면 본계정과 부계정이 자동으로 표시됩니다.</p>`}
-          ${unverified.length ? `<p class="riot-account-help">기존 수동 등록 계정은 소유권 미확인 상태로 보존되며 분석 권한에는 사용되지 않습니다: ${unverified.map(esc).join(", ")}</p>` : ""}</div>`
+          ${legacy.length ? `<p class="riot-account-help"><strong>기존 수동 등록 기록</strong></p>${legacy.map(value=>`<div class="riot-account-row"><span>${verifiedKeys.has(String(value).trim().toLowerCase())?"Discord에서도 확인됨":"미확인"}</span><strong>${esc(value)}</strong></div>`).join("")}` : ""}
+          ${unverified.length ? `<p class="riot-account-help">미확인 계정은 보존만 하며 개인분석 권한에는 사용되지 않습니다.</p>` : ""}</div>`
         : `<p class="riot-account-help">Discord 연동 후 본인이 봇에 등록한 계정만 자동으로 가져옵니다.</p>`}
     </section>
   </div>`;
