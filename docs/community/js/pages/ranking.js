@@ -15,7 +15,7 @@ function valueText(row) {
 
 function noteText(total) {
   if (kind === "winrate") return `10전 이상 일반 내전 기준 · 총 ${total}명`;
-  if (kind === "mmr") return `종합은 전체, 라인은 해당 라인 10게임 이상 기록 기준 · 총 ${total}명`;
+  if (kind === "mmr") return `라인은 5게임 이상, 종합은 5게임 이상 플레이한 라인의 MMR 평균 · 총 ${total}명`;
   if (kind === "streak") return `일반 내전 역대 최고 연승 기준 · 총 ${total}명`;
   if (kind === "awards") return `MVP +100pt · ACE +50pt · 매주 일요일 초기화 · 총 ${total}명`;
   return `일반 내전 누적 기록 기준 · 총 ${total}명`;

@@ -1,12 +1,12 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
-import { switchView } from "./view.js?v=20260907ia1";
+import { switchView } from "./view.js?v=20260909convenience1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260907accountfix1";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260907ia1";
-import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260905ai";
-import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260908rofl1";
+import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260909convenience1";
+import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260909convenience1";
 import { renderMileage } from "./pages/mileage.js?v=20260907ia1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907oauth1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
@@ -151,6 +151,7 @@ function applyRoute({ fromPop = false } = {}) {
     renderMileage();
     return;
   }
+  if (view === "patchnotes") { switchView("patchnotes"); return; }
   if (view === "support") { switchView("support"); renderCommunitySupport(); return; }
   if (view === "admin") {
     if (!hasCommunityAdminAccess()) { goRecent({push:false}); return; }
@@ -272,6 +273,12 @@ function bindEvents() {
         history.pushState({ view: "mileage" }, "", `${url.pathname}${url.search}`);
         switchView("mileage");
         renderMileage();
+      } else if (button.dataset.view === "patchnotes") {
+        const url = new URL(window.location.href);
+        url.search = "";
+        url.searchParams.set("view", "patchnotes");
+        history.pushState({ view: "patchnotes" }, "", `${url.pathname}${url.search}`);
+        switchView("patchnotes");
       } else if (button.dataset.view === "support") {
         const url = new URL(window.location.href);
         url.search = "";

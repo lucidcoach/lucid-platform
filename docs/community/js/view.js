@@ -11,6 +11,7 @@ export function switchView(view) {
   $("searchView")?.classList.toggle("active", view === "search");
   $("analysisView")?.classList.toggle("active", view === "analysis");
   $("rankingView")?.classList.toggle("active", view === "ranking");
+  $("patchnotesView")?.classList.toggle("active", view === "patchnotes");
   $("mileageView")?.classList.toggle("active", view === "mileage");
   $("adminView")?.classList.toggle("active", view === "admin");
   $("supportView")?.classList.toggle("active", view === "support");

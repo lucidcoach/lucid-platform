@@ -421,6 +421,10 @@ function roflPanel(){
       <div id="roflUploadResults"></div>
     </section>
     <div id="roflDashboard"><div class="admin-empty-admin"><strong>패치 상태를 불러오는 중...</strong></div></div>
+    <section class="admin-work-panel">
+      <div class="rofl-card-head"><div><small>REPLAY ARCHIVE</small><h3>저장된 경기 리플레이</h3></div><button id="replayArchiveRefresh" class="admin-select-button" type="button">새로고침</button></div>
+      <div id="replayArchiveList" class="rofl-file-results"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
+    </section>
   `);
 }
 
@@ -472,6 +476,9 @@ async function uploadRoflFiles(){
   catch(error){if(status)status.textContent=error.message;}finally{button.disabled=!roflFiles.length;}
 }
 async function downloadRoflReport(build){if(!build)return;const status=document.getElementById("roflUploadStatus");try{if(status)status.textContent="진단 ZIP 준비 중...";const response=await fetch(apiUrl(`/api/community/admin/rofl-patch/report/${encodeURIComponent(build)}`),{credentials:"include"});if(!response.ok)throw new Error("진단 ZIP이 아직 준비되지 않았습니다.");const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)"?/)?.[1]||`rofl_patch_${build}_codex.zip`;link.click();URL.revokeObjectURL(url);if(status)status.textContent="진단 ZIP을 다운로드했습니다.";}catch(error){if(status)status.textContent=error.message;}}
+
+async function loadReplayArchive(){const target=document.getElementById("replayArchiveList");if(!target)return;try{const data=await adminRequest("/api/community/admin/replays?limit=100"),rows=data.replays||[];target.innerHTML=rows.length?rows.map(row=>`<div><strong>경기 ${esc(row.matchId)}</strong><span>${esc(row.matchTime||row.uploadedAt||"시간 미상")} · ${esc(row.patch||"패치 미상")}</span><button class="admin-select-button" type="button" data-replay-download="${esc(row.id)}">다운로드</button></div>`).join(""):`<div class="admin-empty-admin"><strong>다운로드할 원본 ROFL이 없습니다.</strong></div>`;target.querySelectorAll("[data-replay-download]").forEach(button=>button.addEventListener("click",()=>downloadReplay(button.dataset.replayDownload)));}catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>리플레이를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
+async function downloadReplay(replayId){const response=await fetch(apiUrl(`/api/community/admin/replays/${encodeURIComponent(replayId)}`),{credentials:"include"});if(!response.ok)return alert("저장된 원본 파일을 찾지 못했습니다.");const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)"?/)?.[1]||"lucid-replay.rofl";link.click();URL.revokeObjectURL(url);}
 
 async function loadMissingDetails(){
   const target=document.getElementById("missingDetailsList");if(!target||!selectedGuild)return;
@@ -548,6 +555,7 @@ function renderSection(){
   }
   if(activeSection==="rofl"){
     loadRoflDashboard();
+    loadReplayArchive();
     const input=root.querySelector("#roflInput"),drop=root.querySelector("#roflDropzone");
     root.querySelector("#roflPick")?.addEventListener("click",()=>input?.click());
     input?.addEventListener("change",()=>setRoflFiles(input.files||[]));
@@ -555,6 +563,7 @@ function renderSection(){
     for(const eventName of ["dragleave","drop"])drop?.addEventListener(eventName,event=>{event.preventDefault();drop.classList.remove("dragging");if(eventName==="drop")setRoflFiles(event.dataTransfer?.files||[]);});
     root.querySelector("#roflAnalyze")?.addEventListener("click",uploadRoflFiles);
     root.querySelector("#roflRefresh")?.addEventListener("click",()=>loadRoflDashboard());
+    root.querySelector("#replayArchiveRefresh")?.addEventListener("click",loadReplayArchive);
     roflRefreshTimer=setInterval(()=>{if(activeSection==="rofl"&&document.getElementById("adminView")?.classList.contains("active"))loadRoflDashboard();},15000);
   }
   if(activeSection==="logs"){
