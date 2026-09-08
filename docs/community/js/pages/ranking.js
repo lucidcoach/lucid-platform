@@ -7,7 +7,7 @@ let role = "";
 
 function valueText(row) {
   if (kind === "games") return `${Number(row.games || 0)}전`;
-  if (kind === "winrate") return `${Number(row.games || 0)}전 ${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패`;
+  if (kind === "winrate") return `${Number(row.games || 0)}전 ${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패 · ${Number(row.winRate || 0).toFixed(1)}%`;
   if (kind === "streak") return `최고 ${Number(row.streak || 0)}연승`;
   if (kind === "awards") return `${Number(row.awardPoints || 0)}pt · MVP ${Number(row.mvp || 0)}회 · ACE ${Number(row.ace || 0)}회`;
   return `${tierLeaguePoints(row.tier, row.score).toLocaleString()}점`;
