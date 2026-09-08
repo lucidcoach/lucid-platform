@@ -10,6 +10,8 @@ let selectedGuild="";
 let guildsLoaded=false;
 let guildAdminAccess=false;
 let missingArchived=false;
+let roflFiles=[];
+let roflRefreshTimer=0;
 const apiUrl=path=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
 async function adminRequest(path,{method="GET",body}={}){const response=await fetch(apiUrl(path),{method,credentials:"include",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.error||"요청에 실패했습니다.");return data;}
 
@@ -19,6 +21,7 @@ const sections = [
   ["mileage","포인트 관리","지급 규칙·상점·주문·감사로그","M"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
   ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
+  ["rofl","ROFL 패치 분석","새 패치 진단·보존·Codex ZIP","R"],
   ["logs","운영 로그","채팅·관리자 작업·신고·포인트 로그","≡"],
   ["data","데이터 관리","서버 데이터 내보내기","⇩"],
   ["support","문의 관리","커뮤니티/봇 문의 처리","?"],
@@ -76,7 +79,7 @@ function dashboard(){
       <span class="admin-status-pill">관리자 권한 확인됨</span>
     </section>
     <div class="admin-card-grid">
-      ${sections.filter(([id])=>isCommunityAdmin()||!["data","support"].includes(id)).map(([id,title,desc,icon])=>`
+      ${sections.filter(([id])=>isCommunityAdmin()||!["rofl","data","support"].includes(id)).map(([id,title,desc,icon])=>`
         <button class="admin-menu-card" type="button" data-admin-section="${id}">
           <span class="admin-menu-icon">${icon}</span>
           <span><strong>${title}</strong><small>${desc}</small></span>
@@ -402,6 +405,74 @@ function supportPanel(){
   `);
 }
 
+function roflStatusClass(status=""){return ["READY","PARTIAL","BLOCKED"].includes(status)?status.toLowerCase():"unknown";}
+function roflTime(value){if(!value)return "-";const date=new Date(Number(value)*1000);return Number.isNaN(date.getTime())?"-":date.toLocaleString("ko-KR");}
+function roflBytes(value){const bytes=Number(value||0);if(bytes<1024)return `${bytes} B`;if(bytes<1048576)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1048576).toFixed(1)} MB`;}
+function roflList(values=[],empty="없음"){return values.length?values.map(value=>`<span>${esc(value)}</span>`).join(""):`<span class="muted">${empty}</span>`;}
+
+function roflPanel(){
+  return shell(`
+    ${panelTitle("ROFL 패치 분석","새 패치 ROFL을 보존하고 자동 진단한 뒤 Codex 전달 ZIP까지 준비합니다.")}
+    <section class="rofl-guide"><strong>사용 순서</strong><span>ROFL 여러 개 선택 → 분석 시작 → 상태와 한줄 원인 확인 → 진단 ZIP 다운로드</span><small>Lucid는 decoder 코드를 추측 수정하거나 자동 배포하지 않습니다.</small></section>
+    <section class="admin-work-panel rofl-upload-panel">
+      <div id="roflDropzone" class="rofl-dropzone" tabindex="0"><strong>새 패치 ROFL을 여기에 놓으세요</strong><span>.rofl 여러 개를 한 번에 선택할 수 있습니다.</span><button id="roflPick" class="admin-select-button" type="button">ROFL 추가</button><input id="roflInput" type="file" accept=".rofl" multiple hidden></div>
+      <div id="roflSelected" class="rofl-selected"><span>선택된 파일이 없습니다.</span></div>
+      <div class="rofl-upload-actions"><button id="roflAnalyze" class="admin-primary" type="button" disabled>분석 시작</button><button id="roflRefresh" class="admin-select-button" type="button">상태 새로고침</button><span id="roflUploadStatus"></span></div>
+      <div id="roflUploadResults"></div>
+    </section>
+    <div id="roflDashboard"><div class="admin-empty-admin"><strong>패치 상태를 불러오는 중...</strong></div></div>
+  `);
+}
+
+function renderRoflDashboard(data){
+  const target=document.getElementById("roflDashboard");if(!target)return;
+  const current=data.current||{},detail=data.detail||{},status=String(current.status||"UNKNOWN"),suff=current.sufficiency||{};
+  const checks=detail.diagnostic_checks||{},diff=detail.patch_diff||{},retention=data.retention||{},deploy=data.deploy||{},result=deploy.last_result||{};
+  const regression=deploy.last_regression||data.regression||{},report=current.diagnostic_report||{},errors=detail.errors||[],representatives=detail.representative_fixtures||[];
+  const reportReady=Boolean(report.zip_path),halt=Boolean(data.decoderFingerprint&&deploy.safety_halt_fingerprint===data.decoderFingerprint);
+  const histories=data.history||[];
+  target.innerHTML=`
+    <section class="rofl-current rofl-${roflStatusClass(status)}">
+      <div><small>CURRENT EXACT BUILD</small><h2>${esc(current.build||"아직 감지되지 않음")}</h2><p>${esc(current.blocker_summary||"ROFL을 업로드하면 상태를 판정합니다.")}</p></div>
+      <strong class="rofl-status-badge">${esc(status)}</strong>
+    </section>
+    <section class="rofl-stat-grid">
+      <article><span>분석 충분도</span><strong>${esc(suff.label||"미수집")}</strong><small>샘플 ${Number(current.fixture_count||0)}개 · 권장 ${Number(suff.recommended||5)}개</small><small>대표 ${representatives.map(row=>`${row.name} (${roflBytes(row.size_bytes)})`).join(" · ")||"미선정"}</small></article>
+      <article><span>현재 decoder</span><strong class="rofl-code">${esc(data.decoderFingerprint||"-")}</strong><small>마지막 상태 ${roflTime(current.updated_at)}</small></article>
+      <article><span>이전 패치 회귀</span><strong>${esc(regression.status||"NOT_RUN")}</strong><small>${esc(regression.summary||"배포 gate에서 실행")}</small></article>
+      <article><span>배포 후 안전 상태</span><strong>${halt?"SAFETY_HALT":esc((deploy.pending_completion||{}).outcome||"대기")}</strong><small>${esc(deploy.last_error||"감지된 오류 없음")}</small></article>
+    </section>
+    <section class="rofl-two-column">
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>DIAGNOSTIC</small><h3>분석 항목</h3></div><span>근거가 없으면 UNPROVEN</span></div><div class="rofl-checks">${Object.entries(checks).map(([name,value])=>`<div><span>${esc(name)}</span><b class="rofl-check-${esc(String(value).split(" ")[0].toLowerCase())}">${esc(value)}</b></div>`).join("")||"<p>진단 자료가 없습니다.</p>"}</div></article>
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>CODEX HANDOFF</small><h3>Codex 전달 패키지</h3></div><span>${reportReady?"생성 완료":"준비 중"}</span></div><div class="rofl-report-info"><strong>${esc(String(report.zip_path||"").split(/[\\/]/).pop()||"아직 생성되지 않음")}</strong><span>build ${esc(current.build||"-")} · sequence ${Number(current.sequence||0)}</span><small>진단 TXT/JSON, 증거 파일, 용량 허용 시 대표 ROFL 포함</small></div><button id="roflDownload" class="admin-primary" type="button" ${reportReady?"":"disabled"}>Codex 진단 ZIP 다운로드</button></article>
+    </section>
+    <section class="admin-work-panel"><div class="rofl-card-head"><div><small>PATCH DIFF</small><h3>이전 정상 패치와 확인된 차이</h3></div><span>추정 변화는 표시하지 않음</span></div><div class="rofl-diff-grid"><div><strong>새로 지원 확인</strong>${roflList(diff.added_or_newly_supported||[])}</div><div><strong>미지원 또는 미확정</strong>${roflList(diff.removed_or_unproven||[])}</div><div><strong>계속 지원 확인</strong>${roflList(diff.unchanged_supported||[])}</div></div></section>
+    <section class="rofl-two-column">
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>RETENTION</small><h3>원본 보존 현황</h3></div><span>최소 14일</span></div><div class="rofl-retention"><span>원본 <b>${Number(retention.raw_total||0)}</b></span><span>구조화 완료 <b>${Number(retention.structured_total||0)}</b></span><span>decode 대기 <b>${Number(retention.decode_pending||0)}</b></span><span>48시간 내 만료 <b>${Number(retention.expires_within_48h||0)}</b></span><span>사용량 <b>${roflBytes(retention.bytes_total)}</b></span></div></article>
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>POST-DEPLOY</small><h3>자동 재분석</h3></div><span>${halt?"안전 중단":result.eligible?"최근 실행":"대기"}</span></div><div class="rofl-retention"><span>대상 <b>${Number(result.eligible||deploy.pending_before_run||0)}</b></span><span>성공·교체 <b>${Number(result.succeeded||0)}</b></span><span>실패·기존값 보존 <b>${Number(result.failed||0)}</b></span><span>저장 서버 <b>${Number(result.guilds||0)}</b></span></div><small class="rofl-safe-note">실패한 경기의 기존 분석은 삭제하거나 덮어쓰지 않습니다.</small></article>
+    </section>
+    <section class="admin-work-panel"><div class="rofl-card-head"><div><small>HISTORY</small><h3>패치 히스토리</h3></div><span>build를 누르면 상세 전환</span></div><div class="rofl-history">${histories.map(row=>`<button type="button" data-rofl-build="${esc(row.build)}"><span><strong>${esc(row.build)}</strong><small>${roflTime(row.updated_at)} · 샘플 ${Number(row.fixture_count||0)}개</small></span><b class="rofl-mini-status rofl-${roflStatusClass(row.status)}">${esc(row.status)}</b><em>${esc(row.blocker_summary||"")}</em></button>`).join("")||"<p>기록된 패치가 없습니다.</p>"}</div></section>
+    <details class="admin-work-panel rofl-details"><summary>상세 오류 및 구조 로그 보기</summary><div><h4>상세 사유</h4><pre>${esc(current.reason||"저장된 상세 사유 없음")}</pre><h4>실패 로그</h4>${errors.length?errors.map(error=>`<pre>${esc(error.source||"error")}: ${esc(error.error||"")}${error.traceback?`\\n\\n${esc(error.traceback)}`:""}</pre>`).join(""):"<p>저장된 실패 로그가 없습니다.</p>"}<h4>snapshot layout</h4><pre>${esc(JSON.stringify(diff.snapshot_layout||{},null,2))}</pre></div></details>
+  `;
+  target.querySelectorAll("[data-rofl-build]").forEach(button=>button.addEventListener("click",()=>loadRoflDashboard(button.dataset.roflBuild)));
+  target.querySelector("#roflDownload")?.addEventListener("click",()=>downloadRoflReport(current.build));
+}
+
+async function loadRoflDashboard(build=""){
+  const target=document.getElementById("roflDashboard");if(!target)return;
+  try{renderRoflDashboard(await adminRequest(`/api/community/admin/rofl-patch/dashboard${build?`?build=${encodeURIComponent(build)}`:""}`));}
+  catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>패치 상태를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
+function setRoflFiles(files){roflFiles=[...files].filter(file=>String(file.name||"").toLowerCase().endsWith(".rofl"));const list=document.getElementById("roflSelected"),button=document.getElementById("roflAnalyze");if(list)list.innerHTML=roflFiles.length?roflFiles.map(file=>`<span><strong>${esc(file.name)}</strong><small>${roflBytes(file.size)}</small></span>`).join(""):"<span>선택된 .rofl 파일이 없습니다.</span>";if(button)button.disabled=!roflFiles.length;}
+async function uploadRoflFiles(){
+  if(!roflFiles.length)return;const status=document.getElementById("roflUploadStatus"),button=document.getElementById("roflAnalyze"),results=document.getElementById("roflUploadResults"),uploading=[...roflFiles];button.disabled=true;if(status)status.textContent=`${uploading.length}개 원본 보존·분석 중...`;
+  const body=new FormData();uploading.forEach(file=>body.append("files",file,file.name));
+  try{const response=await fetch(apiUrl("/api/community/admin/rofl-patch/upload"),{method:"POST",credentials:"include",body}),data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw new Error(data.message||data.error||"업로드에 실패했습니다.");const mixed=(data.builds||[]).length>1;if(status)status.textContent=mixed?"서로 다른 build가 감지되어 build별로 분리했습니다.":"분석 요청이 완료됐습니다.";if(results)results.innerHTML=`<div class="rofl-file-results">${(data.files||[]).map(row=>`<div><strong>${esc(row.filename)}</strong><span>${esc(row.build||"-")}</span><b class="rofl-${roflStatusClass(row.status)}">${row.ok?esc(row.status||"보존됨"):"실패"}${row.duplicate?" · 중복":""}</b><small>${esc(row.decodeError||row.error||"원본 보존 및 decode 완료")}</small></div>`).join("")}</div>`;roflFiles=[];setRoflFiles([]);renderRoflDashboard(data.dashboard||{});}
+  catch(error){if(status)status.textContent=error.message;}finally{button.disabled=!roflFiles.length;}
+}
+async function downloadRoflReport(build){if(!build)return;const status=document.getElementById("roflUploadStatus");try{if(status)status.textContent="진단 ZIP 준비 중...";const response=await fetch(apiUrl(`/api/community/admin/rofl-patch/report/${encodeURIComponent(build)}`),{credentials:"include"});if(!response.ok)throw new Error("진단 ZIP이 아직 준비되지 않았습니다.");const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)"?/)?.[1]||`rofl_patch_${build}_codex.zip`;link.click();URL.revokeObjectURL(url);if(status)status.textContent="진단 ZIP을 다운로드했습니다.";}catch(error){if(status)status.textContent=error.message;}}
+
 async function loadMissingDetails(){
   const target=document.getElementById("missingDetailsList");if(!target||!selectedGuild)return;
   const playerLine=player=>`<div class="missing-player ${player.detailSaved?"saved":"missing"}"><span><strong>${esc(player.name||"알 수 없음")}</strong><small>${esc(player.userId)}</small></span><span>${esc(player.role||"라인 미상")}</span><b>${player.detailSaved?"상세 저장":"상세 누락"}</b></div>`;
@@ -428,7 +499,9 @@ function renderSection(){
     root.innerHTML=`<div class="admin-denied"><strong>관리자 권한이 필요합니다.</strong><span>커뮤니티 관리자에게만 보이는 페이지입니다.</span></div>`;
     return;
   }
-  const pages={dashboard,members:memberPanel,server:serverPanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  clearInterval(roflRefreshTimer);roflRefreshTimer=0;
+  if(activeSection==="rofl"&&!isCommunityAdmin())activeSection="dashboard";
+  const pages={dashboard,members:memberPanel,server:serverPanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
@@ -472,6 +545,17 @@ function renderSection(){
     loadMissingDetails();
     root.querySelector("#missingRefresh")?.addEventListener("click",loadMissingDetails);
     root.querySelectorAll("[data-missing-archived]").forEach(button=>button.addEventListener("click",()=>{missingArchived=button.dataset.missingArchived==="1";renderSection();}));
+  }
+  if(activeSection==="rofl"){
+    loadRoflDashboard();
+    const input=root.querySelector("#roflInput"),drop=root.querySelector("#roflDropzone");
+    root.querySelector("#roflPick")?.addEventListener("click",()=>input?.click());
+    input?.addEventListener("change",()=>setRoflFiles(input.files||[]));
+    for(const eventName of ["dragenter","dragover"])drop?.addEventListener(eventName,event=>{event.preventDefault();drop.classList.add("dragging");});
+    for(const eventName of ["dragleave","drop"])drop?.addEventListener(eventName,event=>{event.preventDefault();drop.classList.remove("dragging");if(eventName==="drop")setRoflFiles(event.dataTransfer?.files||[]);});
+    root.querySelector("#roflAnalyze")?.addEventListener("click",uploadRoflFiles);
+    root.querySelector("#roflRefresh")?.addEventListener("click",()=>loadRoflDashboard());
+    roflRefreshTimer=setInterval(()=>{if(activeSection==="rofl"&&document.getElementById("adminView")?.classList.contains("active"))loadRoflDashboard();},15000);
   }
   if(activeSection==="logs"){
     loadOperationLogs("chat");
