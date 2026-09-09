@@ -409,6 +409,21 @@ function roflStatusClass(status=""){return ["READY","PARTIAL","BLOCKED"].include
 function roflTime(value){if(!value)return "-";const date=new Date(Number(value)*1000);return Number.isNaN(date.getTime())?"-":date.toLocaleString("ko-KR");}
 function roflBytes(value){const bytes=Number(value||0);if(bytes<1024)return `${bytes} B`;if(bytes<1048576)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1048576).toFixed(1)} MB`;}
 function roflList(values=[],empty="없음"){return values.length?values.map(value=>`<span>${esc(value)}</span>`).join(""):`<span class="muted">${empty}</span>`;}
+const ROFL_CAPABILITY_NAMES={kills:"킬 이벤트",deaths_assists:"데스/어시스트 이벤트",level_events:"레벨업",skill_build:"스킬 빌드",objectives:"오브젝트",towers:"타워",checkpoint_player_series:"체크포인트 / 플레이어 추이",fight_raw_events:"교전 분석 원본 이벤트",bans:"밴 정보",item_timeline:"아이템 타임라인",timeline_xp:"시간대별 경험치",player_gold:"개인 골드 타임라인",team_gold:"팀 골드 타임라인","final stats / participants":"최종 스탯 / 참가자","kill events":"킬 이벤트","objective events":"오브젝트 이벤트","tower events":"타워 이벤트","level events":"레벨업 이벤트","skill build":"스킬 빌드","checkpoint / player series":"체크포인트 / 플레이어 추이","timeline XP":"시간대별 경험치","team gold timeline":"팀 골드 타임라인"};
+const ROFL_CHECK_CAPABILITY_IDS={"kill events":"kills","objective events":"objectives","tower events":"towers","level events":"level_events","skill build":"skill_build","checkpoint / player series":"checkpoint_player_series","timeline XP":"timeline_xp","team gold timeline":"team_gold"};
+function roflState(value){return String(value||"UNPROVEN").trim().split(/[ (]/)[0].toUpperCase();}
+function roflStateLabel(value){return ({PASS:"정상",READY:"정상",UNPROVEN:"검증 부족",WAIT:"검증 부족",PARTIAL:"검증 부족",UNSUPPORTED:"아직 지원 안 함",BLOCKED:"운영 반영 보류",FAIL:"검증 실패"})[roflState(value)]||"확인 필요";}
+function roflCapabilityGroups(checks,semanticEvidence,semanticRegression,currentBuild,baselineBuild){
+  const rows=new Map(),skip=new Set(["patch detected","file header decode","fixture gate","production gate"]);
+  Object.entries(checks).forEach(([name,value])=>{if(!skip.has(name)){const id=ROFL_CHECK_CAPABILITY_IDS[name]||name;rows.set(id,{name:ROFL_CAPABILITY_NAMES[name]||name,status:roflState(value)});}});
+  Object.entries(semanticEvidence).forEach(([name,evidence])=>{if(rows.has(name))return;const target=semanticRegression[name]?.target;const status=target||((currentBuild===baselineBuild&&evidence?.conclusion==="confirmed")?"PASS":"UNPROVEN");rows.set(name,{name:ROFL_CAPABILITY_NAMES[name]||name,status:roflState(status)});});
+  const groups={normal:[],insufficient:[],unsupported:[]};
+  rows.forEach(row=>(row.status==="PASS"?groups.normal:row.status==="UNSUPPORTED"?groups.unsupported:groups.insufficient).push(row));
+  return groups;
+}
+function roflCapabilityGroup(title,rows,kind){
+  return `<section class="rofl-capability-group ${kind}"><h4>${title} <b>${rows.length}</b></h4>${rows.length?rows.map(row=>{const reason=kind==="insufficient"?`<small>${["FAIL","BLOCKED"].includes(row.status)?"현재 샘플 검증에 실패했습니다. 상세 원인 확인 후 진단 ZIP을 전달하세요.":"교차검증 근거가 부족합니다. 같은 패치 ROFL을 추가하면 자동 재검증됩니다."}</small>`:"";return `<div><span>${esc(row.name)}</span><strong>${esc(roflStateLabel(row.status))} <small>(${esc(row.status)})</small></strong>${reason}</div>`;}).join(""):`<p>해당 항목이 없습니다.</p>`}</section>`;
+}
 
 function roflPanel(){
   return shell(`
@@ -438,10 +453,18 @@ function renderRoflDashboard(data){
   const regression=deploy.last_regression||data.regression||{},report=current.diagnostic_report||{},errors=detail.errors||[],representatives=detail.representative_fixtures||[];
   const reportReady=Boolean(research.handoff_ready||report.zip_path),halt=Boolean(data.decoderFingerprint&&deploy.safety_halt_fingerprint===data.decoderFingerprint);
   const histories=data.history||[];
+  const fixtureGate=String(checks["fixture gate"]||""),minimum=Number(fixtureGate.match(/minimum\s+(\d+)/i)?.[1]||suff.recommended||5),fixtureCount=Number(current.fixture_count||0),needed=Math.max(0,minimum-fixtureCount);
+  const semanticRegression=((research.final||{}).semantic_regression||{}).capability_regression||{},groups=roflCapabilityGroups(checks,semanticEvidence,semanticRegression,current.build,semanticBaseline.build);
+  const blocked=status==="BLOCKED",researching=research.status==="RESEARCHING";
+  const overall=({READY:"✅ 검증 완료",PARTIAL:"⚠️ 검증 진행 중",BLOCKED:"⛔ 운영 반영 보류"})[status]||"ℹ️ 상태 확인 필요";
+  const impact=blocked?"새 패치 자동 반영은 보류되며 기존 분석 결과는 유지됩니다.":"기존 기본 분석은 계속 사용할 수 있습니다.";
+  const problem=blocked?(current.blocker_summary||current.reason||"필수 검증이 통과되지 않았습니다."):needed?"검증용 ROFL 샘플 부족":researching?"자동 재검증 진행 중":"확인된 운영 차단 문제 없음";
+  const action=blocked?"상세 원인을 확인하고 Codex 진단 ZIP을 전달하세요.":needed?`같은 패치 ROFL ${needed}개 추가 업로드`:researching?"상태를 새로고침해 자동 재검증 결과를 확인하세요.":"별도 조치가 필요하지 않습니다.";
+  const recommendations=blocked?["상세 오류와 실패 원인 확인","Codex 진단 ZIP 다운로드","수정 후 상태 새로고침"]:needed?[`같은 패치 ROFL ${needed}개 추가 업로드`,"상태 새로고침","자동 재검증 결과 확인"]:researching?["자동 분석 완료 대기","상태 새로고침","capability별 결과 확인"]:["운영 적용 가능 여부 확인","필요 시 진단 ZIP 보관","다음 패치 ROFL 수집 준비"];
   target.innerHTML=`
-    <section class="rofl-current rofl-${roflStatusClass(status)}">
-      <div><small>CURRENT EXACT BUILD</small><h2>${esc(current.build||"아직 감지되지 않음")}</h2><p>${esc(current.blocker_summary||"ROFL을 업로드하면 상태를 판정합니다.")}</p></div>
-      <strong class="rofl-status-badge">${esc(status)}</strong>
+    <section class="rofl-operator-summary rofl-${roflStatusClass(status)}">
+      <div class="rofl-card-head"><div><small>현재 상태 요약</small><h2>${esc(current.build||"아직 감지되지 않음")}</h2></div><strong class="rofl-status-badge">${esc(overall)} · ${esc(status)}</strong></div>
+      <dl><div><dt>전체 상태</dt><dd>${esc(overall)}</dd></div><div><dt>운영 영향</dt><dd>${esc(impact)}</dd></div><div><dt>현재 문제</dt><dd>${esc(problem)}</dd></div><div><dt>지금 할 일</dt><dd>${esc(action)}</dd></div></dl>
     </section>
     <section class="rofl-stat-grid">
       <article><span>분석 충분도</span><strong>${esc(suff.label||"미수집")}</strong><small>샘플 ${Number(current.fixture_count||0)}개 · 권장 ${Number(suff.recommended||5)}개</small><small>대표 ${representatives.map(row=>`${row.name} (${roflBytes(row.size_bytes)})`).join(" · ")||"미선정"}</small></article>
@@ -451,15 +474,20 @@ function renderRoflDashboard(data){
       <article><span>v1.2 연구기</span><strong>${esc(research.status||"NOT_STARTED")}</strong><small>${Number(research.progress||0)}% · baseline ${Number(semanticBaseline.fixture_count||0)}개 · KNOWN_GOOD ${knownGood}개 · 운영 READY와 분리</small></article>
     </section>
     <section class="rofl-two-column">
-      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>DIAGNOSTIC</small><h3>분석 항목</h3></div><span>근거가 없으면 UNPROVEN</span></div><div class="rofl-checks">${Object.entries(checks).map(([name,value])=>`<div><span>${esc(name)}</span><b class="rofl-check-${esc(String(value).split(" ")[0].toLowerCase())}">${esc(value)}</b></div>`).join("")||"<p>진단 자료가 없습니다.</p>"}</div></article>
+      <article class="admin-work-panel rofl-capabilities"><div class="rofl-card-head"><div><small>CAPABILITY</small><h3>분석 기능 상태</h3></div><span>내부 상태를 운영자 문구와 함께 표시</span></div>${roflCapabilityGroup("정상",groups.normal,"normal")}${roflCapabilityGroup("검증 부족",groups.insufficient,"insufficient")}${roflCapabilityGroup("아직 지원 안 함",groups.unsupported,"unsupported")}</article>
       <article class="admin-work-panel"><div class="rofl-card-head"><div><small>CODEX HANDOFF</small><h3>Codex 전달 패키지</h3></div><span>${reportReady?"생성 완료":"준비 중"}</span></div><div class="rofl-report-info"><strong>${esc(String(research.handoff_path||report.zip_path||"").split(/[\\/]/).pop()||"아직 생성되지 않음")}</strong><span>build ${esc(current.build||"-")} · sequence ${Number(current.sequence||0)}</span><small>v1.2 연구 결과 또는 운영 decoder 진단 ZIP</small></div><button id="roflDownload" class="admin-primary" type="button" ${reportReady?"":"disabled"}>Codex 진단 ZIP 다운로드</button></article>
+    </section>
+    <section class="rofl-two-column rofl-gates">
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>검증 샘플</small><h3>현재 ${fixtureCount}개 / 최소 ${minimum}개</h3></div><strong>${needed?`추가로 ${needed}개 필요`:"최소 기준 충족"}</strong></div><p>${needed?"같은 패치 ROFL을 추가하면 자동으로 다시 검증합니다.":"샘플 수 기준을 충족했습니다. 각 분석 항목 결과를 확인하세요."}</p></article>
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>운영 적용 가능 여부</small><h3>${esc(roflStateLabel(checks["production gate"]||status))} <small>(${esc(roflState(checks["production gate"]||status))})</small></h3></div></div><dl><div><dt>이유</dt><dd>${esc(problem)}</dd></div><div><dt>운영 영향</dt><dd>${esc(impact)}</dd></div><div><dt>조치</dt><dd>${esc(action)}</dd></div></dl></article>
     </section>
     <section class="admin-work-panel"><div class="rofl-card-head"><div><small>PATCH DIFF</small><h3>이전 정상 패치와 확인된 차이</h3></div><span>추정 변화는 표시하지 않음</span></div><div class="rofl-diff-grid"><div><strong>새로 지원 확인</strong>${roflList(diff.added_or_newly_supported||[])}</div><div><strong>미지원 또는 미확정</strong>${roflList(diff.removed_or_unproven||[])}</div><div><strong>계속 지원 확인</strong>${roflList(diff.unchanged_supported||[])}</div></div></section>
     <section class="rofl-two-column">
       <article class="admin-work-panel"><div class="rofl-card-head"><div><small>RETENTION</small><h3>원본 보존 현황</h3></div><span>최소 14일</span></div><div class="rofl-retention"><span>원본 <b>${Number(retention.raw_total||0)}</b></span><span>구조화 완료 <b>${Number(retention.structured_total||0)}</b></span><span>decode 대기 <b>${Number(retention.decode_pending||0)}</b></span><span>48시간 내 만료 <b>${Number(retention.expires_within_48h||0)}</b></span><span>사용량 <b>${roflBytes(retention.bytes_total)}</b></span></div></article>
       <article class="admin-work-panel"><div class="rofl-card-head"><div><small>POST-DEPLOY</small><h3>자동 재분석</h3></div><span>${halt?"안전 중단":result.eligible?"최근 실행":"대기"}</span></div><div class="rofl-retention"><span>대상 <b>${Number(result.eligible||deploy.pending_before_run||0)}</b></span><span>성공·교체 <b>${Number(result.succeeded||0)}</b></span><span>실패·기존값 보존 <b>${Number(result.failed||0)}</b></span><span>저장 서버 <b>${Number(result.guilds||0)}</b></span></div><small class="rofl-safe-note">실패한 경기의 기존 분석은 삭제하거나 덮어쓰지 않습니다.</small></article>
     </section>
-    <section class="admin-work-panel"><div class="rofl-card-head"><div><small>HISTORY</small><h3>패치 히스토리</h3></div><span>build를 누르면 상세 전환</span></div><div class="rofl-history">${histories.map(row=>`<button type="button" data-rofl-build="${esc(row.build)}"><span><strong>${esc(row.build)}</strong><small>${roflTime(row.updated_at)} · 샘플 ${Number(row.fixture_count||0)}개</small></span><b class="rofl-mini-status rofl-${roflStatusClass(row.status)}">${esc(row.status)}</b><em>${esc(row.blocker_summary||"")}</em></button>`).join("")||"<p>기록된 패치가 없습니다.</p>"}</div></section>
+    <section class="admin-work-panel rofl-recommendations"><div class="rofl-card-head"><div><small>NEXT ACTION</small><h3>추천 작업</h3></div><span>위에서부터 순서대로 진행</span></div><ol>${recommendations.map(item=>`<li>${esc(item)}</li>`).join("")}</ol></section>
+    <section class="admin-work-panel"><div class="rofl-card-head"><div><small>HISTORY</small><h3>패치 히스토리</h3></div><span>build를 누르면 상세 전환</span></div><div class="rofl-history">${histories.map(row=>`<button type="button" data-rofl-build="${esc(row.build)}"><span><strong>${esc(row.build)}</strong><small>${roflTime(row.updated_at)} · 샘플 ${Number(row.fixture_count||0)}개</small></span><b class="rofl-mini-status rofl-${roflStatusClass(row.status)}">${esc(roflStateLabel(row.status))} (${esc(row.status)})</b><em>${esc(row.blocker_summary||"")}</em></button>`).join("")||"<p>기록된 패치가 없습니다.</p>"}</div></section>
     <details class="admin-work-panel rofl-details"><summary>상세 오류 및 구조 로그 보기</summary><div><h4>상세 사유</h4><pre>${esc(current.reason||"저장된 상세 사유 없음")}</pre><h4>실패 로그</h4>${errors.length?errors.map(error=>`<pre>${esc(error.source||"error")}: ${esc(error.error||"")}${error.traceback?`\\n\\n${esc(error.traceback)}`:""}</pre>`).join(""):"<p>저장된 실패 로그가 없습니다.</p>"}<h4>snapshot layout</h4><pre>${esc(JSON.stringify(diff.snapshot_layout||{},null,2))}</pre></div></details>
   `;
   target.querySelectorAll("[data-rofl-build]").forEach(button=>button.addEventListener("click",()=>loadRoflDashboard(button.dataset.roflBuild)));
