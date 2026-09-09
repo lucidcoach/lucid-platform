@@ -125,7 +125,7 @@ function openMyRecords({push=true}={}) {
   target.querySelector("[data-link-discord]")?.addEventListener("click",()=>$("communityLinkBtn")?.click());
 }
 
-function applyRoute({ fromPop = false } = {}) {
+async function applyRoute({ fromPop = false, routeState = null } = {}) {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view");
   const player = params.get("player");
@@ -160,7 +160,14 @@ function applyRoute({ fromPop = false } = {}) {
     return;
   }
   if (player && guild) {
-    openPlayer(player, guild, { historyMode: "none" });
+    await openPlayer(player, guild, { historyMode: "none" });
+    const saved = routeState?.playerView;
+    const filter = document.querySelector("[data-personal-champion-filter]");
+    if (fromPop && saved && filter) {
+      filter.value = saved.championFilter || "";
+      filter.dispatchEvent(new Event("input"));
+      requestAnimationFrame(() => window.scrollTo(0, Number(saved.scrollY || 0)));
+    }
     return;
   }
   if (query) {
@@ -310,6 +317,8 @@ function bindEvents() {
     const fullAnalysisTrigger = event.target.closest("[data-open-full-analysis]");
     if (fullAnalysisTrigger) {
       event.preventDefault(); event.stopPropagation();
+      const championFilter = document.querySelector("[data-personal-champion-filter]")?.value || "";
+      history.replaceState({...(history.state || {}),playerView:{championFilter,scrollY:window.scrollY}},"",window.location.href);
       openAnalysisFromMatch({
         userId: fullAnalysisTrigger.dataset.userId, guildId: fullAnalysisTrigger.dataset.guildId,
         matchId: fullAnalysisTrigger.dataset.matchId, champion: fullAnalysisTrigger.dataset.champion, role: fullAnalysisTrigger.dataset.role,
@@ -364,7 +373,7 @@ function bindEvents() {
   });
   window.addEventListener("lucid:admin-denied", () => goRecent({push:false}));
   window.addEventListener("lucid:logged-out", () => goRecent());
-  window.addEventListener("popstate", () => applyRoute({ fromPop: true }));
+  window.addEventListener("popstate", (event) => applyRoute({ fromPop: true, routeState:event.state }));
   window.addEventListener("lucid:player-opened", (event) => rememberRecentSearch(event.detail));
   window.addEventListener("lucid:favorite-toggle", (event) => toggleFavorite(event.detail));
 }
