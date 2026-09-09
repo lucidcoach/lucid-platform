@@ -1,9 +1,9 @@
 import { apiGet } from "../api.js?v=20260907permissions1";
-import { PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
+import { API_BASE_URL, PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260905ai";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260907hotfix1";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260909replay1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907oauth1";
 
@@ -262,10 +262,32 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
     feed.innerHTML = visible.map((match) => playerMatchCard(match, userId)).join("")
       || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
     bindExpanders(feed);
+    bindReplayDownloads(feed);
   };
 
   input.addEventListener("input", render);
   input.addEventListener("change", render);
+}
+
+function bindReplayDownloads(target) {
+  target.querySelectorAll("[data-replay-download]").forEach((button) => button.addEventListener("click", async () => {
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/community/admin/replays/${encodeURIComponent(button.dataset.replayDownload)}`, { credentials:"include" });
+      if (!response.ok) throw new Error();
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = button.dataset.replayFilename || "lucid-replay.rofl";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (_) {
+      window.alert("ROFL 다운로드에 실패했습니다.");
+    } finally {
+      button.disabled = false;
+    }
+  }));
 }
 
 export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
@@ -274,10 +296,13 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
   const target=$("searchResults");
   renderLoading(target,4);
   try {
-    const [data, serverStats] = await Promise.all([
+    const [data, serverStats, replayData] = await Promise.all([
       apiGet(`/api/community/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=${PLAYER_MATCH_LIMIT}`),
       loadServerStats(userId,guildId),
+      isCommunityAdmin() ? apiGet("/api/community/admin/replays?limit=500").catch(() => ({ replays:[] })) : Promise.resolve({ replays:[] }),
     ]);
+    const replayMap = new Map((replayData.replays || []).map((row) => [`${row.guildId}:${row.matchId}`, row]));
+    const matches = (data.matches || []).map((match) => ({ ...match, replay:replayMap.get(`${match.guildId}:${match.matchId}`) || null }));
     const p=data.player;
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
@@ -298,12 +323,12 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       </div>
     </section>
     ${serverStats ? serverStatsPanel(serverStats) : ""}
-    ${personalHistoryFilters(data.matches || [], userId, guildId, p.name || "")}
-    <div class="match-feed personal-feed" data-personal-match-feed>${(data.matches || []).map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
+    ${personalHistoryFilters(matches, userId, guildId, p.name || "")}
+    <div class="match-feed personal-feed" data-personal-match-feed>${matches.map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
     bindChampionStats(target, p.championStats || {});
     bindAssociates(target, p.recentAssociates || {});
-    bindPersonalHistoryFilters(target, data.matches || [], userId);
+    bindPersonalHistoryFilters(target, matches, userId);
     target.querySelector("[data-admin-analyze-player]")?.addEventListener("click", (event) => {
       const button = event.currentTarget;
       const requestedUserId = button.dataset.userId || String(userId);
@@ -322,6 +347,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       window.location.assign(`${url.pathname}${url.search}`);
     });
     bindExpanders(target);
+    bindReplayDownloads(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
       window.dispatchEvent(new CustomEvent("lucid:favorite-toggle", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
       const nowFavorite = !event.currentTarget.classList.contains("active");

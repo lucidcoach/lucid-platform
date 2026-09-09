@@ -1745,6 +1745,9 @@
 
 /* 2026-09-07 match compact analysis refresh */
 .personal-actions{align-self:stretch;justify-content:center}
+.personal-actions{display:flex;flex-direction:column;align-items:center;gap:3px}
+.replay-download{display:grid;place-items:center;width:30px;height:28px;padding:0;border:1px solid #38587b;border-radius:7px;background:#13243a;color:#8fc2ff;cursor:pointer}
+.replay-download:hover{background:#1a3454;color:#fff}.replay-download:disabled{opacity:.55;cursor:wait}.replay-download svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .personal-admin-analysis-button{margin-left:auto;min-width:92px;height:40px;border:1px solid #4b73a5;border-radius:9px;background:#173052;color:#eef6ff;font-weight:850;cursor:pointer}
 .personal-admin-analysis-button:hover{background:#21436f}
 @media(max-width:900px){.personal-admin-analysis-button{width:100%;margin-left:0}.personal-history-toolbar{flex-wrap:wrap}}

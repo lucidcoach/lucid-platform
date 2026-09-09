@@ -38,6 +38,7 @@ export function playerMatchCard(match, userId) {
   const achievements = achievementBadges(player);
   const rank = aiRank(match, player);
   const mmrDelta = Math.round(Number(player.mmrDelta || 0));
+  const replay = match.replay?.id ? match.replay : null;
   const resultText = `${won ? "승리" : "패배"}${mmrDelta ? ` (${mmrDelta > 0 ? "+" : ""}${mmrDelta})` : ""}`;
   return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}" data-analysis-user-id="${escapeHtml(userId)}" data-analysis-guild-id="${escapeHtml(match.guildId || "")}" data-analysis-match-id="${escapeHtml(match.matchId || "")}" data-analysis-champion="${escapeHtml(player.champion || "")}" data-analysis-role="${escapeHtml(player.role || "")}">
     <div class="personal-summary">
@@ -53,6 +54,6 @@ export function playerMatchCard(match, userId) {
         <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
       </div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
-      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button></div>
+      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button>${replay ? `<button class="replay-download" type="button" data-replay-download="${escapeHtml(replay.id)}" data-replay-filename="${escapeHtml(replay.filename || "lucid-replay.rofl")}" aria-label="ROFL 다운로드" title="ROFL 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 19h14"/></svg></button>` : ""}</div>
     </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,userId)}</article>`;
 }
