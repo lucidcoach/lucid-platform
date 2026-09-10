@@ -4,6 +4,9 @@ import fs from "node:fs";
 const source = fs.readFileSync(new URL("../docs/community/js/pages/communityAdmin.js", import.meta.url), "utf8");
 
 assert.match(source, /전적 소급 복구/);
+assert.match(source, /\["retro","리플레이 소급"/);
+assert.match(source, /retro:retroPanel/);
+assert.match(source, /activeSection==="retro"/);
 assert.match(source, /retroactive-rofl\/upload\?guildId=/);
 assert.match(source, /retroactive-rofl\/apply/);
 assert.match(source, /confirmNewMatch:completeMissing/);

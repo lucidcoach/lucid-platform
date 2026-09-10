@@ -23,6 +23,7 @@ const sections = [
   ["mileage","포인트 관리","지급 규칙·상점·주문·감사로그","M"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
   ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
+  ["retro","리플레이 소급","지난 경기 ROFL 검증·복구","↶"],
   ["rofl","ROFL 패치 분석","새 패치 진단·보존·Codex ZIP","R"],
   ["logs","운영 로그","채팅·관리자 작업·신고·포인트 로그","≡"],
   ["data","데이터 관리","서버 데이터 내보내기","⇩"],
@@ -81,7 +82,7 @@ function dashboard(){
       <span class="admin-status-pill">관리자 권한 확인됨</span>
     </section>
     <div class="admin-card-grid">
-      ${sections.filter(([id])=>isCommunityAdmin()||!["rofl","data","support"].includes(id)).map(([id,title,desc,icon])=>`
+      ${sections.filter(([id])=>isCommunityAdmin()||!["retro","rofl","data","support"].includes(id)).map(([id,title,desc,icon])=>`
         <button class="admin-menu-card" type="button" data-admin-section="${id}">
           <span class="admin-menu-icon">${icon}</span>
           <span><strong>${title}</strong><small>${desc}</small></span>
@@ -447,16 +448,22 @@ function roflPanel(){
       <div class="rofl-card-head"><div><small>GROUND TRUTH</small><h3>Fixture 원본 검증 데이터</h3></div><span id="roflGroundTruthStatus">패치 선택 대기</span></div>
       <div id="roflGroundTruthList" class="rofl-file-results"><div class="admin-empty-admin"><strong>패치 fixture를 불러오는 중...</strong></div></div>
     </section>
+    <section class="admin-work-panel">
+      <div class="rofl-card-head"><div><small>REPLAY ARCHIVE</small><h3>저장된 경기 리플레이</h3></div><button id="replayArchiveRefresh" class="admin-select-button" type="button">새로고침</button></div>
+      <div id="replayArchiveList" class="rofl-file-results"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
+    </section>
+  `);
+}
+
+function retroPanel(){
+  return shell(`
+    ${panelTitle("리플레이 소급","지난 경기 ROFL을 검증하고 누락된 기록만 안전하게 복구합니다.")}
     <section class="admin-work-panel rofl-upload-panel">
       <div class="rofl-card-head"><div><small>RETROACTIVE RECOVERY</small><h3>전적 소급 복구</h3></div><span>기존 전적은 다시 반영하지 않음</span></div>
       <div id="retroRoflDropzone" class="rofl-dropzone" tabindex="0"><strong>복구할 ROFL을 여기에 놓으세요</strong><span>먼저 원본 보존·참가자 10명·기존 경기 상태만 검사합니다.</span><button id="retroRoflPick" class="admin-select-button" type="button">ROFL 추가</button><input id="retroRoflInput" type="file" accept=".rofl" multiple hidden></div>
       <div id="retroRoflSelected" class="rofl-selected"><span>선택된 파일이 없습니다.</span></div>
       <div class="rofl-upload-actions"><button id="retroRoflAnalyze" class="admin-primary" type="button" disabled>검증 시작</button><button id="retroRoflRefresh" class="admin-select-button" type="button">결과 새로고침</button><span id="retroRoflStatus"></span></div>
       <div id="retroRoflResults" class="retroactive-results"><div class="admin-empty-admin"><strong>검증한 ROFL이 없습니다.</strong></div></div>
-    </section>
-    <section class="admin-work-panel">
-      <div class="rofl-card-head"><div><small>REPLAY ARCHIVE</small><h3>저장된 경기 리플레이</h3></div><button id="replayArchiveRefresh" class="admin-select-button" type="button">새로고침</button></div>
-      <div id="replayArchiveList" class="rofl-file-results"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
     </section>
   `);
 }
@@ -599,8 +606,8 @@ function renderSection(){
     return;
   }
   clearInterval(roflRefreshTimer);roflRefreshTimer=0;
-  if(activeSection==="rofl"&&!isCommunityAdmin())activeSection="dashboard";
-  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  if(["retro","rofl"].includes(activeSection)&&!isCommunityAdmin())activeSection="dashboard";
+  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,retro:retroPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
@@ -650,7 +657,6 @@ function renderSection(){
   if(activeSection==="rofl"){
     loadRoflDashboard();
     loadReplayArchive();
-    loadRetroRoflActions();
     const input=root.querySelector("#roflInput"),drop=root.querySelector("#roflDropzone");
     root.querySelector("#roflPick")?.addEventListener("click",()=>input?.click());
     input?.addEventListener("change",()=>setRoflFiles(input.files||[]));
@@ -659,6 +665,10 @@ function renderSection(){
     root.querySelector("#roflAnalyze")?.addEventListener("click",uploadRoflFiles);
     root.querySelector("#roflRefresh")?.addEventListener("click",()=>loadRoflDashboard());
     root.querySelector("#replayArchiveRefresh")?.addEventListener("click",loadReplayArchive);
+    roflRefreshTimer=setInterval(()=>{if(activeSection==="rofl"&&document.getElementById("adminView")?.classList.contains("active"))loadRoflDashboard();},15000);
+  }
+  if(activeSection==="retro"){
+    loadRetroRoflActions();
     const retroInput=root.querySelector("#retroRoflInput"),retroDrop=root.querySelector("#retroRoflDropzone");
     root.querySelector("#retroRoflPick")?.addEventListener("click",()=>retroInput?.click());
     retroInput?.addEventListener("change",()=>setRetroRoflFiles(retroInput.files||[]));
@@ -666,7 +676,7 @@ function renderSection(){
     for(const eventName of ["dragleave","drop"])retroDrop?.addEventListener(eventName,event=>{event.preventDefault();retroDrop.classList.remove("dragging");if(eventName==="drop")setRetroRoflFiles(event.dataTransfer?.files||[]);});
     root.querySelector("#retroRoflAnalyze")?.addEventListener("click",uploadRetroRoflFiles);
     root.querySelector("#retroRoflRefresh")?.addEventListener("click",loadRetroRoflActions);
-    roflRefreshTimer=setInterval(()=>{if(activeSection==="rofl"&&document.getElementById("adminView")?.classList.contains("active")){loadRoflDashboard();loadRetroRoflActions();}},15000);
+    roflRefreshTimer=setInterval(()=>{if(activeSection==="retro"&&document.getElementById("adminView")?.classList.contains("active"))loadRetroRoflActions();},15000);
   }
   if(activeSection==="logs"){
     loadOperationLogs("chat");
