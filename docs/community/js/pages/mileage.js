@@ -6,10 +6,6 @@ const apiUrl=(path)=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
 const labels={MATCH_COMPLETE:"내전 완료",MATCH_WIN:"승리 보너스",VOICE_ACTIVITY:"음성 활동",WEEKLY_QUEST:"주간 퀘스트",INVITE_REWARD:"친구 초대",EVENT_PARTICIPATION:"이벤트 참가",SHOP_PURCHASE:"상점 구매",SHOP_REFUND:"상점 환불",ADMIN_GRANT:"운영진 지급",ADMIN_DEDUCT:"운영진 차감",MATCH_REVERT:"경기 취소"};
 let selectedGuild="";
 let availableGuilds=[];
-const previewItems=[
-  {name:"경기분석권",description:"내전 경기 상세 분석 1회 이용권",price:500,stock:null,limit:"유저당 5회"},
-  {name:"코칭 5,000원 할인권",description:"Lucid 코칭 결제 시 사용하는 할인권",price:1500,stock:30,limit:"유저당 1회"},
-];
 
 async function request(path,{method="GET",body}={}){
   const response=await fetch(apiUrl(path),{method,credentials:"include",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
@@ -105,14 +101,11 @@ function bindGuild(root,guild,{showAdmin=false}={}){
   root.querySelectorAll("[data-update-purchase]").forEach((button)=>button.addEventListener("click",()=>{const purchaseId=button.dataset.updatePurchase,target=root.querySelector(`[data-purchase-status="${CSS.escape(purchaseId)}"]`),next=target?.value||"";const reason=["cancelled","refunded"].includes(next)?prompt("취소/환불 사유를 입력해주세요.",""):"";if(["cancelled","refunded"].includes(next)&&!reason)return;run(()=>request(`${base}/admin/purchases/${encodeURIComponent(purchaseId)}`,{method:"PATCH",body:{status:next,reason}}));}));
 }
 
-function renderGuestPreview(root){
-  root.innerHTML=`<div class="mileage-page"><section class="mileage-head"><div><p class="section-kicker">SERVER POINT SHOP</p><h1>포인트 상점 미리보기</h1><p class="mileage-muted">로그인하고 Discord를 연결하면 서버별 잔액과 실제 판매 상품이 표시됩니다.</p></div><div><small>예시 잔액</small><div class="mileage-balance">1,420P</div></div></section><div class="mileage-grid"><section class="mileage-card"><h2>판매 상품</h2><div class="mileage-list">${previewItems.map(item=>`<div class="mileage-row"><span><strong>${esc(item.name)}</strong><br><small>${esc(item.description)} · 재고 ${item.stock??"무제한"} · ${esc(item.limit)}</small></span><span><b>${item.price.toLocaleString()}P</b> <button class="mileage-buy" disabled title="로그인 후 구매할 수 있습니다">구매</button></span></div>`).join("")}</div><p class="mileage-muted">위 2개는 소비자 화면 확인용 테스트 상품이며 실제 구매·차감은 되지 않습니다.</p></section><section class="mileage-card"><h2>이용 방법</h2><div class="mileage-list"><div class="mileage-row"><span>1. 홈페이지 로그인</span></div><div class="mileage-row"><span>2. Discord 계정 연결</span></div><div class="mileage-row"><span>3. 서버 선택 후 상품 구매</span></div><div class="mileage-row"><span>4. 구매내역에서 처리 상태 확인</span></div></div></section></div></div>`;
-}
-
 export async function renderMileage({rootId="mileageRoot",initialGuild="",managersOnly=false,showAdmin=false}={}){
   const root=document.getElementById(rootId);if(!root)return;
   const user=getCurrentUser();
-  if(!user){renderGuestPreview(root);return;}
+  const linked=Boolean(user?.discordConnected||user?.discord_connected||user?.discordDisplayName||user?.discord_display_name);
+  if(!linked){root.innerHTML=`<section class="mileage-card"><h2>상품을 보려면 로그인 및 디스코드 연동이 필요합니다.</h2></section>`;return;}
   try{
     const data=await request("/api/mileage/guilds");let guilds=data.guilds||[];
     if(managersOnly)guilds=guilds.filter(g=>g.canManage);
