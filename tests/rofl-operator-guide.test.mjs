@@ -19,6 +19,11 @@ for (const text of ["Fixture 원본 검증 데이터", "ROFL", "Match-V5", "Time
   assert.match(admin, new RegExp(text));
 }
 assert.match(admin, /\/api\/community\/admin\/rofl-ground-truth\/collect/);
+for (const text of ["인증이 만료되었습니다", "관리자 권한이 없습니다", "서버 응답 시간이 초과", "네트워크 또는 CORS 오류", "실제 0이 아니라 상태 확인", "ROFL 보존 상태를 불러오지 못했습니다", "UNKNOWN / 상태 확인 필요"]) {
+  assert.match(admin, new RegExp(text));
+}
+assert.match(admin, /credentials:"include",signal:AbortSignal\.timeout\(15000\)/);
+assert.match(admin, /data\.partial\|\|!Array\.isArray\(data\.fixtures\)/);
 for (const text of ["수정 승인", "배포 승인", "지시문 보기", "Handoff ZIP", "Validation bundle", "평상시 Codex/LLM은 사용하지 않습니다."]) {
   assert.match(admin, new RegExp(text));
 }
