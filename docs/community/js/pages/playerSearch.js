@@ -1,9 +1,9 @@
 import { apiGet } from "../api.js?v=20260907permissions1";
 import { API_BASE_URL, PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
-import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260905ai";
+import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260911public1";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260909replay1";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260911public1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907oauth1";
 
@@ -236,13 +236,10 @@ function personalHistoryFilters(matches = [], userId, guildId, riotId="") {
       <input type="search" data-personal-champion-filter list="personalChampionOptions-${escapeHtml(userId)}" placeholder="챔피언 검색" autocomplete="off" aria-label="챔피언 검색">
       <datalist id="personalChampionOptions-${escapeHtml(userId)}">${options}</datalist>
     </label>
-    <div class="personal-queue-filter" role="group" aria-label="게임 유형 필터 준비 중">
+    <div class="personal-queue-filter" role="group" aria-label="게임 유형 필터">
       <span class="personal-filter-label">게임 유형</span>
       <div class="personal-queue-buttons">
-        <button type="button" disabled title="Riot API 연동 후 지원">내전</button>
-        <button type="button" disabled title="Riot API 연동 후 지원">솔랭</button>
-        <button type="button" disabled title="Riot API 연동 후 지원">자랭</button>
-        <button type="button" disabled title="Riot API 연동 후 지원">칼바람</button>
+        ${[["all","전체"],["internal","내전"],["solo","솔랭"],["flex","자랭"],["normal","일반"],["aram","칼바람"]].map(([value,label],i)=>`<button type="button" data-personal-queue="${value}" class="${i===0?"active":""}">${label}</button>`).join("")}
       </div>
     </div>
     <button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}" data-riot-id="${escapeHtml(riotId)}">분석하기</button>
@@ -253,12 +250,14 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
   const input = target.querySelector("[data-personal-champion-filter]");
   const feed = target.querySelector("[data-personal-match-feed]");
   if (!input || !feed) return;
+  let category = "all";
 
   const render = () => {
     const query = String(input.value || "").trim().toLowerCase();
-    const visible = query
-      ? matches.filter((match) => personalMatchChampion(match, userId).toLowerCase().includes(query))
-      : matches;
+    const visible = matches.filter((match) =>
+      (!query || personalMatchChampion(match, userId).toLowerCase().includes(query))
+      && (category === "all" || String(match.category || "internal") === category)
+    );
     feed.innerHTML = visible.map((match) => playerMatchCard(match, userId)).join("")
       || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
     bindExpanders(feed);
@@ -267,6 +266,18 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
 
   input.addEventListener("input", render);
   input.addEventListener("change", render);
+  target.querySelectorAll("[data-personal-queue]").forEach((button) => button.addEventListener("click", () => {
+    category = button.dataset.personalQueue || "all";
+    target.querySelectorAll("[data-personal-queue]").forEach((item) => item.classList.toggle("active", item === button));
+    render();
+  }));
+}
+
+function officialRanksPanel(rows = []) {
+  const labels = {RANKED_SOLO_5x5:"솔로랭크", RANKED_FLEX_SR:"자유랭크"};
+  const visible = rows.filter((row) => row.tier);
+  if (!visible.length) return "";
+  return `<section class="official-rank-panel"><div class="profile-section-title"><strong>Riot 공식 랭크</strong></div><div class="official-rank-list">${visible.map((row) => `<div><span>${escapeHtml(labels[row.queueType] || row.queueType)}${Number(row.accountSlot) > 0 ? ` · 부계정 ${Number(row.accountSlot)}` : ""}</span><strong>${escapeHtml(`${row.tier} ${row.rank}`)} ${Number(row.leaguePoints || 0)} LP</strong><small>${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패</small></div>`).join("")}</div></section>`;
 }
 
 function bindReplayDownloads(target) {
@@ -302,7 +313,8 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       isCommunityAdmin() ? apiGet("/api/community/admin/replays?limit=500").catch(() => ({ replays:[] })) : Promise.resolve({ replays:[] }),
     ]);
     const replayMap = new Map((replayData.replays || []).map((row) => [`${row.guildId}:${row.matchId}`, row]));
-    const matches = (data.matches || []).map((match) => ({ ...match, replay:replayMap.get(`${match.guildId}:${match.matchId}`) || null }));
+    const internalMatches = (data.matches || []).map((match) => ({ ...match, source:match.source || "LUCID_INTERNAL", category:"internal", replay:replayMap.get(`${match.guildId}:${match.matchId}`) || null }));
+    const matches = [...internalMatches, ...(data.publicMatches || [])].sort((a,b) => new Date(b.time || 0) - new Date(a.time || 0));
     const p=data.player;
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
@@ -316,6 +328,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
         </div>
         ${roleTierBoard(p.roleTiers || [])}
+        ${officialRanksPanel(data.publicRanks || [])}
       </div>
       <div class="profile-champion-panel">
         ${championStatsPanel(p.championStats || {})}
@@ -360,10 +373,18 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       refreshButton.disabled = true;
       refreshButton.textContent = "갱신 중...";
       try {
-        await openPlayer(userId, guildId, { historyMode:"none" });
-      } catch (_) {
+        const response = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/api/community/players/${encodeURIComponent(userId)}/public-sync?guildId=${encodeURIComponent(guildId)}`, {method:"POST", credentials:"include"});
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok) {
+          if (result.error === "sync_cooldown") throw new Error(`${result.retryAfter || 0}초 후 다시 갱신할 수 있습니다.`);
+          throw new Error(result.message || result.error || "갱신 요청에 실패했습니다.");
+        }
+        refreshButton.textContent = "갱신 예약됨";
+        setTimeout(() => { refreshButton.disabled = false; refreshButton.textContent = "전적 갱신"; }, 3000);
+      } catch (error) {
         refreshButton.disabled = false;
         refreshButton.textContent = "전적 갱신";
+        window.alert(error.message || "갱신 요청에 실패했습니다.");
       }
     });
   } catch(error) {

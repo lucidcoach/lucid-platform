@@ -43,6 +43,7 @@ function teamMaxDamage(match, team) {
 }
 
 function aiRank(match, player) {
+  if (player?.aiScore == null) return null;
   const score = Number(player?.aiScore);
   const rows = (match?.players || []).filter((row) => Number.isFinite(Number(row?.aiScore)));
   if (!Number.isFinite(score) || !rows.length) return null;
@@ -66,7 +67,7 @@ function playerRow(match, player, focusUserId = "") {
     </div>
     <div class="score-identity">
       <span class="score-tier-text ${tierClass(player.tier)}" title="${escapeHtml(player.tier || "미배치")}">${escapeHtml(tierShortLabel(player.tier))}</span>
-      <button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>
+      ${player.userId?`<button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>`:`<span>${escapeHtml(player.name)}</span>`}
     </div>
     <div class="score-ai-cell">${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
     <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span><div class="score-achievements">${achievements}</div></div>

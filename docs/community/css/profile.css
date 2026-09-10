@@ -1774,9 +1774,12 @@
 .personal-champion-search-filter input:focus{border-color:#62589a!important;box-shadow:0 0 0 2px rgba(137,111,255,.12)!important}
 .personal-champion-search-filter input::placeholder{color:#617087!important}
 .personal-queue-filter{min-width:0!important}
-.personal-queue-buttons{display:flex!important;align-items:center!important;gap:4px!important;padding:3px!important;border:1px solid var(--line-soft)!important;border-radius:9px!important;background:#0b1018!important}
+.personal-queue-buttons{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:4px!important;padding:3px!important;border:1px solid var(--line-soft)!important;border-radius:9px!important;background:#0b1018!important}
 .personal-queue-buttons button{height:28px!important;min-width:54px!important;padding:0 10px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:#68758a!important;font-size:10px!important;font-weight:850!important}
 .personal-queue-buttons button:disabled{cursor:not-allowed!important;opacity:.55!important}
+.personal-queue-buttons button.active{background:#193961!important;color:#9ecbff!important}
+.official-rank-panel{margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.official-rank-list{display:grid;gap:8px}.official-rank-list>div{display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:center;padding:9px 10px;border:1px solid var(--line-soft);border-radius:9px;background:#0b1018}.official-rank-list span,.official-rank-list small{color:var(--muted);font-size:11px}.official-rank-list strong{font-size:12px}
 .personal-admin-analysis-button{margin-left:auto!important;min-width:92px!important;height:34px!important;padding:0 15px!important;border:1px solid #4b73a5!important;border-radius:8px!important;background:#173052!important;color:#eef6ff!important;font-weight:850!important;font-size:11px!important;cursor:pointer!important;align-self:flex-end!important}
 .personal-admin-analysis-button:hover{background:#21436f!important}
 @media(max-width:760px){

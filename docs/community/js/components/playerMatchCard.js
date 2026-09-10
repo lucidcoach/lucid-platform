@@ -1,7 +1,7 @@
 import { championIcon } from "../assets.js?v=20260905ab";
-import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260905ab";
+import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260911public1";
 import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260905ab";
-import { scoreboard } from "./scoreboard.js?v=20260907matchsummary2";
+import { scoreboard } from "./scoreboard.js?v=20260911public1";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
@@ -10,6 +10,7 @@ function rosterPlayer(row, guildId, focusUserId) {
 
 
 function aiRank(match, player) {
+  if (player?.aiScore == null) return null;
   const score = Number(player?.aiScore);
   const rows = (match?.players || []).filter((row) => Number.isFinite(Number(row?.aiScore)));
   if (!Number.isFinite(score) || !rows.length) return null;
@@ -55,5 +56,5 @@ export function playerMatchCard(match, userId) {
       </div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
       <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button>${replay ? `<button class="replay-download" type="button" data-replay-download="${escapeHtml(replay.id)}" data-replay-filename="${escapeHtml(replay.filename || "lucid-replay.rofl")}" aria-label="ROFL 다운로드" title="ROFL 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 19h14"/></svg></button>` : ""}</div>
-    </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,userId)}</article>`;
+    </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${scoreboard(match,match.source==="RIOT_API"?"":userId)}</article>`;
 }

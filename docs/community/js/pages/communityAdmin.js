@@ -1,7 +1,7 @@
 
 import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260907oauth1";
 import { API_BASE_URL } from "../config.js?v=20260904d";
-import { renderMileage } from "./mileage.js?v=20260910series1";
+import { renderMileage } from "./mileage.js?v=20260911public1";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let activeSection="dashboard";
@@ -21,6 +21,7 @@ const sections = [
   ["server","서버 설정","서버별 내전·채널·권한 설정","⚙"],
   ["titles","칭호 / 업적","서버 기준 칭호와 달성 조건 확인","🏷"],
   ["mileage","포인트 관리","지급 규칙·상점·주문·감사로그","M"],
+  ["riot","Riot 공식전적 동기화","등록 계정·수집 상태·공동 플레이","R"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
   ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
   ["retro","리플레이 소급","지난 경기 ROFL 검증·복구","↶"],
@@ -455,6 +456,13 @@ function roflPanel(){
   `);
 }
 
+function riotSyncPanel(){return shell(`${panelTitle("Riot 공식전적 동기화","등록 계정의 Match-V5 수집 상태와 오류를 확인합니다.")}<section class="admin-work-panel"><div class="admin-toolbar"><div><strong>24시간 자동 동기화</strong><small>수동 갱신 요청도 이 영속 대기열에서 우선 처리됩니다.</small></div><button id="riotSyncRefresh" class="admin-primary" type="button">새로고침</button></div><div id="riotSyncSummary" class="admin-stat-grid"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div><div id="riotSyncAccounts" class="admin-table"></div></section>`);}
+
+async function loadRiotSyncStatus(){
+  const summary=document.getElementById("riotSyncSummary"),accounts=document.getElementById("riotSyncAccounts");if(!selectedGuild||!summary||!accounts)return;
+  try{const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/riot-sync`);summary.innerHTML=[["등록 계정",data.registeredAccounts],["24시간 성공",data.succeeded24h],["실패",data.failedAccounts],["대기",data.pendingAccounts],["공식 경기",data.matchesTotal],["오늘 신규",data.matchesToday],["공동 플레이",data.sharedPlayMatches],["마지막 실행",data.lastFullSyncAt?new Date(data.lastFullSyncAt).toLocaleString("ko-KR"):"미실행"]].map(([label,value])=>`<article><span>${label}</span><strong>${esc(value)}</strong></article>`).join("");const rows=data.accounts||[];accounts.innerHTML=rows.length?rows.map(row=>`<div class="admin-table-row admin-log-cols"><span><strong>${esc(row.riotId)}</strong><small>계정 ${Number(row.accountSlot)+1}</small></span><span>${esc(row.status)}</span><span>${row.lastSuccessAt?esc(new Date(row.lastSuccessAt).toLocaleString("ko-KR")):"성공 기록 없음"}<small>다음 ${row.nextSyncAt?esc(new Date(row.nextSyncAt).toLocaleString("ko-KR")):"-"}</small></span><span>${esc(row.lastError||"")}</span></div>`).join(""):`<div class="admin-empty-admin"><strong>등록된 Riot 계정이 없습니다.</strong></div>`;}catch(error){summary.innerHTML=`<div class="admin-empty-admin"><strong>동기화 상태를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;accounts.innerHTML="";}
+}
+
 function retroPanel(){
   return shell(`
     ${panelTitle("리플레이 소급","지난 경기 ROFL을 검증하고 누락된 기록만 안전하게 복구합니다.")}
@@ -607,7 +615,7 @@ function renderSection(){
   }
   clearInterval(roflRefreshTimer);roflRefreshTimer=0;
   if(["retro","rofl"].includes(activeSection)&&!isCommunityAdmin())activeSection="dashboard";
-  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,retro:retroPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,riot:riotSyncPanel,events:eventsPanel,missing:missingPanel,retro:retroPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
@@ -647,6 +655,7 @@ function renderSection(){
 
   if(activeSection==="members"){loadMembers();root.querySelector("#memberRefresh")?.addEventListener("click",loadMembers);root.querySelector("#memberSearch")?.addEventListener("input",renderMemberRows);}
   if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true,showAdmin:true});
+  if(activeSection==="riot"){loadRiotSyncStatus();root.querySelector("#riotSyncRefresh")?.addEventListener("click",loadRiotSyncStatus);}
   if(activeSection==="server")loadServerSettings();
   if(activeSection==="titles"){loadTitleCatalog();root.querySelector("#titleSearch")?.addEventListener("input",renderTitleCatalog);root.querySelector("#titleCategory")?.addEventListener("change",renderTitleCatalog);}
   if(activeSection==="missing"){

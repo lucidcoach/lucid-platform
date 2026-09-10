@@ -14,7 +14,7 @@ export function formatDuration(seconds) {
 
 export function relativeTime(text) {
   const raw = String(text || "");
-  const normalized = raw.replace(" ", "T") + (raw.includes("+") ? "" : "+09:00");
+  const normalized = raw.replace(" ", "T") + (raw.includes("+") || raw.endsWith("Z") ? "" : "+09:00");
   const time = new Date(normalized).getTime();
   if (!Number.isFinite(time)) return raw;
   const diff = Math.max(0, Date.now() - time);
@@ -29,6 +29,8 @@ export function relativeTime(text) {
 }
 
 export function matchCategory(match) {
+  const explicit = String(match?.category || "").toLowerCase();
+  if (["normal","solo","flex","aram","internal"].includes(explicit)) return explicit;
   const mode = String(match?.mode || "classic").toLowerCase();
   const queue = String(match?.queue || "").toLowerCase();
   if (mode.includes("aram") || queue.includes("aram")) return "aram";
@@ -38,6 +40,9 @@ export function matchCategory(match) {
 
 export function normalizeMode(match) {
   const category = matchCategory(match);
+  if (category === "normal") return "일반";
+  if (category === "solo") return "솔랭";
+  if (category === "flex") return "자랭";
   if (category === "aram") return "칼바람";
   if (category === "league") return "리그전";
   return "내전";
