@@ -75,14 +75,14 @@ function radarPoints(values, radius=112, cx=150, cy=140) {
   }).join(" ");
 }
 
-function radar(labels, own=null, compare=null, legend="서버 내 순위") {
+function radar(labels, own=null, compare=null, legend="서버 내 순위", ownLabel="나") {
   const grid = [.25,.5,.75,1].map(scale => `<polygon points="${radarPoints(labels.map(() => scale))}" class="server-radar-grid"/>`).join("");
   const axes = labels.map((label,index) => {
     const angle = -Math.PI / 2 + index * Math.PI / 3;
     const x = 150 + Math.cos(angle) * 137, y = 140 + Math.sin(angle) * 137;
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">${esc(label)}</text>`;
   }).join("");
-  return `<div class="server-radar-wrap"><div class="server-radar-legend">${own?`<span><i></i>나</span>`:""}${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${own?esc(legend):"데이터 부족"}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}${own?`<polygon points="${radarPoints(own)}" class="server-radar-own"/>`:""}${axes}</svg>${!own&&!compare?`<strong class="server-radar-empty">비교 가능한 경기 데이터가 부족합니다.</strong>`:""}</div>`;
+  return `<div class="server-radar-wrap"><div class="server-radar-legend">${own?`<span><i></i>${esc(ownLabel)}</span>`:""}${compare ? `<span><b></b>${esc(legend)}</span>` : `<span>${own?esc(legend):"데이터 부족"}</span>`}</div><svg class="server-radar" viewBox="0 0 300 280" role="img" aria-label="육각형 경기 지표 그래프">${grid}${compare ? `<polygon points="${radarPoints(compare)}" class="server-radar-compare"/>` : ""}${own?`<polygon points="${radarPoints(own)}" class="server-radar-own"/>`:""}${axes}</svg>${!own&&!compare?`<strong class="server-radar-empty">비교 가능한 경기 데이터가 부족합니다.</strong>`:""}</div>`;
 }
 
 function metricRankScore(metric={}) {
@@ -98,8 +98,8 @@ function serverMetricPanel(metrics={}) {
   const order = dashboard.role === "탑" ? ROLE_METRICS["탑"] : (metrics.metricOrder || ROLE_METRICS[dashboard.role]);
   const values = order.map(item => metricRankScore(metrics.metrics?.[item.key || item[0]]));
   return `<section class="server-analysis-card radar-card">
-    <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>${Number(metrics.sampleGames||0)}경기 기준</span></div>
-    ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values.every(Number.isFinite)?values:null)}
+    <div class="server-card-head"><div><small>SERVER RANKING</small><h2>${esc(dashboard.role)} 라인 서버 지표</h2></div><span>총 ${Number(metrics.sampleGames||0)}경기</span></div>
+    ${roleButtons()}${radar(order.map(item=>item.label||item[1]),values.every(Number.isFinite)?values:null,null,"서버 내 순위",dashboard.identity?.riotId||dashboard.profile?.player?.name||dashboard.identity?.name||"나")}
     <div class="server-rank-list">${order.map(item=>{const key=item.key||item[0],label=item.label||item[1],row=metrics.metrics?.[key]||{};return `<div><span>${esc(label)}</span><strong>${metricText(key,row.value)}</strong><small>${row.rank?`${row.rank}위 / ${row.total}명 · 상위 ${row.topPercent}%`:`비교 기록 없음`}</small></div>`;}).join("")}</div>
   </section>`;
 }

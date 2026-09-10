@@ -12,5 +12,7 @@ for (const mapping of [
 
 assert.match(report, /values\.every\(Number\.isFinite\)\?values:null/);
 assert.match(report, /비교 기록 없음/);
+assert.match(report, /총 \$\{Number\(metrics\.sampleGames\|\|0\)\}경기/);
+assert.match(report, /dashboard\.identity\?\.riotId/);
 
 console.log("server radar mapping checks passed");
