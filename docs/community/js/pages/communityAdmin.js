@@ -1,7 +1,7 @@
 
 import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260907oauth1";
 import { API_BASE_URL } from "../config.js?v=20260904d";
-import { renderMileage } from "./mileage.js?v=20260906ops2";
+import { renderMileage } from "./mileage.js?v=20260910series1";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let activeSection="dashboard";
@@ -18,6 +18,7 @@ async function adminRequest(path,{method="GET",body}={}){const response=await fe
 const sections = [
   ["members","회원 관리","가입 회원·권한·Discord 연결 상태 확인","U"],
   ["server","서버 설정","서버별 내전·채널·권한 설정","⚙"],
+  ["titles","칭호 / 업적","서버 기준 칭호와 달성 조건 확인","🏷"],
   ["mileage","포인트 관리","지급 규칙·상점·주문·감사로그","M"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
   ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
@@ -108,7 +109,8 @@ function serverPanel(){
           <div class="admin-draft-note">변경 요청은 DB 작업 큐에 저장되고 LucidGame이 검증한 뒤 메모리와 DB에 함께 적용합니다.</div>
         </div>
         <div data-server-panel="match" hidden>
-          <div class="admin-form-section"><h3>내전 설정</h3><form id="matchFrequencyForm" class="mileage-form"><label class="wide">내전 빈도<select name="value"><option>적음</option><option>보통</option><option>많음</option></select></label><button class="wide" type="submit">변경 요청</button></form><div class="admin-setting-row"><div><strong>큐 운영</strong><small>예약시간과 자동 팀 구성은 실시간 큐 상태가 필요하므로 Discord 큐 패널에서 관리합니다.</small></div></div></div>
+          <div class="admin-form-section"><h3>내전 설정</h3><form id="matchFrequencyForm" class="mileage-form"><label class="wide">내전 빈도<select name="value"><option>적음</option><option>보통</option><option>많음</option></select></label><button class="wide" type="submit">변경 요청</button></form></div>
+          <div class="admin-form-section"><h3>일반 큐</h3><form id="generalQueueCreateForm" class="mileage-form"><label>경기 방식<select name="bestOf"><option value="1">단판</option><option value="3">BO3</option><option value="5">BO5</option></select></label><button type="submit">+ 일반 큐 생성</button></form><div id="generalQueueList" class="admin-queue-list"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div></div>
         </div>
         <div data-server-panel="channels" hidden><div class="admin-form-section"><h3>채널 설정</h3><form id="serverChannelForm" class="mileage-form"><label>기능<select name="key"><option value="announcement">공지사항</option><option value="patchnote">패치노트</option><option value="match_output">내전 출력</option><option value="report">신고 접수</option><option value="league_output">리그전 출력</option></select></label><label>Discord 채널 ID<input name="channelId" required inputmode="numeric" pattern="[0-9]+"></label><button class="wide" type="submit">변경 요청</button></form><div class="admin-draft-note">참가·기록·도움말처럼 패널 메시지를 다시 만들어야 하는 채널은 현재 Discord /채널설정을 사용해주세요.</div></div></div>
         <div data-server-panel="permissions" hidden><div class="admin-form-section"><h3>내전 관리자 역할</h3><form id="adminRoleForm" class="mileage-form"><label class="wide">Discord 역할 ID<input name="roleId" required inputmode="numeric" pattern="[0-9]+"></label><button class="wide" type="submit">변경 요청</button></form><div class="admin-setting-row"><div><strong>홈페이지 관리 권한</strong><small>Discord 관리자·서버 관리 권한·내전 관리자 역할을 봇이 주기적으로 확인합니다.</small></div></div></div></div>
@@ -118,7 +120,7 @@ function serverPanel(){
   `);
 }
 
-const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할"};
+const actionLabels={set_match_frequency:"내전 빈도",set_channel:"채널 설정",set_admin_role:"관리자 역할",create_general_queue:"일반 큐 생성",set_general_queue_best_of:"경기 방식",delete_general_queue:"일반 큐 삭제"};
 const statusLabels={pending:"대기",processing:"적용 중",completed:"완료",failed:"실패"};
 async function loadServerSettings(){
   if(!selectedGuild)return;
@@ -126,6 +128,10 @@ async function loadServerSettings(){
     const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/settings`),settings=data.settings||{};
     const frequency=document.querySelector('#matchFrequencyForm [name="value"]');if(frequency)frequency.value=settings.matchFrequency||"보통";
     const role=document.querySelector('#adminRoleForm [name="roleId"]');if(role)role.value=settings.adminRoleId||"";
+    const queues=document.getElementById("generalQueueList"),rows=settings.queues||[];
+    if(queues)queues.innerHTML=rows.length?rows.map(row=>`<div class="admin-queue-row"><span><strong>일반 큐 ${Number(row.displayNumber)}</strong><small>${Number(row.participants||0)}/10명 · ${row.status==="in_progress"?"경기 진행 중":"대기 중"}${row.messageId?` · 패널 ${esc(row.messageId)}`:""}</small></span><select data-queue-mode="${esc(row.queueId)}" ${row.legacy||row.status==="in_progress"?"disabled":""}><option value="1" ${Number(row.bestOf)===1?"selected":""}>단판</option><option value="3" ${Number(row.bestOf)===3?"selected":""}>BO3</option><option value="5" ${Number(row.bestOf)===5?"selected":""}>BO5</option></select><button data-queue-delete="${esc(row.queueId)}" ${row.legacy||row.status==="in_progress"||Number(row.participants)>0?"disabled":""}>삭제</button></div>`).join(""):`<div class="admin-empty-admin"><strong>생성된 일반 큐가 없습니다.</strong></div>`;
+    queues?.querySelectorAll("[data-queue-mode]").forEach(select=>select.addEventListener("change",()=>enqueueServerAction("set_general_queue_best_of",{queueId:select.dataset.queueMode,bestOf:Number(select.value)})));
+    queues?.querySelectorAll("[data-queue-delete]").forEach(button=>button.addEventListener("click",()=>{if(confirm("대기자가 없는 이 큐를 삭제할까요?"))enqueueServerAction("delete_general_queue",{queueId:button.dataset.queueDelete});}));
     const list=document.getElementById("serverActionList"),actions=data.actions||[];
     if(list)list.innerHTML=actions.length?actions.map(row=>`<div class="mileage-row"><span><strong>${esc(actionLabels[row.action]||row.action)}</strong><br><small>${esc(row.updatedAt||row.createdAt)}</small></span><b>${esc(statusLabels[row.status]||row.status)}${row.error?` · ${esc(row.error)}`:""}</b></div>`).join(""):`<div class="admin-empty-admin"><strong>아직 변경 요청이 없습니다.</strong></div>`;
   }catch(error){const status=document.getElementById("serverActionStatus");if(status)status.textContent=error.message;}
@@ -503,6 +509,11 @@ function renderRoflDashboard(data){
   target.querySelectorAll("[data-rofl-artifact]").forEach(button=>button.addEventListener("click",()=>downloadRoflWorkflowArtifact(button.dataset.roflArtifactBuild,button.dataset.roflArtifact,button.dataset.roflArtifactPart||1)));
 }
 
+let titleRows=[];
+function titlePanel(){return shell(`${panelTitle("칭호 / 업적","봇이 실제 사용하는 칭호 정의와 달성 조건입니다.")}<section class="admin-work-panel"><div class="admin-title-tools"><input id="titleSearch" type="search" placeholder="칭호 또는 조건 검색"><select id="titleCategory"><option value="">전체 분류</option></select><b id="titleCount">0개</b></div><div id="titleCatalog" class="admin-title-grid"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div></section>`);}
+function renderTitleCatalog(){const search=String(document.getElementById("titleSearch")?.value||"").toLowerCase(),category=document.getElementById("titleCategory")?.value||"",rows=titleRows.filter(row=>(!category||row.category===category)&&(!search||`${row.name} ${row.condition}`.toLowerCase().includes(search)));const count=document.getElementById("titleCount"),target=document.getElementById("titleCatalog");if(count)count.textContent=`${rows.length}개`;if(target)target.innerHTML=rows.map(row=>`<article><span>${esc(row.icon||"🏷️")}</span><div><small>${esc(row.category||"기타")}${row.seriesGroup?` · ${esc(row.seriesGroup)}`:""}</small><strong>${esc(row.name)}</strong><p>${esc(row.condition||"조건 정보 없음")}</p></div></article>`).join("")||`<div class="admin-empty-admin"><strong>조건에 맞는 칭호가 없습니다.</strong></div>`;}
+async function loadTitleCatalog(){if(!selectedGuild)return;try{const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/titles`);titleRows=data.titles||[];const select=document.getElementById("titleCategory"),categories=[...new Set(titleRows.map(row=>row.category).filter(Boolean))].sort();if(select)select.innerHTML=`<option value="">전체 분류</option>${categories.map(value=>`<option>${esc(value)}</option>`).join("")}`;renderTitleCatalog();}catch(error){const target=document.getElementById("titleCatalog");if(target)target.innerHTML=`<div class="admin-empty-admin"><strong>${esc(error.message)}</strong></div>`;}}
+
 async function loadRoflDashboard(build=""){
   const target=document.getElementById("roflDashboard");if(!target)return;
   try{const data=await adminRequest(`/api/community/admin/rofl-patch/dashboard${build?`?build=${encodeURIComponent(build)}`:""}`);renderRoflDashboard(data);await loadRoflGroundTruth(data.current?.build||build);}
@@ -567,7 +578,7 @@ function renderSection(){
   }
   clearInterval(roflRefreshTimer);roflRefreshTimer=0;
   if(activeSection==="rofl"&&!isCommunityAdmin())activeSection="dashboard";
-  const pages={dashboard,members:memberPanel,server:serverPanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,events:eventsPanel,missing:missingPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
@@ -580,6 +591,7 @@ function renderSection(){
     root.querySelectorAll("[data-server-panel]").forEach(panel=>panel.hidden=panel.dataset.serverPanel!==btn.dataset.serverTab);
   }));
   root.querySelector("#matchFrequencyForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("set_match_frequency",{value:form.get("value")});});
+  root.querySelector("#generalQueueCreateForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("create_general_queue",{bestOf:Number(form.get("bestOf"))});});
   root.querySelector("#serverChannelForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("set_channel",{key:form.get("key"),channelId:form.get("channelId")});});
   root.querySelector("#adminRoleForm")?.addEventListener("submit",event=>{event.preventDefault();const form=new FormData(event.currentTarget);enqueueServerAction("set_admin_role",{roleId:form.get("roleId")});});
   root.querySelectorAll(".admin-subtabs button").forEach(btn=>btn.addEventListener("click",()=>{
@@ -607,6 +619,7 @@ function renderSection(){
   if(activeSection==="members"){loadMembers();root.querySelector("#memberRefresh")?.addEventListener("click",loadMembers);root.querySelector("#memberSearch")?.addEventListener("input",renderMemberRows);}
   if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true,showAdmin:true});
   if(activeSection==="server")loadServerSettings();
+  if(activeSection==="titles"){loadTitleCatalog();root.querySelector("#titleSearch")?.addEventListener("input",renderTitleCatalog);root.querySelector("#titleCategory")?.addEventListener("change",renderTitleCatalog);}
   if(activeSection==="missing"){
     loadMissingDetails();
     root.querySelector("#missingRefresh")?.addEventListener("click",loadMissingDetails);
