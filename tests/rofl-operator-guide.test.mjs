@@ -15,5 +15,9 @@ assert.match(admin, /같은 패치 ROFL \$\{needed\}개 추가 업로드/);
 assert.match(admin, /production gate/);
 assert.match(admin, /researchV13\|\|data\.researchV12/);
 assert.match(admin, /v1\.3 연구기/);
+for (const text of ["Fixture 원본 검증 데이터", "ROFL", "Match-V5", "Timeline", "마지막 수집", "재수집"]) {
+  assert.match(admin, new RegExp(text));
+}
+assert.match(admin, /\/api\/community\/admin\/rofl-ground-truth\/collect/);
 
 console.log("ROFL operator guidance checks passed");

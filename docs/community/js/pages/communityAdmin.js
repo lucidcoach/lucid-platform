@@ -437,6 +437,10 @@ function roflPanel(){
     </section>
     <div id="roflDashboard"><div class="admin-empty-admin"><strong>패치 상태를 불러오는 중...</strong></div></div>
     <section class="admin-work-panel">
+      <div class="rofl-card-head"><div><small>GROUND TRUTH</small><h3>Fixture 원본 검증 데이터</h3></div><span id="roflGroundTruthStatus">패치 선택 대기</span></div>
+      <div id="roflGroundTruthList" class="rofl-file-results"><div class="admin-empty-admin"><strong>패치 fixture를 불러오는 중...</strong></div></div>
+    </section>
+    <section class="admin-work-panel">
       <div class="rofl-card-head"><div><small>REPLAY ARCHIVE</small><h3>저장된 경기 리플레이</h3></div><button id="replayArchiveRefresh" class="admin-select-button" type="button">새로고침</button></div>
       <div id="replayArchiveList" class="rofl-file-results"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
     </section>
@@ -496,8 +500,24 @@ function renderRoflDashboard(data){
 
 async function loadRoflDashboard(build=""){
   const target=document.getElementById("roflDashboard");if(!target)return;
-  try{renderRoflDashboard(await adminRequest(`/api/community/admin/rofl-patch/dashboard${build?`?build=${encodeURIComponent(build)}`:""}`));}
+  try{const data=await adminRequest(`/api/community/admin/rofl-patch/dashboard${build?`?build=${encodeURIComponent(build)}`:""}`);renderRoflDashboard(data);await loadRoflGroundTruth(data.current?.build||build);}
   catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>패치 상태를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
+function renderRoflGroundTruth(rows=[]){
+  const target=document.getElementById("roflGroundTruthList");if(!target)return;
+  target.innerHTML=rows.length?rows.map(row=>`<div><strong>${esc(row.match_id)}</strong><span>ROFL ${row.rofl_preserved?"보존":"없음"} · Match-V5 ${row.match_ground_truth?"있음":"없음"} · Timeline ${row.timeline_ground_truth?"있음":"없음"}</span><small>마지막 수집 ${esc(row.fetched_at?new Date(row.fetched_at).toLocaleString("ko-KR"):"-")}</small><button class="admin-select-button" type="button" data-ground-truth-match="${esc(row.match_id)}" data-ground-truth-build="${esc(row.build)}" data-ground-truth-force="${row.match_ground_truth&&row.timeline_ground_truth?"1":"0"}" ${row.rofl_preserved?"":"disabled"}>${row.match_ground_truth&&row.timeline_ground_truth?"재수집":"수집"}</button></div>`).join(""):`<div class="admin-empty-admin"><strong>표시할 fixture가 없습니다.</strong></div>`;
+  target.querySelectorAll("[data-ground-truth-match]").forEach(button=>button.addEventListener("click",()=>collectRoflGroundTruth(button)));
+}
+async function loadRoflGroundTruth(build){
+  const status=document.getElementById("roflGroundTruthStatus");if(!build)return renderRoflGroundTruth([]);
+  try{const data=await adminRequest(`/api/community/admin/rofl-ground-truth?build=${encodeURIComponent(build)}`);renderRoflGroundTruth(data.fixtures||[]);if(status)status.textContent=`${(data.fixtures||[]).filter(row=>row.match_ground_truth&&row.timeline_ground_truth).length}/${(data.fixtures||[]).length} 수집됨`;}
+  catch(error){if(status)status.textContent=error.message;renderRoflGroundTruth([]);}
+}
+async function collectRoflGroundTruth(button){
+  const status=document.getElementById("roflGroundTruthStatus");button.disabled=true;if(status)status.textContent=`${button.dataset.groundTruthMatch} 수집 중...`;
+  try{const data=await adminRequest("/api/community/admin/rofl-ground-truth/collect",{method:"POST",body:{build:button.dataset.groundTruthBuild,matchId:button.dataset.groundTruthMatch,force:button.dataset.groundTruthForce==="1"}});renderRoflGroundTruth(data.fixtures||[]);if(status)status.textContent=`${button.dataset.groundTruthMatch} ${data.collection?.result||"완료"}`;}
+  catch(error){if(status)status.textContent=error.message;button.disabled=false;}
 }
 
 function setRoflFiles(files){roflFiles=[...files].filter(file=>String(file.name||"").toLowerCase().endsWith(".rofl"));const list=document.getElementById("roflSelected"),button=document.getElementById("roflAnalyze");if(list)list.innerHTML=roflFiles.length?roflFiles.map(file=>`<span><strong>${esc(file.name)}</strong><small>${roflBytes(file.size)}</small></span>`).join(""):"<span>선택된 .rofl 파일이 없습니다.</span>";if(button)button.disabled=!roflFiles.length;}
