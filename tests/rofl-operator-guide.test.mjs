@@ -19,5 +19,11 @@ for (const text of ["Fixture 원본 검증 데이터", "ROFL", "Match-V5", "Time
   assert.match(admin, new RegExp(text));
 }
 assert.match(admin, /\/api\/community\/admin\/rofl-ground-truth\/collect/);
+for (const text of ["수정 승인", "배포 승인", "지시문 보기", "Handoff ZIP", "Validation bundle", "평상시 Codex/LLM은 사용하지 않습니다."]) {
+  assert.match(admin, new RegExp(text));
+}
+assert.match(admin, /"approve-fix"/);
+assert.match(admin, /"approve-deploy"/);
+assert.match(admin, /\/workflow\/\$\{encodeURIComponent\(build\)\}/);
 
 console.log("ROFL operator guidance checks passed");

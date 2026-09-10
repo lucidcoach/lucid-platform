@@ -405,7 +405,7 @@ function supportPanel(){
   `);
 }
 
-function roflStatusClass(status=""){return ["READY","PARTIAL","BLOCKED"].includes(status)?status.toLowerCase():"unknown";}
+function roflStatusClass(status=""){const value=String(status).toUpperCase();return value.includes("READY")?"ready":["BLOCKED","VALIDATION_FAILED"].includes(value)?"blocked":["PARTIAL","RESEARCHING"].includes(value)?"partial":"unknown";}
 function roflTime(value){if(!value)return "-";const date=new Date(Number(value)*1000);return Number.isNaN(date.getTime())?"-":date.toLocaleString("ko-KR");}
 function roflBytes(value){const bytes=Number(value||0);if(bytes<1024)return `${bytes} B`;if(bytes<1048576)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1048576).toFixed(1)} MB`;}
 function roflList(values=[],empty="없음"){return values.length?values.map(value=>`<span>${esc(value)}</span>`).join(""):`<span class="muted">${empty}</span>`;}
@@ -428,7 +428,7 @@ function roflCapabilityGroup(title,rows,kind){
 function roflPanel(){
   return shell(`
     ${panelTitle("ROFL 패치 분석","새 패치 ROFL을 보존하고 자동 진단한 뒤 Codex 전달 ZIP까지 준비합니다.")}
-    <section class="rofl-guide"><strong>사용 순서</strong><span>ROFL 여러 개 선택 → 분석 시작 → 상태와 한줄 원인 확인 → 진단 ZIP 다운로드</span><small>Lucid는 decoder 코드를 추측 수정하거나 자동 배포하지 않습니다.</small></section>
+    <section class="rofl-guide"><strong>자동 흐름</strong><span>ROFL 업로드 → 원본 보존 → ground truth 수집 → 연구·재검증 → workflow 갱신</span><small>사람 입력은 문제가 있을 때의 수정 승인과 검증 통과 뒤의 배포 승인뿐입니다. 평상시 Codex/LLM은 사용하지 않습니다.</small></section>
     <section class="admin-work-panel rofl-upload-panel">
       <div id="roflDropzone" class="rofl-dropzone" tabindex="0"><strong>새 패치 ROFL을 여기에 놓으세요</strong><span>.rofl 여러 개를 한 번에 선택할 수 있습니다.</span><button id="roflPick" class="admin-select-button" type="button">ROFL 추가</button><input id="roflInput" type="file" accept=".rofl" multiple hidden></div>
       <div id="roflSelected" class="rofl-selected"><span>선택된 파일이 없습니다.</span></div>
@@ -451,6 +451,7 @@ function renderRoflDashboard(data){
   const target=document.getElementById("roflDashboard");if(!target)return;
   const current=data.current||{},detail=data.detail||{},status=String(current.status||"UNKNOWN"),suff=current.sufficiency||{};
   const research=data.researchV13||data.researchV12||data.researchV11||{};
+  const workflow=data.workflow||{},workflowCounts=workflow.counts||{},validation=workflow.validation||{},validationGates=validation.gates||{};
   const semanticBaseline=(research.baseline||{}).semantic_baseline||{},semanticEvidence=semanticBaseline.capability_evidence||{};
   const knownGood=Object.values(semanticEvidence).filter(item=>item&&item.conclusion==="confirmed").length;
   const checks=detail.diagnostic_checks||{},diff=detail.patch_diff||{},retention=data.retention||{},deploy=data.deploy||{},result=deploy.last_result||{};
@@ -459,12 +460,12 @@ function renderRoflDashboard(data){
   const histories=data.history||[];
   const fixtureGate=String(checks["fixture gate"]||""),minimum=Number(fixtureGate.match(/minimum\s+(\d+)/i)?.[1]||suff.recommended||5),fixtureCount=Number(current.fixture_count||0),needed=Math.max(0,minimum-fixtureCount);
   const semanticRegression=((research.final||{}).semantic_regression||{}).capability_regression||{},groups=roflCapabilityGroups(checks,semanticEvidence,semanticRegression,current.build,semanticBaseline.build);
-  const blocked=status==="BLOCKED",researching=research.status==="RESEARCHING";
+  const blocked=status==="BLOCKED",researching=research.status==="RESEARCHING",fixPending=workflow.status==="FIX_APPROVAL_PENDING",deployPending=workflow.status==="DEPLOY_APPROVAL_PENDING";
   const overall=({READY:"✅ 검증 완료",PARTIAL:"⚠️ 검증 진행 중",BLOCKED:"⛔ 운영 반영 보류"})[status]||"ℹ️ 상태 확인 필요";
   const impact=blocked?"새 패치 자동 반영은 보류되며 기존 분석 결과는 유지됩니다.":"기존 기본 분석은 계속 사용할 수 있습니다.";
   const problem=blocked?(current.blocker_summary||current.reason||"필수 검증이 통과되지 않았습니다."):needed?"검증용 ROFL 샘플 부족":researching?"자동 재검증 진행 중":"확인된 운영 차단 문제 없음";
-  const action=blocked?"상세 원인을 확인하고 Codex 진단 ZIP을 전달하세요.":needed?`같은 패치 ROFL ${needed}개 추가 업로드`:researching?"상태를 새로고침해 자동 재검증 결과를 확인하세요.":"별도 조치가 필요하지 않습니다.";
-  const recommendations=blocked?["상세 오류와 실패 원인 확인","Codex 진단 ZIP 다운로드","수정 후 상태 새로고침"]:needed?[`같은 패치 ROFL ${needed}개 추가 업로드`,"상태 새로고침","자동 재검증 결과 확인"]:researching?["자동 분석 완료 대기","상태 새로고침","capability별 결과 확인"]:["운영 적용 가능 여부 확인","필요 시 진단 ZIP 보관","다음 패치 ROFL 수집 준비"];
+  const action=fixPending?"연구 결과를 확인하고 수정 승인":deployPending?"검증 결과를 확인하고 배포 승인":needed?`같은 패치 ROFL ${needed}개 추가 업로드`:researching?"자동 분석 완료 대기":"별도 조치가 필요하지 않습니다.";
+  const recommendations=fixPending?["연구 결과와 fixture 수 확인","수정 승인","동결된 Codex package 전달"]:deployPending?["Validation·Regression 확인","배포 승인"]:needed?[`같은 패치 ROFL ${needed}개 추가 업로드`]:researching?["자동 분석 완료 대기"]:["별도 조치 없음"];
   target.innerHTML=`
     <section class="rofl-operator-summary rofl-${roflStatusClass(status)}">
       <div class="rofl-card-head"><div><small>현재 상태 요약</small><h2>${esc(current.build||"아직 감지되지 않음")}</h2></div><strong class="rofl-status-badge">${esc(overall)} · ${esc(status)}</strong></div>
@@ -479,8 +480,9 @@ function renderRoflDashboard(data){
     </section>
     <section class="rofl-two-column">
       <article class="admin-work-panel rofl-capabilities"><div class="rofl-card-head"><div><small>CAPABILITY</small><h3>분석 기능 상태</h3></div><span>내부 상태를 운영자 문구와 함께 표시</span></div>${roflCapabilityGroup("정상",groups.normal,"normal")}${roflCapabilityGroup("검증 부족",groups.insufficient,"insufficient")}${roflCapabilityGroup("아직 지원 안 함",groups.unsupported,"unsupported")}</article>
-      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>CODEX HANDOFF</small><h3>Codex 전달 패키지</h3></div><span>${reportReady?"생성 완료":"준비 중"}</span></div><div class="rofl-report-info"><strong>${esc(String(research.handoff_path||report.zip_path||"").split(/[\\/]/).pop()||"아직 생성되지 않음")}</strong><span>build ${esc(current.build||"-")} · sequence ${Number(current.sequence||0)}</span><small>v1.3 연구 결과 또는 운영 decoder 진단 ZIP</small></div><button id="roflDownload" class="admin-primary" type="button" ${reportReady?"":"disabled"}>Codex 진단 ZIP 다운로드</button></article>
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>RESEARCH HANDOFF</small><h3>자동 연구 결과</h3></div><span>${reportReady?"대표 fixture 최대 3개":"준비 중"}</span></div><div class="rofl-report-info"><strong>${esc(String(research.handoff_path||report.zip_path||"").split(/[\\/]/).pop()||"아직 생성되지 않음")}</strong><span>build ${esc(current.build||"-")} · 운영 READY 권한 없음</span><small>결정론적 sidecar 결과이며 Codex/LLM을 호출하지 않습니다.</small></div><button id="roflDownload" class="admin-select-button" type="button" ${reportReady?"":"disabled"}>연구 Handoff 다운로드</button></article>
     </section>
+    <section class="admin-work-panel"><div class="rofl-card-head"><div><small>APPROVAL WORKFLOW</small><h3>${esc(workflow.result||workflow.status||"RESEARCHING")}</h3></div><span>${esc(workflow.timeline_status||"")} · sequence ${Number(workflow.pending_sequence||workflow.sequence||0)}</span></div><div class="rofl-retention"><span>valid fixture <b>${Number(workflowCounts.valid||workflow.valid_fixture_count||0)}/${Number(workflowCounts.total||fixtureCount)}</b></span><span>ground truth <b>${Number(workflowCounts.ground_truth||workflow.ground_truth_count||0)}/${Number(workflowCounts.validation||workflowCounts.valid||0)}</b></span><span>confidence <b>${esc(workflow.confidence||"LOW")}</b></span><span>Validation <b>${validationGates.fixtures_match?`${Number(validationGates.fixture_count||0)}/${Number(validationGates.fixture_count||0)} PASS`:"대기"}</b></span><span>Regression <b>${esc(validationGates.regression_1617?.passed?`${Number(validationGates.regression_1617.tested_fixture_count||0)}/${Number(validationGates.regression_1617.tested_fixture_count||0)} PASS`:"대기")}</b></span></div><div class="rofl-upload-actions"><button class="admin-primary" type="button" data-rofl-approve-fix="${esc(current.build||"")}" ${fixPending?"":"disabled"}>수정 승인</button><button class="admin-primary" type="button" data-rofl-approve-deploy="${esc(current.build||"")}" ${deployPending?"":"disabled"}>배포 승인</button>${workflow.manifest?`<button class="admin-select-button" type="button" data-rofl-artifact="instruction" data-rofl-artifact-build="${esc(current.build||"")}">지시문 보기</button><button class="admin-select-button" type="button" data-rofl-artifact="package" data-rofl-artifact-build="${esc(current.build||"")}">Handoff ZIP</button>${(workflow.manifest.validation_bundles||[]).map((_,index)=>`<button class="admin-select-button" type="button" data-rofl-artifact="validation-bundle" data-rofl-artifact-part="${index+1}" data-rofl-artifact-build="${esc(current.build||"")}">Validation bundle${index?` ${index+1}`:""}</button>`).join("")}`:""}</div><small class="rofl-safe-note">수정 승인 전에는 Codex package가 동결되지 않으며, 배포 승인은 모든 validation gate 통과 뒤에만 활성화됩니다.</small></section>
     <section class="rofl-two-column rofl-gates">
       <article class="admin-work-panel"><div class="rofl-card-head"><div><small>검증 샘플</small><h3>현재 ${fixtureCount}개 / 최소 ${minimum}개</h3></div><strong>${needed?`추가로 ${needed}개 필요`:"최소 기준 충족"}</strong></div><p>${needed?"같은 패치 ROFL을 추가하면 자동으로 다시 검증합니다.":"샘플 수 기준을 충족했습니다. 각 분석 항목 결과를 확인하세요."}</p></article>
       <article class="admin-work-panel"><div class="rofl-card-head"><div><small>운영 적용 가능 여부</small><h3>${esc(roflStateLabel(checks["production gate"]||status))} <small>(${esc(roflState(checks["production gate"]||status))})</small></h3></div></div><dl><div><dt>이유</dt><dd>${esc(problem)}</dd></div><div><dt>운영 영향</dt><dd>${esc(impact)}</dd></div><div><dt>조치</dt><dd>${esc(action)}</dd></div></dl></article>
@@ -496,6 +498,9 @@ function renderRoflDashboard(data){
   `;
   target.querySelectorAll("[data-rofl-build]").forEach(button=>button.addEventListener("click",()=>loadRoflDashboard(button.dataset.roflBuild)));
   target.querySelector("#roflDownload")?.addEventListener("click",()=>downloadRoflReport(current.build));
+  target.querySelector("[data-rofl-approve-fix]")?.addEventListener("click",()=>approveRoflWorkflow(current.build,"approve-fix","현재 연구 결과와 fixture/ground-truth 해시를 수정 package로 동결할까요?"));
+  target.querySelector("[data-rofl-approve-deploy]")?.addEventListener("click",()=>approveRoflWorkflow(current.build,"approve-deploy","검증 결과를 확인했습니다. 배포를 승인할까요?"));
+  target.querySelectorAll("[data-rofl-artifact]").forEach(button=>button.addEventListener("click",()=>downloadRoflWorkflowArtifact(button.dataset.roflArtifactBuild,button.dataset.roflArtifact,button.dataset.roflArtifactPart||1)));
 }
 
 async function loadRoflDashboard(build=""){
@@ -528,6 +533,8 @@ async function uploadRoflFiles(){
   catch(error){if(status)status.textContent=error.message;}finally{button.disabled=!roflFiles.length;}
 }
 async function downloadRoflReport(build){if(!build)return;const status=document.getElementById("roflUploadStatus");try{if(status)status.textContent="진단 ZIP 준비 중...";const response=await fetch(apiUrl(`/api/community/admin/rofl-patch/report/${encodeURIComponent(build)}`),{credentials:"include"});if(!response.ok)throw new Error("진단 ZIP이 아직 준비되지 않았습니다.");const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)"?/)?.[1]||`rofl_patch_${build}_codex.zip`;link.click();URL.revokeObjectURL(url);if(status)status.textContent="진단 ZIP을 다운로드했습니다.";}catch(error){if(status)status.textContent=error.message;}}
+async function approveRoflWorkflow(build,action,message){if(!build||!confirm(message))return;const status=document.getElementById("roflUploadStatus");try{if(status)status.textContent="승인 기록 중...";await adminRequest(`/api/community/admin/rofl-patch/workflow/${encodeURIComponent(build)}/${action}`,{method:"POST"});if(status)status.textContent="승인되었습니다.";await loadRoflDashboard(build);}catch(error){if(status)status.textContent=error.message;}}
+async function downloadRoflWorkflowArtifact(build,kind,part=1){const response=await fetch(apiUrl(`/api/community/admin/rofl-patch/workflow/${encodeURIComponent(build)}/${kind}?part=${encodeURIComponent(part)}`),{credentials:"include"});if(!response.ok)return alert("동결된 산출물을 찾지 못했습니다.");const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)"?/)?.[1]||`${kind}-${build}`;link.click();URL.revokeObjectURL(url);}
 
 async function loadReplayArchive(){const target=document.getElementById("replayArchiveList");if(!target)return;try{const data=await adminRequest("/api/community/admin/replays?limit=100"),rows=data.replays||[];target.innerHTML=rows.length?rows.map(row=>`<div><strong>경기 ${esc(row.matchId)}</strong><span>${esc(row.matchTime||row.uploadedAt||"시간 미상")} · ${esc(row.patch||"패치 미상")}</span><button class="admin-select-button" type="button" data-replay-download="${esc(row.id)}">다운로드</button></div>`).join(""):`<div class="admin-empty-admin"><strong>다운로드할 원본 ROFL이 없습니다.</strong></div>`;target.querySelectorAll("[data-replay-download]").forEach(button=>button.addEventListener("click",()=>downloadReplay(button.dataset.replayDownload)));}catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>리플레이를 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}}
 async function downloadReplay(replayId){const response=await fetch(apiUrl(`/api/community/admin/replays/${encodeURIComponent(replayId)}`),{credentials:"include"});if(!response.ok)return alert("저장된 원본 파일을 찾지 못했습니다.");const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(response.headers.get("Content-Disposition")||"").match(/filename="?([^";]+)"?/)?.[1]||"lucid-replay.rofl";link.click();URL.revokeObjectURL(url);}
