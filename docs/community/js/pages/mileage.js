@@ -3,7 +3,7 @@ import { getCurrentUser } from "../auth.js?v=20260907oauth1";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,(ch)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const apiUrl=(path)=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
-const labels={MATCH_COMPLETE:"내전 완료",MATCH_WIN:"승리 보너스",VOICE_ACTIVITY:"음성 활동",WEEKLY_QUEST:"주간 퀘스트",INVITE_REWARD:"친구 초대",EVENT_PARTICIPATION:"이벤트 참가",PUBLIC_MATCH_WITH_GUILD_MEMBER:"서버원 동반 공식 경기",SHOP_PURCHASE:"상점 구매",SHOP_REFUND:"상점 환불",ADMIN_GRANT:"운영진 지급",ADMIN_DEDUCT:"운영진 차감",MATCH_REVERT:"경기 취소"};
+const labels={MATCH_COMPLETE:"내전 완료",MATCH_WIN:"승리 보너스",SCRIM_LEVEL_UP:"내전 레벨업",VOICE_ACTIVITY:"음성 활동",WEEKLY_QUEST:"주간 퀘스트",INVITE_REWARD:"친구 초대",EVENT_PARTICIPATION:"이벤트 참가",PUBLIC_MATCH_WITH_GUILD_MEMBER:"서버원 동반 공식 경기",SHOP_PURCHASE:"상점 구매",SHOP_REFUND:"상점 환불",ADMIN_GRANT:"운영진 지급",ADMIN_DEDUCT:"운영진 차감",MATCH_REVERT:"경기 취소"};
 let selectedGuild="";
 let availableGuilds=[];
 

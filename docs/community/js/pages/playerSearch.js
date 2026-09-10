@@ -316,13 +316,17 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     const internalMatches = (data.matches || []).map((match) => ({ ...match, source:match.source || "LUCID_INTERNAL", category:"internal", replay:replayMap.get(`${match.guildId}:${match.matchId}`) || null }));
     const matches = [...internalMatches, ...(data.publicMatches || [])].sort((a,b) => new Date(b.time || 0) - new Date(a.time || 0));
     const p=data.player;
+    const scrimIconUrl = p.scrimIconPath ? `${API_BASE_URL.replace(/\/$/, "")}${p.scrimIconPath}` : "";
+    const scrimIcon = scrimIconUrl
+      ? `<img class="summoner-profile-icon" src="${escapeHtml(scrimIconUrl)}" alt="내전 레벨 아이콘">`
+      : `<span class="summoner-profile-icon fallback" aria-label="내전 레벨 아이콘">${escapeHtml(p.scrimIconEmoji || "🎮")}</span>`;
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack"><span class="summoner-level-text placeholder">Lv --</span><span class="summoner-profile-icon placeholder" aria-label="소환사 아이콘 자리"></span></span><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${scrimIcon}</span><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
