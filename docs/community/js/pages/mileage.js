@@ -50,6 +50,7 @@ function adminCards(data){
     <div class="mileage-row"><span>최근 7일 발행 / 소비</span><b>${Number(e.issued7d||0).toLocaleString()}P / ${Number(e.spent7d||0).toLocaleString()}P</b></div>
     <div class="mileage-row"><span>총 유통 / 1인 평균</span><b>${Number(e.circulation||0).toLocaleString()}P / ${Number(e.averageBalance||0).toLocaleString()}P</b></div>
     <div class="mileage-row"><span>예상 주간 획득<br><small>${esc(e.estimateBasis||"")}</small></span><b>${Number(e.estimatedWeekly||0).toLocaleString()}P</b></div>
+    <div class="mileage-row"><span>최근 7일 획득 범위<br><small>최저 ~ 최고</small></span><b>${Number(e.weeklyEarners||0)?`${Number(e.weeklyEarnedMin||0).toLocaleString()}P ~ ${Number(e.weeklyEarnedMax||0).toLocaleString()}P`:"기록 없음"}</b></div>
     <div class="mileage-row"><span>최다 지급 / 인기 상품</span><b>${esc(labels[e.topRewardType]||e.topRewardType||"-")} / ${esc(e.topShopItem||"-")}</b></div>
   </div></section><section class="mileage-card mileage-admin"><h2>수동 지급·차감</h2><form id="mileageAdjustForm" class="mileage-form">
     <label>Discord 사용자 ID<input name="userId" required inputmode="numeric"></label><label>포인트 (+지급 / -차감)<input name="amount" type="number" required></label>
