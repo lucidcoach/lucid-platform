@@ -446,7 +446,7 @@ function roflPanel(){
 function renderRoflDashboard(data){
   const target=document.getElementById("roflDashboard");if(!target)return;
   const current=data.current||{},detail=data.detail||{},status=String(current.status||"UNKNOWN"),suff=current.sufficiency||{};
-  const research=data.researchV12||data.researchV11||{};
+  const research=data.researchV13||data.researchV12||data.researchV11||{};
   const semanticBaseline=(research.baseline||{}).semantic_baseline||{},semanticEvidence=semanticBaseline.capability_evidence||{};
   const knownGood=Object.values(semanticEvidence).filter(item=>item&&item.conclusion==="confirmed").length;
   const checks=detail.diagnostic_checks||{},diff=detail.patch_diff||{},retention=data.retention||{},deploy=data.deploy||{},result=deploy.last_result||{};
@@ -471,11 +471,11 @@ function renderRoflDashboard(data){
       <article><span>현재 decoder</span><strong class="rofl-code">${esc(data.decoderFingerprint||"-")}</strong><small>마지막 상태 ${roflTime(current.updated_at)}</small></article>
       <article><span>이전 패치 회귀</span><strong>${esc(regression.status||"NOT_RUN")}</strong><small>${esc(regression.summary||"배포 gate에서 실행")}</small></article>
       <article><span>배포 후 안전 상태</span><strong>${halt?"SAFETY_HALT":esc((deploy.pending_completion||{}).outcome||"대기")}</strong><small>${esc(deploy.last_error||"감지된 오류 없음")}</small></article>
-      <article><span>v1.2 연구기</span><strong>${esc(research.status||"NOT_STARTED")}</strong><small>${Number(research.progress||0)}% · baseline ${Number(semanticBaseline.fixture_count||0)}개 · KNOWN_GOOD ${knownGood}개 · 운영 READY와 분리</small></article>
+      <article><span>v1.3 연구기</span><strong>${esc(research.status||"NOT_STARTED")}</strong><small>${Number(research.progress||0)}% · baseline ${Number(semanticBaseline.fixture_count||0)}개 · KNOWN_GOOD ${knownGood}개 · 운영 READY와 분리</small></article>
     </section>
     <section class="rofl-two-column">
       <article class="admin-work-panel rofl-capabilities"><div class="rofl-card-head"><div><small>CAPABILITY</small><h3>분석 기능 상태</h3></div><span>내부 상태를 운영자 문구와 함께 표시</span></div>${roflCapabilityGroup("정상",groups.normal,"normal")}${roflCapabilityGroup("검증 부족",groups.insufficient,"insufficient")}${roflCapabilityGroup("아직 지원 안 함",groups.unsupported,"unsupported")}</article>
-      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>CODEX HANDOFF</small><h3>Codex 전달 패키지</h3></div><span>${reportReady?"생성 완료":"준비 중"}</span></div><div class="rofl-report-info"><strong>${esc(String(research.handoff_path||report.zip_path||"").split(/[\\/]/).pop()||"아직 생성되지 않음")}</strong><span>build ${esc(current.build||"-")} · sequence ${Number(current.sequence||0)}</span><small>v1.2 연구 결과 또는 운영 decoder 진단 ZIP</small></div><button id="roflDownload" class="admin-primary" type="button" ${reportReady?"":"disabled"}>Codex 진단 ZIP 다운로드</button></article>
+      <article class="admin-work-panel"><div class="rofl-card-head"><div><small>CODEX HANDOFF</small><h3>Codex 전달 패키지</h3></div><span>${reportReady?"생성 완료":"준비 중"}</span></div><div class="rofl-report-info"><strong>${esc(String(research.handoff_path||report.zip_path||"").split(/[\\/]/).pop()||"아직 생성되지 않음")}</strong><span>build ${esc(current.build||"-")} · sequence ${Number(current.sequence||0)}</span><small>v1.3 연구 결과 또는 운영 decoder 진단 ZIP</small></div><button id="roflDownload" class="admin-primary" type="button" ${reportReady?"":"disabled"}>Codex 진단 ZIP 다운로드</button></article>
     </section>
     <section class="rofl-two-column rofl-gates">
       <article class="admin-work-panel"><div class="rofl-card-head"><div><small>검증 샘플</small><h3>현재 ${fixtureCount}개 / 최소 ${minimum}개</h3></div><strong>${needed?`추가로 ${needed}개 필요`:"최소 기준 충족"}</strong></div><p>${needed?"같은 패치 ROFL을 추가하면 자동으로 다시 검증합니다.":"샘플 수 기준을 충족했습니다. 각 분석 항목 결과를 확인하세요."}</p></article>

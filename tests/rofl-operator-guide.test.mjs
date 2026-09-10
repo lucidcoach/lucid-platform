@@ -13,5 +13,7 @@ for (const text of ["정상", "검증 부족", "아직 지원 안 함", "운영 
 assert.match(admin, /Math\.max\(0,minimum-fixtureCount\)/);
 assert.match(admin, /같은 패치 ROFL \$\{needed\}개 추가 업로드/);
 assert.match(admin, /production gate/);
+assert.match(admin, /researchV13\|\|data\.researchV12/);
+assert.match(admin, /v1\.3 연구기/);
 
 console.log("ROFL operator guidance checks passed");
