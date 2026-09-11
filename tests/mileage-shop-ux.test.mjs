@@ -26,6 +26,7 @@ assert.match(mileage, /admin\/invites\?page=/);
 assert.match(mileage, /const auditRows=.*userName/);
 assert.match(mileage, /const inviteRows=.*inviterName/);
 assert.match(mileage, /admin\/balances\?page=/);
+assert.match(mileage, /admin\/balances\?page=\$\{adminBalancePage\}&limit=5/);
 assert.match(mileage, /포인트 보유 현황/);
 assert.match(mileage, /newcomer_duo_match_count/);
 assert.match(app, /moreMenu\.contains\(event\.target\)/);
