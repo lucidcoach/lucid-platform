@@ -38,6 +38,22 @@ const TIER_ICON = {
   I: "iron.png",
 };
 
+function equippedTitleBadge(title) {
+  if (!title?.displayTitle) return "";
+  let icons = "";
+  if (title.iconSource === "custom" && title.customIconUrl) {
+    icons = `<img src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="">`;
+  } else if (title.iconSource === "champion") {
+    icons = (title.championNames || []).map((name) => {
+      const url = championIcon(name);
+      return url ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}">` : "";
+    }).join("");
+  } else if (title.iconSource === "emoji" && title.iconEmoji) {
+    icons = `<span>${escapeHtml(title.iconEmoji)}</span>`;
+  }
+  return `<div class="profile-equipped-title">${icons ? `<i>${icons}</i>` : ""}<b>${escapeHtml(title.displayTitle)}</b></div>`;
+}
+
 function tierIcon(tier = "") {
   const key = String(tier || "").match(/^(GM|[CMDEP G S B I])/i)?.[1]?.replaceAll(" ", "").toUpperCase()
     || String(tier || "").match(/^(GM|[CMDEPGSBI])/i)?.[1]?.toUpperCase()
@@ -346,7 +362,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${scrimIcon}</span><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${scrimIcon}</span><div class="profile-identity-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${equippedTitleBadge(p.equippedTitle)}</div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
