@@ -7,7 +7,7 @@ import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260911tit
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260910metrics1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260911ranking1";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260911titleicon1";
-import { renderMileage } from "./pages/mileage.js?v=20260911dryrun1";
+import { renderMileage } from "./pages/mileage.js?v=20260911shopux1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907oauth1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260911livemodal1";
@@ -232,6 +232,8 @@ function openCommunityAccount({push=true}={}) {
 }
 
 function bindEvents() {
+  const moreMenu=document.querySelector(".nav-more");
+  const closeMoreMenu=()=>{if(moreMenu)moreMenu.open=false;};
   $("playerSearchForm").addEventListener("submit",(event)=>{
     event.preventDefault();
     const query=$("playerSearchInput").value.trim();
@@ -250,6 +252,7 @@ function bindEvents() {
   });
   document.querySelectorAll(".nav-tab[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      closeMoreMenu();
       if (button.dataset.view === "recent") {
         goRecent();
       } else if (button.dataset.view === "analysis") {
@@ -299,6 +302,7 @@ function bindEvents() {
     });
   });
   document.addEventListener("click", (event) => {
+    if(moreMenu?.open&&!moreMenu.contains(event.target))closeMoreMenu();
     const personalExpand = event.target.closest(".personal-expand");
     if (personalExpand) {
       const card = personalExpand.closest(".personal-match");
@@ -360,6 +364,7 @@ function bindEvents() {
     if (!userId || !guildId) return;
     openPlayer(userId, guildId, { historyMode: "push" });
   });
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeMoreMenu();});
   window.addEventListener("lucid:open-account", () => openCommunityAccount());
   window.addEventListener("lucid:auth-changed", async (event) => {
     await syncAdminAccess();
@@ -373,7 +378,7 @@ function bindEvents() {
   });
   window.addEventListener("lucid:admin-denied", () => goRecent({push:false}));
   window.addEventListener("lucid:logged-out", () => goRecent());
-  window.addEventListener("popstate", (event) => applyRoute({ fromPop: true, routeState:event.state }));
+  window.addEventListener("popstate", (event) => {closeMoreMenu();applyRoute({ fromPop: true, routeState:event.state });});
   window.addEventListener("lucid:player-opened", (event) => rememberRecentSearch(event.detail));
   window.addEventListener("lucid:favorite-toggle", (event) => toggleFavorite(event.detail));
 }
