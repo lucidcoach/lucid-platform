@@ -1278,6 +1278,7 @@
   margin:0!important;
 }
 .profile-identity-copy{display:grid;gap:5px;min-width:0}.profile-equipped-title{display:flex;align-items:center;width:max-content;max-width:100%;gap:6px;padding:3px 8px;border:1px solid #34435b;border-radius:999px;background:#111b29;color:#b9c8dc;font-size:10px}.profile-equipped-title i{display:flex;align-items:center;gap:2px;font-style:normal}.profile-equipped-title img{width:19px;height:19px;border-radius:50%;object-fit:cover}.profile-equipped-title img+img{margin-left:-6px;border:1px solid #111b29}.profile-equipped-title b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-role-badges{display:flex;gap:5px;flex-wrap:wrap}.profile-role-badges span{display:inline-flex;align-items:center;width:max-content;padding:3px 8px;border:1px solid #35527a;border-radius:999px;background:#142238;color:#b9d7ff;font-size:10px;font-weight:800}.summoner-profile-icon.title-icon{width:48px;height:48px;object-fit:cover}
 .profile-refresh-above-name .profile-favorite-button{
   order:1!important;
   width:27px!important;

@@ -51,7 +51,28 @@ function equippedTitleBadge(title) {
   } else if (title.iconSource === "emoji" && title.iconEmoji) {
     icons = `<span>${escapeHtml(title.iconEmoji)}</span>`;
   }
-  return `<div class="profile-equipped-title">${icons ? `<i>${icons}</i>` : ""}<b>${escapeHtml(title.displayTitle)}</b></div>`;
+  const name = title.iconEmoji && String(title.displayTitle).startsWith(title.iconEmoji)
+    ? String(title.displayTitle).slice(String(title.iconEmoji).length).trim()
+    : title.displayTitle;
+  return `<div class="profile-equipped-title">${icons ? `<i>${icons}</i>` : ""}<b>${escapeHtml(name)}</b></div>`;
+}
+
+function roleBadges(rows = []) {
+  return rows.length ? `<div class="profile-role-badges">${rows.map((role) => `<span>${escapeHtml(role.icon || "")} ${escapeHtml(role.label || "")}</span>`).join("")}</div>` : "";
+}
+
+function titleProfileIcon(title, fallback) {
+  if (title?.iconSource === "custom" && title.customIconUrl) {
+    return `<img class="summoner-profile-icon title-icon" src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="${escapeHtml(title.displayTitle || "장착 칭호")}">`;
+  }
+  if (title?.iconSource === "champion" && title.championNames?.length) {
+    const url = championIcon(title.championNames[0]);
+    if (url) return `<img class="summoner-profile-icon title-icon" src="${escapeHtml(url)}" alt="${escapeHtml(title.championNames[0])}">`;
+  }
+  if (title?.iconSource === "emoji" && title.iconEmoji) {
+    return `<span class="summoner-profile-icon fallback title-icon" aria-label="${escapeHtml(title.displayTitle || "장착 칭호")}">${escapeHtml(title.iconEmoji)}</span>`;
+  }
+  return fallback;
 }
 
 function tierIcon(tier = "") {
@@ -356,13 +377,14 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     const scrimIcon = scrimIconUrl
       ? `<img class="summoner-profile-icon" src="${escapeHtml(scrimIconUrl)}" alt="내전 레벨 아이콘">`
       : `<span class="summoner-profile-icon fallback" aria-label="내전 레벨 아이콘">${escapeHtml(p.scrimIconEmoji || "🎮")}</span>`;
+    const profileIcon = titleProfileIcon(p.equippedTitle, scrimIcon);
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${scrimIcon}</span><div class="profile-identity-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${equippedTitleBadge(p.equippedTitle)}</div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${equippedTitleBadge(p.equippedTitle)}${roleBadges(p.roleBadges || [])}</div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
         <div class="profile-overview profile-overview-compact">
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>

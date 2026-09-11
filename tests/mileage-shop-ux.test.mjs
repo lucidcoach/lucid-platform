@@ -25,6 +25,9 @@ assert.match(mileage, /admin\/transactions\?page=/);
 assert.match(mileage, /admin\/invites\?page=/);
 assert.match(mileage, /const auditRows=.*userName/);
 assert.match(mileage, /const inviteRows=.*inviterName/);
+assert.match(mileage, /admin\/balances\?page=/);
+assert.match(mileage, /포인트 보유 현황/);
+assert.match(mileage, /newcomer_duo_match_count/);
 assert.match(app, /moreMenu\.contains\(event\.target\)/);
 assert.match(app, /event\.key==="Escape"/);
 
@@ -41,6 +44,7 @@ assert.match(context.ui.questRow({period:"daily",name:"내전 3판",conditions:{
 assert.match(context.ui.questRow({period:"daily",name:"최초 승리",conditions:{period:"daily",win_count:1},progress:{win_count:1},completed:true,rewarded:true,reward:20}),/1 \/ 1승 · 지급 완료/);
 assert.match(context.ui.questRow({period:"weekly",name:"10판",conditions:{period:"weekly",match_count:10},progress:{match_count:7},reward:50}),/7 \/ 10판/);
 assert.match(context.ui.questRow({period:"weekly",name:"20판",conditions:{period:"weekly",match_count:20},progress:{match_count:14},reward:50}),/14 \/ 20판/);
+assert.match(context.ui.questRow({period:"weekly",name:"신입 듀오",conditions:{period:"weekly",newcomer_duo_match_count:1},progress:{newcomer_duo_match_count:1},completed:true,rewarded:true,reward:50}),/1 \/ 1판 · 지급 완료/);
 assert.match(context.ui.questRow({period:"weekly",name:"설정 변경",conditions:{period:"weekly",match_count:7},progress:{match_count:1},reward:99}),/1 \/ 7판.*보상 99P/s);
 assert.match(context.ui.productCopy({effectType:"stats_reset",effectConfig:{scope:"top"}}).detail,/탑 표시 전적만.*티어\/MMR/);
 assert.match(context.ui.productCopy({effectType:"team_reroll"}).detail,/참가자·포지션·경기 방식은 유지/);

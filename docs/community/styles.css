@@ -1,17 +1,17 @@
-@import url("css/tokens.css?v=20260904l");
+@import url("css/tokens.css?v=20260911theme1");
 @import url("css/base.css?v=20260904l");
 @import url("css/layout.css?v=20260909convenience1");
 @import url("css/matches.css?v=20260907scoreboard1");
-@import url("css/profile.css?v=20260911titleicon1");
+@import url("css/profile.css?v=20260911titleicon2");
 @import url("css/states.css?v=20260904l");
 @import url("css/responsive.css?v=20260904l");
 
 @import url("css/analysis.css?v=20260906report6");
 
-@import url("css/auth.css?v=20260911mobileauth1");
+@import url("css/auth.css?v=20260911theme1");
 @import url("css/ranking.css?v=20260911tiercutoff1");
 
-@import url("css/admin.css?v=20260911titleicon1");
-@import url("css/mileage.css?v=20260911mileageux1");
+@import url("css/admin.css?v=20260911titleicon2");
+@import url("css/mileage.css?v=20260911mileageux2");
 @import url("css/current-games.css?v=20260911livemodal1");
 @import url("css/analysis-server.css?v=20260907ia1");

@@ -10,5 +10,9 @@ for (const text of ["이미지 편집", "이미지 제거", "customIconUrl", "ch
 assert.match(admin, /method:"DELETE"/);
 assert.match(profile, /equippedTitleBadge\(p\.equippedTitle\)/);
 assert.match(profile, /title\.iconSource === "champion"/);
+assert.match(profile, /titleProfileIcon\(p\.equippedTitle, scrimIcon\)/);
+assert.match(profile, /roleBadges\(p\.roleBadges \|\| \[\]\)/);
+assert.match(profile, /title\.iconSource === "custom"/);
+assert.match(profile, /String\(title\.displayTitle\)\.startsWith\(title\.iconEmoji\)/);
 
 console.log("title icon admin and profile checks passed");

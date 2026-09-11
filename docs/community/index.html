@@ -6,7 +6,8 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260911mileageux1">
+  <script>document.documentElement.dataset.theme=localStorage.getItem("coach-theme")||((matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light")</script>
+  <link rel="stylesheet" href="styles.css?v=20260911mileageux2">
 </head>
 <body>
   <header class="community-header">
@@ -36,6 +37,7 @@
         </details>
       </nav>
       <div class="community-auth-actions" aria-label="계정">
+        <button id="communityThemeBtn" class="community-auth-button theme" type="button" aria-label="화면 테마 변경"></button>
         <button id="communityLoginBtn" class="community-auth-button account" type="button">로그인</button>
         <button id="communityLinkBtn" class="community-auth-button discord" type="button">Discord로 연결</button>
         <button id="communityLogoutBtn" class="community-auth-button logout" type="button" hidden>로그아웃</button>
@@ -190,6 +192,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js?v=20260911mileageux1"></script>
+  <script type="module" src="js/app-report6.js?v=20260911mileageux2"></script>
 </body>
 </html>

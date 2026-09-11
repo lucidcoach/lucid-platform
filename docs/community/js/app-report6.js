@@ -3,11 +3,11 @@ import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260909convenience1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260911titleicon1";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260911titleicon2";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260910metrics1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260911ranking1";
-import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260911titleicon1";
-import { renderMileage } from "./pages/mileage.js?v=20260911mileageux1";
+import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260911titleicon2";
+import { renderMileage } from "./pages/mileage.js?v=20260911mileageux2";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260911mobileauth1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260911livemodal1";
@@ -17,6 +17,14 @@ const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
 const FAVORITE_SEARCH_KEY = "lucid-community-favorite-searches-v1";
 const RECENT_SEARCH_LIMIT = 8;
 const FAVORITE_SEARCH_LIMIT = 12;
+const THEME_KEY = "coach-theme";
+
+function applyTheme(theme){
+  const next=theme==="dark"?"dark":"light",button=$("communityThemeBtn");
+  document.documentElement.dataset.theme=next;
+  localStorage.setItem(THEME_KEY,next);
+  if(button){button.textContent=next==="dark"?"☀ 기본모드":"🌙 다크모드";button.setAttribute("aria-pressed",String(next==="dark"));}
+}
 
 function renderCommunitySupport(){
   const root=$("communitySupportRoot");if(!root)return;
@@ -232,6 +240,8 @@ function openCommunityAccount({push=true}={}) {
 }
 
 function bindEvents() {
+  applyTheme(document.documentElement.dataset.theme);
+  $("communityThemeBtn")?.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
   const moreMenu=document.querySelector(".nav-more");
   const closeMoreMenu=()=>{if(moreMenu)moreMenu.open=false;};
   $("playerSearchForm").addEventListener("submit",(event)=>{
