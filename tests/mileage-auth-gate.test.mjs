@@ -7,6 +7,6 @@ assert.match(source, /const linked=Boolean\(user\?\.discordConnected/);
 assert.match(source, /if\(!linked\).*상품을 보려면 로그인 및 디스코드 연동이 필요합니다\./s);
 assert.match(source, /최근 7일 획득 범위/);
 assert.match(source, /weeklyEarnedMin/);
-assert.match(entry, /pages\/mileage\.js\?v=20260911trend1/);
+assert.match(entry, /pages\/mileage\.js\?v=20260911level1/);
 
 console.log("mileage auth gate checks passed");

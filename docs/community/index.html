@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260911level1">
+  <link rel="stylesheet" href="styles.css?v=20260911tiercutoff1">
 </head>
 <body>
   <header class="community-header">
@@ -112,7 +112,10 @@
     <section id="rankingView" class="content-view">
       <div class="section-heading ranking-heading">
         <div><p class="section-kicker">LEADERBOARD</p><h1>내전 랭킹</h1></div>
-        <div><small id="rankingRefreshStatus" role="status" aria-live="polite"></small> <button class="ghost-button" id="refreshRankingsBtn" type="button" hidden>랭킹 갱신</button></div>
+        <div class="ranking-heading-actions">
+          <small class="ranking-tier-cutoffs" aria-label="그랜드마스터 400점 이상, 챌린저 800점 이상">GM : 400점 ↑ · 챌린저 : 800점 ↑</small>
+          <div><small id="rankingRefreshStatus" role="status" aria-live="polite"></small> <button class="ghost-button" id="refreshRankingsBtn" type="button" hidden>랭킹 갱신</button></div>
+        </div>
       </div>
       <div class="ranking-filters" role="group" aria-label="랭킹 종류">
         <button class="ranking-kind active" type="button" data-ranking-kind="mmr">티어</button>
