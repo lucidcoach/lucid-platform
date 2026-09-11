@@ -50,6 +50,12 @@ export async function fetchCoachingCoupons(productId) {
   });
 }
 
+export function previewTestCoachingCoupon(testPurchaseId, productId) {
+  return requestJson(`/api/coaching/test-coupons/${encodeURIComponent(testPurchaseId)}/use-preview`, {
+    method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId }),
+  });
+}
+
 export function filterReservations(bookings, status, query) {
   return bookings.filter((booking) => {
     const statusMatches = status === "all" || booking.status === status;

@@ -1,6 +1,6 @@
 import { categories, filterSets, purposes, text, tierRank, state } from "../catalog.js";
 import { fetchCoachAvailability, fetchCoachReviews } from "../coachService.js";
-import { buildReservationPayload, fetchCoachingCoupons, submitReservation } from "../reservations.js?v=20260911coupon1";
+import { buildReservationPayload, fetchCoachingCoupons, previewTestCoachingCoupon, submitReservation } from "../reservations.js?v=20260911dryrun1";
 import { addLocalDays, byId as $, escapeHtml, formatDateTime, isoDateOnly } from "../utils.js";
 
 export function createMarketPage({
@@ -761,7 +761,7 @@ function mountBookingForm(mountId, coach) {
       const preferred = new URL(window.location.href).searchParams.get("coupon") || "";
       coupons.forEach((coupon) => select.insertAdjacentHTML(
         "beforeend",
-        `<option value="${escapeHtml(coupon.id)}" data-discount="${Number(coupon.discountKrw || 0)}">${escapeHtml(coupon.itemIcon || "🎟️")} ${escapeHtml(coupon.itemName)} · ${Number(coupon.finalAmount || 0).toLocaleString("ko-KR")}원 결제</option>`,
+        `<option value="${escapeHtml(coupon.id)}" data-discount="${Number(coupon.discountKrw || 0)}" data-test="${coupon.isTest?"1":"0"}">${coupon.isTest?"[TEST] ":""}${escapeHtml(coupon.itemIcon || "🎟️")} ${escapeHtml(coupon.itemName)} · ${Number(coupon.finalAmount || 0).toLocaleString("ko-KR")}원 ${coupon.isTest?"예상":"결제"}</option>`,
       ));
       if ([...select.options].some((option) => option.value === preferred)) select.value = preferred;
       const updatePrice = () => {
@@ -803,12 +803,18 @@ function mountBookingForm(mountId, coach) {
       event.target.reportValidity();
       return;
     }
+    const selectedCoupon=event.target.elements.couponPurchaseId?.selectedOptions?.[0];
     const originalText = submitButton.textContent;
     submitButton.disabled = true;
-    submitButton.textContent = "예약 전송 중";
+    submitButton.textContent = selectedCoupon?.dataset.test==="1"?"TEST 계산 중":"예약 전송 중";
     const reservation = buildReservationPayload(coach, new FormData(event.target));
 
     try {
+      if(selectedCoupon?.dataset.test==="1"){
+        const {result}=await previewTestCoachingCoupon(selectedCoupon.value,coach.id);
+        alert(`TEST 쿠폰 사용 요청 생성\n할인 ${Number(result.discountKrw||0).toLocaleString("ko-KR")}원 · 예상 결제 ${Number(result.finalAmount||0).toLocaleString("ko-KR")}원\n관리자 TEST 보관함에서 처리할 수 있습니다. 실제 예약·결제·포인트는 변경되지 않았습니다.`);
+        return;
+      }
       const savedReservation = await submitReservation(reservation);
       if (!savedReservation.id) throw new Error("생성된 구매 정보를 확인하지 못했습니다.");
       await startTossPayment(savedReservation.id, submitButton);

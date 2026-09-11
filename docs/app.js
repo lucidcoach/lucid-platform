@@ -90,7 +90,7 @@ import {
   parseReservationPrice,
   splitCsv,
 } from "./js/utils.js";
-import { createMarketPage } from "./js/pages/market.js?v=20260911coupon1";
+import { createMarketPage } from "./js/pages/market.js?v=20260911dryrun1";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
 import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911coupon1";
 import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260907accountfix1";
