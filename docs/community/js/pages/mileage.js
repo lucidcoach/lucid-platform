@@ -8,7 +8,7 @@ let selectedGuild="";
 let availableGuilds=[];
 
 async function request(path,{method="GET",body}={}){
-  const response=await fetch(apiUrl(path),{method,credentials:"include",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
+  const response=await fetch(apiUrl(path),{method,credentials:"include",cache:"no-store",headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.ok) throw new Error(data.error||"요청에 실패했습니다.");
   return data;

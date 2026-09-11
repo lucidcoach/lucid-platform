@@ -12,6 +12,7 @@ assert.match(source, /듀오게임 보상/);
 assert.doesNotMatch(source, /동반게임 최소 시간/);
 assert.match(source, /scrim_xp_per_match/);
 assert.match(source, /duo_match_count/);
-assert.match(entry, /pages\/mileage\.js\?v=20260911economy2/);
+assert.match(source, /cache:"no-store"/);
+assert.match(entry, /pages\/mileage\.js\?v=20260911shop1/);
 
 console.log("mileage auth gate checks passed");
