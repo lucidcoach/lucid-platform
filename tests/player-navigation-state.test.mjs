@@ -9,8 +9,9 @@ assert.match(app, /filter\.dispatchEvent\(new Event\("input"\)\)/);
 assert.match(app, /window\.scrollTo\(0, Number\(saved\.scrollY \|\| 0\)\)/);
 assert.match(app, /routeState:event\.state/);
 assert.match(player, /data-rank-switch="riot"/);
-assert.match(player, /official-rank-panel"\$\{switchable \? " hidden"/);
-assert.match(player, /internal\.hidden = showRiot/);
-assert.match(player, /riot\.hidden = !showRiot/);
+assert.match(player, /profile-rank-switcher-body/);
+assert.match(player, /data-rank-switch-title/);
+assert.match(player, /panel\.hidden=panel\.dataset\.rankPanel/);
+assert.match(player, /button\.dataset\.rankSwitch=showRiot\?"internal":"riot"/);
 
 console.log("player navigation state checks passed");

@@ -68,14 +68,14 @@ function roleDelta(row = {}) {
   return `<span class="role-tier-delta ${up ? "up" : "down"}">${up ? "▲" : "▼"}${Math.abs(Math.round(delta))}점</span>`;
 }
 
-function roleTierBoard(rows = [], switchable = false) {
+function roleTierBoard(rows = [], embedded = false) {
   const roles = ["탑", "정글", "미드", "원딜", "서폿"];
   const list = Array.isArray(rows)
     ? rows
     : Object.entries(rows || {}).map(([role, value]) => ({ role, ...(value && typeof value === "object" ? value : { tier:value }) }));
   const byRole = new Map(list.map((row) => [normalizeRoleKey(row?.role || row?.position || row?.lane), row]));
-  return `<section class="role-tier-board role-tier-compact" aria-label="라인별 내전 티어">
-    <div class="profile-section-title"><strong>라인별 내전 티어</strong>${switchable ? `<button class="profile-favorite-button" style="margin-left:auto" type="button" data-rank-switch="riot" aria-label="Riot 공식 랭크 보기" title="Riot 공식 랭크 보기">⇄</button>` : ""}</div>
+  return `<${embedded?"div":"section"} class="role-tier-board role-tier-compact" aria-label="라인별 내전 티어">
+    ${embedded?"":`<div class="profile-section-title"><strong>라인별 내전 티어</strong></div>`}
     <div class="role-tier-list">${roles.map((role) => {
       const row = byRole.get(role) || { role, tier: "미배치", wins: 0, losses: 0 };
       const tier = String(row?.tier || row?.tierName || row?.rank || "").trim();
@@ -97,7 +97,7 @@ function roleTierBoard(rows = [], switchable = false) {
         </span>
       </div>`;
     }).join("")}</div>
-  </section>`;
+  </${embedded?"div":"section"}>`;
 }
 
 function championRow(row) {
@@ -273,22 +273,31 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
   }));
 }
 
-function officialRanksPanel(rows = [], switchable = false) {
+function officialRanksPanel(rows = [], embedded = false) {
   const labels = {RANKED_SOLO_5x5:"솔로랭크", RANKED_FLEX_SR:"자유랭크"};
   const visible = rows.filter((row) => row.tier);
   if (!visible.length) return "";
-  return `<section class="official-rank-panel"${switchable ? " hidden" : ""}><div class="profile-section-title"><strong>Riot 공식 랭크</strong>${switchable ? `<button class="profile-favorite-button" style="margin-left:auto" type="button" data-rank-switch="internal" aria-label="라인별 내전 티어 보기" title="라인별 내전 티어 보기">⇄</button>` : ""}</div><div class="official-rank-list">${visible.map((row) => `<div><span>${escapeHtml(labels[row.queueType] || row.queueType)}${Number(row.accountSlot) > 0 ? ` · 부계정 ${Number(row.accountSlot)}` : ""}</span><strong>${escapeHtml(`${row.tier} ${row.rank}`)} ${Number(row.leaguePoints || 0)} LP</strong><small>${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패</small></div>`).join("")}</div></section>`;
+  return `<${embedded?"div":"section"} class="official-rank-panel">${embedded?"":`<div class="profile-section-title"><strong>Riot 공식 랭크</strong></div>`}<div class="official-rank-list">${visible.map((row) => `<div><span>${escapeHtml(labels[row.queueType] || row.queueType)}${Number(row.accountSlot) > 0 ? ` · 부계정 ${Number(row.accountSlot)}` : ""}</span><strong>${escapeHtml(`${row.tier} ${row.rank}`)} ${Number(row.leaguePoints || 0)} LP</strong><small>${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패</small></div>`).join("")}</div></${embedded?"div":"section"}>`;
+}
+
+function profileRanksPanel(roleRows = [], officialRows = []) {
+  const official = officialRanksPanel(officialRows, true);
+  if (!official) return roleTierBoard(roleRows);
+  return `<section class="profile-rank-switcher"><div class="profile-section-title"><strong data-rank-switch-title>라인별 내전 티어</strong><button class="profile-favorite-button" style="margin-left:auto" type="button" data-rank-switch="riot" aria-label="Riot 공식 랭크 보기" title="Riot 공식 랭크 보기">⇄</button></div><div class="profile-rank-switcher-body"><div data-rank-panel="internal">${roleTierBoard(roleRows,true)}</div><div data-rank-panel="riot" hidden>${official}</div></div></section>`;
 }
 
 function bindRankSwitch(target) {
-  const internal = target.querySelector(".role-tier-board");
-  const riot = target.querySelector(".official-rank-panel");
-  if (!internal || !riot) return;
-  target.querySelectorAll("[data-rank-switch]").forEach((button) => button.addEventListener("click", () => {
+  const button = target.querySelector("[data-rank-switch]");
+  const title = target.querySelector("[data-rank-switch-title]");
+  if (!button || !title) return;
+  button.addEventListener("click", () => {
     const showRiot = button.dataset.rankSwitch === "riot";
-    internal.hidden = showRiot;
-    riot.hidden = !showRiot;
-  }));
+    target.querySelectorAll("[data-rank-panel]").forEach(panel=>{panel.hidden=panel.dataset.rankPanel!==(showRiot?"riot":"internal");});
+    title.textContent=showRiot?"Riot 공식 랭크":"라인별 내전 티어";
+    button.dataset.rankSwitch=showRiot?"internal":"riot";
+    button.title=showRiot?"라인별 내전 티어 보기":"Riot 공식 랭크 보기";
+    button.setAttribute("aria-label",button.title);
+  });
 }
 
 function bindReplayDownloads(target) {
@@ -333,7 +342,6 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       : `<span class="summoner-profile-icon fallback" aria-label="내전 레벨 아이콘">${escapeHtml(p.scrimIconEmoji || "🎮")}</span>`;
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
-    const officialRanks = officialRanksPanel(data.publicRanks || [], true);
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
@@ -343,8 +351,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
           <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
           <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
         </div>
-        ${roleTierBoard(p.roleTiers || [], Boolean(officialRanks))}
-        ${officialRanks}
+        ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
       </div>
       <div class="profile-champion-panel">
         ${championStatsPanel(p.championStats || {})}
