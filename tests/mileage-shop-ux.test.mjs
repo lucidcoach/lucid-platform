@@ -7,6 +7,7 @@ for (const value of ["feedback", "reset", "cosmetic", "shortDescription", "linke
 assert.match(mileage, /data-item-detail/);
 assert.match(mileage, /💰 포인트 획득 방법/);
 assert.match(mileage, /earningGuideDialog/);
+assert.doesNotMatch(mileage, /esc\(q\.description\)/);
 assert.match(mileage, /admin\/transactions\?page=/);
 assert.match(mileage, /admin\/invites\?page=/);
 assert.match(mileage, /const auditRows=.*userName/);
