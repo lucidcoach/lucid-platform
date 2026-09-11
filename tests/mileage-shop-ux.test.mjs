@@ -1,18 +1,48 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import vm from "node:vm";
 
 const mileage = readFileSync(new URL("../docs/community/js/pages/mileage.js", import.meta.url), "utf8");
+const mileageCss = readFileSync(new URL("../docs/community/css/mileage.css", import.meta.url), "utf8");
 const app = readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8");
 for (const value of ["feedback", "reset", "cosmetic", "shortDescription", "linkedPageUrl"]) assert.match(mileage, new RegExp(value));
 assert.match(mileage, /data-item-detail/);
 assert.match(mileage, /💰 포인트 획득 방법/);
 assert.match(mileage, /earningGuideDialog/);
 assert.doesNotMatch(mileage, /esc\(q\.description\)/);
+assert.doesNotMatch(mileage, /재고 \$\{item\.stock\?\?"무제한"\}/);
+assert.match(mileage, /item\.stock==null\?"":`재고/);
+assert.match(mileage, /포인트 내역 · 총/);
+assert.match(mileage, /서버원과 함께 게임 · 이번 주/);
+assert.match(mileage, /q\.progress/);
+assert.match(mileage, /q\.completed/);
+assert.match(mileage, /q\.rewarded/);
+assert.match(mileage, /승\/패·챔피언 승률 초기화 · 티어 유지/);
+assert.match(mileage, /현재 큐는 유지하고 팀 구성만 다시 편성합니다/);
+assert.match(mileageCss, /\.mileage-short-description\{[^}]*white-space:normal/);
+assert.match(mileageCss, /@media\(max-width:600px\).*\.mileage-quest-row\{overflow-wrap:anywhere\}/s);
 assert.match(mileage, /admin\/transactions\?page=/);
 assert.match(mileage, /admin\/invites\?page=/);
 assert.match(mileage, /const auditRows=.*userName/);
 assert.match(mileage, /const inviteRows=.*inviterName/);
 assert.match(app, /moreMenu\.contains\(event\.target\)/);
 assert.match(app, /event\.key==="Escape"/);
+
+const context={};
+vm.runInNewContext(`${mileage.replace(/^import .*$/gm,"").replace("export async function renderMileage","async function renderMileage")}\nglobalThis.ui={stockText,productCopy,capRow,questRow};`,context);
+assert.equal(context.ui.stockText({stock:null}),"");
+assert.equal(context.ui.stockText({stock:5}),"재고 5개");
+assert.match(context.ui.capRow("기본 활동 · 오늘",0,100),/0 \/ 100P.*<progress/s);
+assert.match(context.ui.capRow("기본 활동 · 이번 주",140,700),/140 \/ 700P/);
+assert.match(context.ui.capRow("서버원과 함께 게임 · 이번 주",0,0),/상한 없음/);
+assert.match(context.ui.questRow({period:"daily",name:"내전 3판",conditions:{period:"daily",match_count:3},progress:{match_count:0},reward:30}),/0 \/ 3판/);
+assert.match(context.ui.questRow({period:"daily",name:"내전 3판",conditions:{period:"daily",match_count:3},progress:{match_count:2},reward:30}),/2 \/ 3판/);
+assert.match(context.ui.questRow({period:"daily",name:"내전 3판",conditions:{period:"daily",match_count:3},progress:{match_count:3},completed:true,rewarded:true,reward:30}),/3 \/ 3판 · 지급 완료/);
+assert.match(context.ui.questRow({period:"daily",name:"최초 승리",conditions:{period:"daily",win_count:1},progress:{win_count:1},completed:true,rewarded:true,reward:20}),/1 \/ 1승 · 지급 완료/);
+assert.match(context.ui.questRow({period:"weekly",name:"10판",conditions:{period:"weekly",match_count:10},progress:{match_count:7},reward:50}),/7 \/ 10판/);
+assert.match(context.ui.questRow({period:"weekly",name:"20판",conditions:{period:"weekly",match_count:20},progress:{match_count:14},reward:50}),/14 \/ 20판/);
+assert.match(context.ui.questRow({period:"weekly",name:"설정 변경",conditions:{period:"weekly",match_count:7},progress:{match_count:1},reward:99}),/1 \/ 7판.*보상 99P/s);
+assert.match(context.ui.productCopy({effectType:"stats_reset",effectConfig:{scope:"top"}}).detail,/탑 표시 전적만.*티어\/MMR/);
+assert.match(context.ui.productCopy({effectType:"team_reroll"}).detail,/참가자·포지션·경기 방식은 유지/);
 
 console.log("mileage shop UX checks passed");
