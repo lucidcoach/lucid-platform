@@ -1,5 +1,5 @@
 import { apiGet, apiPost } from "../api.js?v=20260911ranking1";
-import { getCurrentUser, isCommunityAdmin, isCommunityServerAdmin } from "../auth.js?v=20260907oauth1";
+import { getCurrentUser, isCommunityAdmin, isCommunityServerAdmin } from "../auth.js?v=20260911authsingleton1";
 import { $, escapeHtml, tierClass, tierLeaguePoints } from "../utils.js?v=20260905ai";
 import { renderLoading } from "../view.js?v=20260904r";
 

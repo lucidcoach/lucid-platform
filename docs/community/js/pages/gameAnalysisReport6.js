@@ -2,7 +2,7 @@ import { apiGet } from "../api.js?v=20260907permissions1";
 import { championIcon } from "../assets.js?v=20260907analysis1";
 import { $, escapeHtml, relativeTime } from "../utils.js?v=20260907analysis1";
 import { switchView } from "../view.js?v=20260907analysis1";
-import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260907oauth1";
+import { canAnalyzePlayer, getAnalysisIdentity, canAnalyzeAllPlayers, isCommunityAdmin, isCommunityCoach, getCurrentUser } from "../auth.js?v=20260911authsingleton1";
 
 const ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
 const ROLE_METRICS = {

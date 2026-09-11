@@ -5,7 +5,7 @@ import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints,
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260911public1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
-import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260907oauth1";
+import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260911authsingleton1";
 
 
 function updateUrl(params, mode = "push") {

@@ -4,6 +4,12 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../docs/community/js/pages/mileage.js", import.meta.url), "utf8");
 const entry = readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8");
 const page = readFileSync(new URL("../docs/community/index.html", import.meta.url), "utf8");
+const authConsumers = [
+  entry,
+  ...["communityAdmin", "mileage", "playerSearch", "ranking", "gameAnalysisReport6"]
+    .map((name) => readFileSync(new URL(`../docs/community/js/pages/${name}.js`, import.meta.url), "utf8")),
+];
+for (const consumer of authConsumers) assert.match(consumer, /auth\.js\?v=20260911authsingleton1/);
 assert.match(source, /const linked=Boolean\(user\?\.discordConnected/);
 assert.match(source, /if\(!linked\).*상품을 보려면 로그인 및 디스코드 연동이 필요합니다\./s);
 assert.match(source, /최근 7일 획득 범위/);
@@ -33,8 +39,8 @@ assert.match(source, /data-use-item/);
 assert.match(source, /wallet\?page=\$\{transactionPage\}&limit=5/);
 assert.match(source, /transactionPagination/);
 assert.match(source, /mileageTransactionPager/);
-assert.match(entry, /pages\/mileage\.js\?v=20260911mileageux2/);
+assert.match(entry, /pages\/mileage\.js\?v=20260911authsingleton1/);
 assert.match(page, /styles\.css\?v=20260911mileageux2/);
-assert.match(page, /app-report6\.js\?v=20260911mileageux2/);
+assert.match(page, /app-report6\.js\?v=20260911authsingleton1/);
 
 console.log("mileage auth gate checks passed");
