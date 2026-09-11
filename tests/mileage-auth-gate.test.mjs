@@ -13,6 +13,9 @@ assert.doesNotMatch(source, /동반게임 최소 시간/);
 assert.match(source, /scrim_xp_per_match/);
 assert.match(source, /duo_match_count/);
 assert.match(source, /cache:"no-store"/);
-assert.match(entry, /pages\/mileage\.js\?v=20260911shop1/);
+assert.match(source, /과거 내전 소급 허용/);
+assert.match(source, /admin\/backfill\/preview/);
+assert.match(source, /이미 지급된 포인트는 다시 지급되지 않습니다/);
+assert.match(entry, /pages\/mileage\.js\?v=20260911backfill1/);
 
 console.log("mileage auth gate checks passed");
