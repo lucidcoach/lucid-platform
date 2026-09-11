@@ -95,11 +95,15 @@ async function loadCurrentUser(){
   return currentUser;
 }
 
-function openModal(){ document.getElementById("communityAuthModal")?.removeAttribute("hidden"); }
+function openModal(){
+  const modal=document.getElementById("communityAuthModal");
+  modal?.removeAttribute("hidden");
+  requestAnimationFrame(()=>modal?.querySelector('[data-community-oauth="discord"]')?.focus());
+}
 function closeModal(){ document.getElementById("communityAuthModal")?.setAttribute("hidden",""); }
 function startOAuth(provider){
   const start=new URL(apiUrl(`/api/auth/oauth/${provider}/start`));
-  start.searchParams.set("returnTo",`${window.location.origin}${window.location.pathname}`);
+  start.searchParams.set("returnTo",window.location.href);
   window.location.assign(start.toString());
 }
 
@@ -127,6 +131,7 @@ export async function initCommunityAuth(){
   const form=document.getElementById("communityAuthForm");
   document.getElementById("communityAuthClose")?.addEventListener("click",closeModal);
   document.getElementById("communityAuthModal")?.addEventListener("click",e=>{ if(e.target?.id==="communityAuthModal") closeModal(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
   loginBtn?.addEventListener("click",()=>{ if(currentUser) window.dispatchEvent(new CustomEvent("lucid:open-account")); else openModal(); });
   discordBtn?.addEventListener("click",()=>{
     const connected=Boolean(currentUser?.discordConnected||currentUser?.discord_connected||currentUser?.discordDisplayName||currentUser?.discord_display_name);

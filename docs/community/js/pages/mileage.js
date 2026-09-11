@@ -214,7 +214,11 @@ export async function renderMileage({rootId="mileageRoot",initialGuild="",manage
   const root=document.getElementById(rootId);if(!root)return;
   const user=getCurrentUser();
   const linked=Boolean(user?.discordConnected||user?.discord_connected||user?.discordDisplayName||user?.discord_display_name);
-  if(!linked){root.innerHTML=`<section class="mileage-card"><h2>상품을 보려면 로그인 및 디스코드 연동이 필요합니다.</h2></section>`;return;}
+  if(!linked){
+    root.innerHTML=`<section class="mileage-card mileage-auth-gate"><h2>상품을 보려면 로그인 및 디스코드 연동이 필요합니다.</h2><p class="mileage-muted">Discord 계정을 연동하면 포인트와 상품을 확인할 수 있습니다.</p><button class="mileage-action" type="button" data-mileage-discord-login>Discord로 로그인</button></section>`;
+    root.querySelector("[data-mileage-discord-login]")?.addEventListener("click",()=>document.getElementById("communityLinkBtn")?.click());
+    return;
+  }
   try{
     const data=await request("/api/mileage/guilds");let guilds=data.guilds||[];
     if(managersOnly)guilds=guilds.filter(g=>g.canManage);

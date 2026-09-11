@@ -7,8 +7,8 @@ import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260911tit
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260910metrics1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260911ranking1";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260911titleicon1";
-import { renderMileage } from "./pages/mileage.js?v=20260911quest2";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260907oauth1";
+import { renderMileage } from "./pages/mileage.js?v=20260911mobileauth1";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260911mobileauth1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260911livemodal1";
 

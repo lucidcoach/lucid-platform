@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#080b11">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
-  <link rel="stylesheet" href="styles.css?v=20260911shopux1">
+  <link rel="stylesheet" href="styles.css?v=20260911mobileauth1">
 </head>
 <body>
   <header class="community-header">
@@ -172,15 +172,15 @@
       <h2 id="communityAuthTitle">로그인</h2>
       <p>강의 사이트와 같은 계정을 사용합니다.</p>
       <form id="communityAuthForm">
+        <div class="community-social-auth" aria-label="소셜 로그인">
+          <button class="discord" type="button" data-community-oauth="discord"><img src="../assets/discord-login.png" alt=""><span>Discord로 로그인</span></button>
+          <button class="google" type="button" data-community-oauth="google"><img src="../assets/google-logo.jpg" alt=""><span>Google로 계속하기</span></button>
+          <button class="naver" type="button" data-community-oauth="naver"><img src="../assets/naver.jpg" alt=""><span>Naver로 계속하기</span></button>
+        </div>
+        <div class="community-auth-divider"><span>또는 이메일로</span></div>
         <label>이메일<input name="email" type="email" autocomplete="email" required></label>
         <label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label>
         <button type="submit">로그인</button>
-        <div class="community-auth-divider"><span>또는 소셜 계정으로</span></div>
-        <div class="community-social-auth" aria-label="소셜 로그인">
-          <button class="google" type="button" data-community-oauth="google"><img src="../assets/google-logo.jpg" alt=""><span>Google로 계속하기</span></button>
-          <button class="naver" type="button" data-community-oauth="naver"><img src="../assets/naver.jpg" alt=""><span>Naver로 계속하기</span></button>
-          <button class="discord" type="button" data-community-oauth="discord"><img src="../assets/discord-login.png" alt=""><span>Discord로 계속하기</span></button>
-        </div>
         <span id="communityAuthStatus"></span>
       </form>
     </div>
@@ -190,6 +190,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js?v=20260911quest2"></script>
+  <script type="module" src="js/app-report6.js?v=20260911mobileauth1"></script>
 </body>
 </html>
