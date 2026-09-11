@@ -11,7 +11,8 @@ assert.match(admin, /method:"DELETE"/);
 assert.match(profile, /equippedTitleBadge\(p\.equippedTitle\)/);
 assert.match(profile, /title\.iconSource === "champion"/);
 assert.match(profile, /titleProfileIcon\(p\.equippedTitle, scrimIcon\)/);
-assert.match(profile, /roleBadges\(p\.roleBadges \|\| \[\]\)/);
+assert.match(profile, /roleBadges\(p\.roleBadges \|\| \[\], p\.equippedTitle\)/);
+assert.match(profile, /String\(role\.label \|\| ""\)\.trim\(\) !== titleName/);
 assert.match(profile, /title\.iconSource === "custom"/);
 assert.match(profile, /String\(title\.displayTitle\)\.startsWith\(title\.iconEmoji\)/);
 
