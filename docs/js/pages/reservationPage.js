@@ -22,7 +22,7 @@ import {
   renderStatusOptions,
   updateRefundRequest,
   updateReservationStatus,
-} from "../reservations.js";
+} from "../reservations.js?v=20260911coupon1";
 import { byId as $, escapeHtml, formatDateTime } from "../utils.js";
 import { fetchAdminSettlements, reconcileAdminPayment, updateAdminSettlement } from "../admin.js";
 
@@ -107,8 +107,8 @@ async function submitReservationReview(reservationId, form) {
 }
 
 async function startTossPayment(reservationId, button) {
-  if (!state.currentUser || typeof window.TossPayments !== "function") {
-    alert("결제 모듈을 불러오지 못했습니다. 페이지를 새로고침해주세요.");
+  if (!state.currentUser) {
+    alert("로그인이 필요합니다.");
     return;
   }
   const originalText = button.textContent;
@@ -117,6 +117,14 @@ async function startTossPayment(reservationId, button) {
   try {
     const result = await createPaymentOrder(reservationId);
     const order = result.order || {};
+    if (order.status === "PAID" || Number(order.amount) === 0) {
+      state.activeView = "student";
+      state.studentReservationLoadState = "idle";
+      await loadStudentReservations();
+      alert("쿠폰 사용이 완료되어 추가 결제 없이 신청되었습니다.");
+      return;
+    }
+    if (typeof window.TossPayments !== "function") throw new Error("결제 모듈을 불러오지 못했습니다. 페이지를 새로고침해주세요.");
     const returnUrl = new URL(window.location.href);
     ["payment", "paymentKey", "orderId", "amount", "code", "message"].forEach((key) => returnUrl.searchParams.delete(key));
     returnUrl.hash = "";

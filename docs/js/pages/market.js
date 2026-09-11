@@ -1,6 +1,6 @@
 import { categories, filterSets, purposes, text, tierRank, state } from "../catalog.js";
 import { fetchCoachAvailability, fetchCoachReviews } from "../coachService.js";
-import { buildReservationPayload, submitReservation } from "../reservations.js";
+import { buildReservationPayload, fetchCoachingCoupons, submitReservation } from "../reservations.js?v=20260911coupon1";
 import { addLocalDays, byId as $, escapeHtml, formatDateTime, isoDateOnly } from "../utils.js";
 
 export function createMarketPage({
@@ -734,6 +734,12 @@ function mountBookingForm(mountId, coach) {
   if (!mount) return;
   const form = $("bookingFormTemplate").content.cloneNode(true);
   mount.appendChild(form);
+  const bookingForm = $("bookingForm");
+  const submitButton = $("bookingSubmitBtn");
+  const couponField = document.createElement("label");
+  couponField.className = "wide";
+  couponField.innerHTML = '<span>사용 가능한 쿠폰</span><select name="couponPurchaseId"><option value="">쿠폰 없이 결제</option></select><small data-coupon-price></small>';
+  submitButton.before(couponField);
   $("bookingContactLabel").textContent = text.bookingContactLabel;
   $("bookingTimeLabel").textContent = text.bookingTimeLabel;
   $("bookingMemoLabel").textContent = text.bookingMemoLabel;
@@ -750,6 +756,23 @@ function mountBookingForm(mountId, coach) {
       studentAuto.textContent = `수강생 닉네임 · ${displayName}`;
     }
     $("bookingForm").contact.value = state.currentUser.email || "";
+    fetchCoachingCoupons(coach.id).then(({ coupons = [], originalAmount = 0 }) => {
+      const select = bookingForm.elements.couponPurchaseId;
+      const preferred = new URL(window.location.href).searchParams.get("coupon") || "";
+      coupons.forEach((coupon) => select.insertAdjacentHTML(
+        "beforeend",
+        `<option value="${escapeHtml(coupon.id)}" data-discount="${Number(coupon.discountKrw || 0)}">${escapeHtml(coupon.itemIcon || "🎟️")} ${escapeHtml(coupon.itemName)} · ${Number(coupon.finalAmount || 0).toLocaleString("ko-KR")}원 결제</option>`,
+      ));
+      if ([...select.options].some((option) => option.value === preferred)) select.value = preferred;
+      const updatePrice = () => {
+        const discount = Number(select.selectedOptions[0]?.dataset.discount || 0);
+        couponField.querySelector("[data-coupon-price]").textContent = discount
+          ? `${Number(originalAmount).toLocaleString("ko-KR")}원 - ${discount.toLocaleString("ko-KR")}원 = ${Math.max(0, Number(originalAmount) - discount).toLocaleString("ko-KR")}원`
+          : `결제 예정 ${Number(originalAmount).toLocaleString("ko-KR")}원`;
+      };
+      select.addEventListener("change", updatePrice);
+      updatePrice();
+    }).catch(() => { couponField.hidden = true; });
   }
   renderAvailabilityPicker(coach);
   $("bookingForm").noValidate = true;
@@ -780,7 +803,6 @@ function mountBookingForm(mountId, coach) {
       event.target.reportValidity();
       return;
     }
-    const submitButton = $("bookingSubmitBtn");
     const originalText = submitButton.textContent;
     submitButton.disabled = true;
     submitButton.textContent = "예약 전송 중";

@@ -39,7 +39,15 @@ export function buildReservationPayload(coach, data) {
     reservation.availabilitySlotId = availabilitySlotId;
     reservation.slotId = availabilitySlotId;
   }
+  const couponPurchaseId = data.get("couponPurchaseId");
+  if (couponPurchaseId) reservation.couponPurchaseId = couponPurchaseId;
   return reservation;
+}
+
+export async function fetchCoachingCoupons(productId) {
+  return requestJson(`/api/coaching/coupons?productId=${encodeURIComponent(productId)}`, {
+    credentials: "include",
+  });
 }
 
 export function filterReservations(bookings, status, query) {
@@ -176,6 +184,8 @@ export function getPaymentErrorMessage(code) {
     amount_mismatch: "결제 금액이 서버 주문과 일치하지 않습니다.",
     email_verification_required: "결제 전에 이메일 인증을 완료해주세요.",
     required_consents_missing: "필수 약관 동의가 필요합니다.",
+    coupon_unavailable: "선택한 쿠폰이 이미 사용 중이거나 사용할 수 없습니다.",
+    coupon_not_eligible: "이 상품에는 선택한 쿠폰을 사용할 수 없습니다.",
     PAY_PROCESS_CANCELED: "결제가 취소되었습니다.",
     PAY_PROCESS_ABORTED: "결제 인증에 실패했습니다.",
   })[code] || code || "결제 처리 중 오류가 발생했습니다.";

@@ -77,7 +77,7 @@ import {
   submitReservation,
   updateRefundRequest,
   updateReservationStatus,
-} from "./js/reservations.js";
+} from "./js/reservations.js?v=20260911coupon1";
 import {
   addLocalDays,
   byId as $,
@@ -90,9 +90,9 @@ import {
   parseReservationPrice,
   splitCsv,
 } from "./js/utils.js";
-import { createMarketPage } from "./js/pages/market.js";
+import { createMarketPage } from "./js/pages/market.js?v=20260911coupon1";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
-import { createReservationPage } from "./js/pages/reservationPage.js";
+import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911coupon1";
 import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260907accountfix1";
 import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260907accountfix1";
 import { createCoachSelfPage } from "./js/pages/coachSelf.js";
@@ -439,6 +439,10 @@ async function loadCoachesFromApi() {
         }
         state.coachLoadState = state.coaches.length ? "loaded" : "empty";
         render();
+        const lessonId = new URL(window.location.href).searchParams.get("lesson");
+        if (lessonId && state.coaches.some((coach) => coach.id === lessonId)) {
+          marketPage.openLessonDetail(lessonId);
+        }
         return;
       }
     } catch (error) {
