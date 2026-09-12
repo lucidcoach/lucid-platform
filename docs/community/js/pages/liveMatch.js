@@ -1,5 +1,6 @@
 import { apiGet } from "../api.js?v=20260907current1";
 import { championIcon } from "../assets.js?v=20260907current1";
+import { getCurrentUser, getResolvedAnalysisPlayers } from "../auth.js?v=20260911authsingleton1";
 import { $, escapeHtml, tierClass } from "../utils.js?v=20260905ai";
 
 const esc = (value) => escapeHtml(String(value ?? ""));
@@ -24,8 +25,44 @@ function elapsedText(value) {
   return `${Math.floor(minutes / 60) ? `${Math.floor(minutes / 60)}시간 ` : ""}${minutes % 60}분 진행`;
 }
 
+function queueName(game) {
+  return String(game?.queueName || game?.queueLabel || game?.queueKey || "내전").trim() || "내전";
+}
+
+function ownedPlayerKeys() {
+  const user = getCurrentUser();
+  const directDiscordId = String(user?.discordUserId || user?.discord_user_id || "").trim();
+  const keys = new Set();
+  if (directDiscordId) keys.add(`*:${directDiscordId}`);
+  for (const row of getResolvedAnalysisPlayers()) {
+    const userId = String(row?.userId || "").trim();
+    if (!userId) continue;
+    keys.add(`${String(row?.guildId || "").trim()}:${userId}`);
+  }
+  return keys;
+}
+
+function isMyGame(game, owned = ownedPlayerKeys()) {
+  if (!owned.size) return false;
+  const guildId = String(game?.guildId || "").trim();
+  return [...(game?.blue || []), ...(game?.red || [])].some((player) => {
+    const userId = String(player?.userId || "").trim();
+    return userId && (owned.has(`*:${userId}`) || owned.has(`${guildId}:${userId}`));
+  });
+}
+
+function sortedCurrentGames(games) {
+  const owned = ownedPlayerKeys();
+  return games
+    .map((game, index) => ({ game, index, mine: isMyGame(game, owned) }))
+    .sort((a, b) => Number(b.mine) - Number(a.mine) || a.index - b.index)
+    .map(({ game }) => game);
+}
+
 function compactCard(game) {
-  return `<article class="current-game-card">
+  const mine = isMyGame(game);
+  return `<article class="current-game-card${mine ? " is-my-game" : ""}">
+    <div class="current-game-title"><div><small>QUEUE</small><strong>${esc(queueName(game))}</strong></div>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
     <div class="current-versus"><strong class="blue">블루팀</strong><span>VS</span><strong class="red">레드팀</strong></div>
     <p class="current-time"><span>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"}</span><b>·</b><span>${elapsedText(game.startedAt)}</span></p>
     <div class="current-roster-preview"><span>${(game.blue || []).map((player) => esc(player.name)).join(" · ") || "라인업 확인 중"}</span><span>${(game.red || []).map((player) => esc(player.name)).join(" · ") || "라인업 확인 중"}</span></div>
@@ -54,19 +91,34 @@ function champions(rows = []) {
   }).join("");
 }
 
+function recentSummary(player) {
+  const games = Number(player.recentGames || 0);
+  const wins = Number(player.recentWins || 0);
+  const losses = Number(player.recentLosses || 0);
+  const rate = Number(player.recentWinRate || 0);
+  return `최근전적 ${wins}승 ${losses}패 (${rate.toFixed(0)}%)`;
+}
+
 function playerRow(player) {
-  const form = player.recentForm || [];
+  const form = Array.isArray(player.recentForm) ? player.recentForm : [];
+  const totalGames = Number(player.totalGames || 0);
+  const totalRate = Number(player.totalWinRate || 0);
   return `<article class="current-player-row">
-    <div class="current-player-head"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt=""><div class="current-player-name"><span class="tier-badge ${tierClass(player.tier)}">${esc(player.tier || "미배치")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button></div></div>
+    <div class="current-player-topline">
+      <div class="current-player-head"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt=""><div class="current-player-name"><span class="tier-badge ${tierClass(player.tier)}">${esc(player.tier || "미배치")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button></div></div>
+      <div class="current-player-recent"><span>${esc(recentSummary(player))}</span><span class="current-form">${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || `<em>기록 없음</em>`}</span></div>
+    </div>
     <div class="current-player-tag">플레이 특징 분석 중</div>
-    <div class="current-player-record"><span>최근 ${Number(player.recentGames || 0)}전 ${Number(player.recentWins || 0)}승 ${Number(player.recentLosses || 0)}패 <strong>${Number(player.recentWinRate || 0).toFixed(0)}%</strong></span><span>전체 ${Number(player.totalGames || 0)}전 <strong>${Number(player.totalWinRate || 0).toFixed(1)}%</strong></span><span class="current-form">${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || "기록 없음"}</span></div>
-    <div class="current-champion-groups"><div><small>MOST 1·2·3</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(player.role || "배정 라인")}</small><span>${champions(player.recentChampions)}</span></div></div>
+    <div class="current-player-overall">전체승률 <strong>${totalGames}전, ${totalRate.toFixed(1)}%</strong></div>
+    <div class="current-champion-groups"><div><small>모스트 챔피언</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(player.role || "배정 라인")}</small><span>${champions(player.recentChampions)}</span></div></div>
   </article>`;
 }
+
 
 function renderList() {
   const root = $("liveMatchRoot");
   if (!root) return;
+  currentGames = sortedCurrentGames(currentGames);
   root.innerHTML = currentGames.length
     ? `<div class="current-game-list">${currentGames.map(compactCard).join("")}</div>`
     : `<p class="current-empty">현재 진행 중인 내전이 없습니다</p>`;
@@ -80,7 +132,7 @@ function renderPreview(gameId) {
   document.body.insertAdjacentHTML("beforeend", `<dialog id="currentMatchDialog" class="current-match-dialog" aria-labelledby="currentMatchTitle">
     <div class="current-match-modal">
       <button class="current-match-close" type="button" data-current-close aria-label="닫기">×</button>
-      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle"><span class="blue">BLUE TEAM</span><b>VS</b><span class="red">RED TEAM</span></h2><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
+      <header class="current-match-modal-head"><p>LIVE MATCH · ${esc(queueName(game))}</p><h2 id="currentMatchTitle"><span class="blue">BLUE TEAM</span><b>VS</b><span class="red">RED TEAM</span></h2><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
       <div class="current-match-teams">
         <section class="current-team-block blue-team"><h3>블루팀 <span>평균 티어 ${esc(game.blueAverageTier || "미배치")}</span></h3>${(game.blue || []).map(playerRow).join("")}</section>
         <div class="current-match-vs" aria-hidden="true">VS</div>
@@ -94,6 +146,8 @@ function renderPreview(gameId) {
   dialog.addEventListener("close", () => dialog.remove(), { once: true });
   dialog.showModal();
 }
+
+window.addEventListener("lucid:auth-changed", () => { if (currentGames.length) renderList(); });
 
 export async function loadLiveMatch() {
   const root = $("liveMatchRoot");

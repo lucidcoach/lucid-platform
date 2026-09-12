@@ -10,7 +10,7 @@ import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "
 import { renderMileage } from "./pages/mileage.js?v=20260911authsingleton1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260911authsingleton1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
-import { loadLiveMatch } from "./pages/liveMatch.js?v=20260911livemodal1";
+import { loadLiveMatch } from "./pages/liveMatch.js?v=20260912liveui1";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
