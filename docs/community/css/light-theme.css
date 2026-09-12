@@ -1,0 +1,762 @@
+/*
+ * LUCID Community light theme
+ * Dedicated light design layer. Dark mode remains owned by the existing component CSS.
+ * This file intentionally centralizes light surfaces, typography, borders and states.
+ */
+
+html[data-theme="light"] body {
+  background: var(--page-bg);
+  color: var(--text-primary);
+}
+html[data-theme="light"] button:focus-visible,
+html[data-theme="light"] a:focus-visible,
+html[data-theme="light"] input:focus-visible,
+html[data-theme="light"] select:focus-visible,
+html[data-theme="light"] textarea:focus-visible {
+  outline-color: var(--focus-ring);
+}
+html[data-theme="light"] .numeric { color: var(--text-secondary); }
+html[data-theme="light"] ::selection { background: #ddd5ff; color: #241d49; }
+
+/* Header / global navigation */
+html[data-theme="light"] .community-header {
+  background: rgba(255,255,255,.94);
+  border-bottom-color: var(--border-soft);
+  box-shadow: 0 1px 0 rgba(26,38,59,.03);
+  backdrop-filter: blur(14px);
+}
+html[data-theme="light"] :where(.service-switch,.nav-tab,.nav-more summary) {
+  color: var(--text-muted);
+}
+html[data-theme="light"] :where(.service-switch:hover,.nav-tab:hover,.nav-more summary:hover) {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+html[data-theme="light"] :where(.service-switch.active,.nav-tab.active) {
+  color: var(--text-primary);
+}
+html[data-theme="light"] .service-switch.active {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] .nav-tab.active::after { background: var(--accent-primary); }
+html[data-theme="light"] .nav-beta { color: var(--accent-primary); background: var(--accent-soft); }
+html[data-theme="light"] .nav-more-menu {
+  background: var(--surface-elevated);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow);
+}
+html[data-theme="light"] .nav-more-menu .nav-tab { color: var(--text-secondary); }
+html[data-theme="light"] .nav-more-menu .nav-tab:hover { color: var(--text-primary); }
+
+/* Account / header buttons */
+html[data-theme="light"] .community-auth-button {
+  border-color: var(--border-default);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  box-shadow: 0 1px 2px rgba(35,48,72,.03);
+}
+html[data-theme="light"] .community-auth-button:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .community-auth-button.theme {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5638ce;
+}
+html[data-theme="light"] .community-auth-button.discord {
+  border-color: #c8cff9;
+  background: #f1f3ff;
+  color: #4d58cb;
+}
+html[data-theme="light"] .community-auth-button.active-user {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5138c3;
+}
+html[data-theme="light"] .community-auth-button.logout {
+  border-color: #edc9cf;
+  background: #fff7f8;
+  color: #a34453;
+}
+
+/* Page shell and headings */
+html[data-theme="light"] .community-main { color: var(--text-primary); }
+html[data-theme="light"] .section-kicker { color: var(--accent-primary); }
+html[data-theme="light"] :where(.section-heading h1,.analysis-page-head h1,.community-account-head h1,.admin-page-head h1,.mileage-head h1) {
+  color: var(--text-primary);
+}
+html[data-theme="light"] :where(.section-heading small,.analysis-page-head p,.community-account-head p,.admin-page-head p,.mileage-muted) {
+  color: var(--text-muted);
+}
+
+/* Shared controls */
+html[data-theme="light"] :where(input,select,textarea) {
+  background: var(--surface-1) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
+}
+html[data-theme="light"] :where(input,textarea)::placeholder { color: #98a2b3; opacity: 1; }
+html[data-theme="light"] :where(input,select,textarea):focus {
+  border-color: var(--accent-border) !important;
+  box-shadow: 0 0 0 3px rgba(101,71,223,.10);
+}
+html[data-theme="light"] :where(.ghost-button,.load-more) {
+  border-color: var(--border-default);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] :where(.ghost-button,.load-more):hover {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5138c3;
+}
+
+/* Search strip / tabs */
+html[data-theme="light"] .search-strip {
+  border-color: var(--border-soft);
+  background: transparent;
+}
+html[data-theme="light"] .community-home-button {
+  border-color: var(--border-default);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] .community-home-button:hover {
+  border-color: var(--accent-border);
+  background: #f6f3ff;
+  color: #5940c8;
+}
+html[data-theme="light"] .community-home-button.active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5138c3;
+  box-shadow: inset 0 0 0 1px rgba(101,71,223,.04);
+}
+html[data-theme="light"] .search-control input {
+  background: var(--surface-1) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-default) !important;
+}
+html[data-theme="light"] .search-control button {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+html[data-theme="light"] .search-control button:hover { background: var(--accent-hover); }
+
+/* Recent searches / favorites */
+html[data-theme="light"] .search-memory-panel {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .search-memory-column + .search-memory-column { border-color: var(--border-soft); }
+html[data-theme="light"] .search-memory-title { color: var(--text-primary); }
+html[data-theme="light"] .search-memory-row {
+  background: var(--surface-2);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .search-memory-row:hover {
+  border-color: var(--accent-border);
+  background: #f5f2ff;
+}
+html[data-theme="light"] .search-memory-open { color: var(--text-primary); }
+html[data-theme="light"] .search-memory-star { color: #a06c0a; }
+html[data-theme="light"] .search-memory-star.active { color: #d18a00; }
+html[data-theme="light"] .search-memory-remove { color: var(--text-subtle); }
+html[data-theme="light"] .search-memory-remove:hover { color: var(--danger); }
+html[data-theme="light"] .search-memory-empty { color: var(--text-muted); }
+
+/* Match history cards */
+html[data-theme="light"] .match-category-tab {
+  border-color: var(--border-default);
+  background: var(--surface-1);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .match-category-tab:hover { background: var(--surface-hover); color: var(--text-primary); }
+html[data-theme="light"] .match-category-tab.active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5138c3;
+}
+html[data-theme="light"] .match-card {
+  border-color: var(--border-default);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .match-card:hover { border-color: #c6bedf; box-shadow: var(--shadow); }
+html[data-theme="light"] .match-summary { background: var(--surface-1); color: var(--text-primary); }
+html[data-theme="light"] .match-time,
+html[data-theme="light"] .match-meta,
+html[data-theme="light"] .match-duration,
+html[data-theme="light"] .team-label,
+html[data-theme="light"] .player-position { color: var(--text-muted); }
+html[data-theme="light"] .match-tier-badge { color: var(--text-primary); }
+html[data-theme="light"] .team-preview {
+  background: var(--surface-2);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .team-preview.blue,
+html[data-theme="light"] .blue-team,
+html[data-theme="light"] .team-block.blue { background: var(--team-blue-soft); }
+html[data-theme="light"] .team-preview.red,
+html[data-theme="light"] .red-team,
+html[data-theme="light"] .team-block.red { background: var(--team-red-soft); }
+html[data-theme="light"] :where(.blue-team .team-title,.team-preview.blue .team-label,.blue-side) { color: var(--team-blue-text); }
+html[data-theme="light"] :where(.red-team .team-title,.team-preview.red .team-label,.red-side) { color: var(--team-red-text); }
+html[data-theme="light"] .match-expand,
+html[data-theme="light"] .match-card button.match-expand {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .match-expand:hover { background: var(--accent-soft); color: var(--accent-primary); }
+
+/* Current / live match */
+html[data-theme="light"] .current-games-panel {
+  border-color: var(--border-default);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .current-panel-title { border-color: var(--border-soft); }
+html[data-theme="light"] .current-panel-title h2 { color: var(--text-primary); }
+html[data-theme="light"] .current-status-dot { box-shadow: 0 0 0 4px rgba(37,134,95,.10); }
+html[data-theme="light"] .current-game-card {
+  border-color: var(--border-default);
+  background: var(--surface-2);
+}
+html[data-theme="light"] .current-game-card.is-my-game {
+  border-color: var(--accent-border);
+  background: #f5f2ff;
+  box-shadow: 0 0 0 2px rgba(101,71,223,.06);
+}
+html[data-theme="light"] .current-game-queue-label,
+html[data-theme="light"] .current-game-meta,
+html[data-theme="light"] .current-empty { color: var(--text-muted); }
+html[data-theme="light"] .current-game-queue-name,
+html[data-theme="light"] .current-player-name { color: var(--text-primary); }
+html[data-theme="light"] .current-game-my-badge {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: #5138c3;
+}
+html[data-theme="light"] .current-game-team.blue { background: var(--team-blue-soft); border-color: #cfdef5; }
+html[data-theme="light"] .current-game-team.red { background: var(--team-red-soft); border-color: #f1d3d8; }
+html[data-theme="light"] .current-game-detail-button {
+  border-color: var(--accent-border);
+  background: var(--surface-1);
+  color: #5940c8;
+}
+html[data-theme="light"] .current-game-detail-button:hover { background: var(--accent-soft); }
+html[data-theme="light"] .current-match-dialog {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+  box-shadow: 0 24px 64px rgba(38,48,66,.18);
+}
+html[data-theme="light"] .current-match-dialog::backdrop { background: rgba(38,48,66,.35); }
+html[data-theme="light"] .current-match-close {
+  border-color: var(--border-default);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .current-match-close:hover { border-color: var(--accent-border); color: var(--accent-primary); }
+html[data-theme="light"] .current-team-block,
+html[data-theme="light"] .current-player {
+  background: var(--surface-1);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .current-player-recent,
+html[data-theme="light"] .current-player-total,
+html[data-theme="light"] .current-match-modal-head small { color: var(--text-muted); }
+
+/* Player search / profile */
+html[data-theme="light"] .search-candidate {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .search-candidate:hover { background: var(--surface-hover); border-color: var(--accent-border); }
+html[data-theme="light"] .search-candidate span { color: var(--text-muted); }
+html[data-theme="light"] :where(.profile-head,.role-tier-board,.champion-stats-panel) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .profile-identity { border-color: var(--border-soft); }
+html[data-theme="light"] .profile-aliases { color: var(--text-muted); }
+html[data-theme="light"] .profile-aliases>span {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] .profile-overview {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] .profile-record { border-color: var(--border-soft); }
+html[data-theme="light"] .profile-record>span,
+html[data-theme="light"] .profile-record>small,
+html[data-theme="light"] .profile-champion span,
+html[data-theme="light"] .profile-section-title span { color: var(--text-muted); }
+html[data-theme="light"] .profile-record>strong { color: var(--text-primary); }
+html[data-theme="light"] .role-tier-card {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] .role-tier-role,
+html[data-theme="light"] .role-tier-card div span { color: var(--text-muted); }
+html[data-theme="light"] .champion-role-tab {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] .champion-role-tab:hover { background: var(--surface-hover); }
+html[data-theme="light"] .champion-role-tab.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: #5138c3;
+}
+html[data-theme="light"] .champion-stat-head { color: var(--text-muted); border-color: var(--border-soft); }
+html[data-theme="light"] .champion-stat-row { border-color: var(--border-soft); }
+
+/* Personal match rows */
+html[data-theme="light"] .personal-match {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: 0 2px 10px rgba(35,48,72,.04);
+}
+html[data-theme="light"] .personal-match.win .personal-summary {
+  background: linear-gradient(90deg, #eef5ff 0%, #fff 34%);
+}
+html[data-theme="light"] .personal-match.loss .personal-summary {
+  background: linear-gradient(90deg, #fff0f2 0%, #fff 34%);
+}
+html[data-theme="light"] .result-meta strong { color: var(--team-blue-text); }
+html[data-theme="light"] .personal-match.loss .result-meta strong { color: var(--team-red-text); }
+html[data-theme="light"] :where(.focus-kda span,.focus-cs span,.roster-player,.roster-profile-link,.profile-match-meta) { color: var(--text-muted); }
+html[data-theme="light"] .roster-team.allies { border-color: var(--border-soft); }
+html[data-theme="light"] .roster-player.is-focus,
+html[data-theme="light"] .roster-player.is-focus .roster-profile-link { color: var(--text-primary); }
+html[data-theme="light"] .focus-loadout .rune-spells {
+  background: var(--surface-1);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .personal-expand {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .personal-expand:hover { background: var(--accent-soft); color: var(--accent-primary); }
+html[data-theme="light"] .damage-track { background: #e4e8ef; }
+
+/* Ranking */
+html[data-theme="light"] :where(.ranking-kind,.ranking-role) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] :where(.ranking-kind,.ranking-role):hover { background: var(--surface-hover); }
+html[data-theme="light"] :where(.ranking-kind.active,.ranking-role.active) {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5138c3;
+}
+html[data-theme="light"] .ranking-board {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .ranking-period {
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .ranking-table-head,
+html[data-theme="light"] .ranking-row,
+html[data-theme="light"] .ranking-note { border-color: var(--border-soft); }
+html[data-theme="light"] .ranking-row:hover { background: #faf9ff; }
+html[data-theme="light"] .ranking-position { color: var(--text-secondary); }
+html[data-theme="light"] .ranking-player { color: var(--text-primary); }
+html[data-theme="light"] .ranking-player:hover { color: var(--accent-primary); }
+
+/* Mileage / shop / support */
+html[data-theme="light"] :where(.mileage-head,.mileage-card,.mileage-row,.mileage-cap-row,.mileage-quest-row,.mileage-level-preview,.mileage-backfill-state) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .mileage-head,
+html[data-theme="light"] .mileage-card { box-shadow: var(--shadow-soft); }
+html[data-theme="light"] .mileage-row:hover { background: var(--surface-2); }
+html[data-theme="light"] :where(.mileage-row small,.mileage-muted,.mileage-form label,.mileage-card>label,.mileage-dialog dt,.mileage-backfill-details,.mileage-backfill-history,.mileage-quest-meta) {
+  color: var(--text-muted);
+}
+html[data-theme="light"] .mileage-balance { color: var(--accent-primary); }
+html[data-theme="light"] :where(.mileage-form input,.mileage-form select,.mileage-form textarea,.mileage-head select,.mileage-card>label select) {
+  background: var(--surface-1) !important;
+  border-color: var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+html[data-theme="light"] :where(.mileage-form button,.mileage-buy,.mileage-action) {
+  background: var(--accent-primary);
+  color: #fff;
+}
+html[data-theme="light"] :where(.mileage-form button,.mileage-buy,.mileage-action):hover:not(:disabled) { background: var(--accent-hover); }
+html[data-theme="light"] .mileage-pagination button,
+html[data-theme="light"] .mileage-shop-tabs button,
+html[data-theme="light"] .mileage-settings-tabs button {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] :where(.mileage-pagination button[aria-current="page"],.mileage-shop-tabs button.active,.mileage-settings-tabs button.active) {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: #5138c3;
+}
+html[data-theme="light"] .mileage-dialog {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+  box-shadow: 0 24px 64px rgba(38,48,66,.18);
+}
+html[data-theme="light"] .mileage-dialog::backdrop { background: rgba(38,48,66,.35); }
+html[data-theme="light"] .mileage-dialog-close { color: var(--text-muted); }
+html[data-theme="light"] .mileage-detail-short { color: #5b43c7; }
+html[data-theme="light"] .mileage-dialog dl>div,
+html[data-theme="light"] .mileage-backfill-history div { border-color: var(--border-soft); }
+html[data-theme="light"] .mileage-level-preview>div span,
+html[data-theme="light"] .mileage-level-preview>div b { background: var(--surface-2); }
+html[data-theme="light"] .mileage-level-preview>div b { color: var(--accent-primary); }
+html[data-theme="light"] .mileage-quest-meta b { color: var(--text-primary); }
+html[data-theme="light"] .mileage-complete-badge { background: var(--success-soft); color: var(--success); }
+html[data-theme="light"] .mileage-quest-row.is-complete { background: #f2fbf7; border-color: #b8dfd0; }
+html[data-theme="light"] .mileage-test-mode { background: #fffaf0; border-color: #e2bc6a; }
+html[data-theme="light"] .mileage-test-result { color: var(--text-secondary); border-color: #d3a650; }
+html[data-theme="light"] .mileage-test-cleanup { background: #fff3f5; border-color: #e2b9c0; color: #a93c4b; }
+
+/* Auth modal / account */
+html[data-theme="light"] .community-auth-modal { background: rgba(40,48,64,.35); }
+html[data-theme="light"] .community-auth-dialog {
+  background: var(--surface-elevated);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+  box-shadow: 0 24px 64px rgba(38,48,66,.20);
+}
+html[data-theme="light"] .community-auth-dialog>p,
+html[data-theme="light"] .community-auth-dialog label { color: var(--text-muted); }
+html[data-theme="light"] .community-auth-close { color: var(--text-muted); }
+html[data-theme="light"] .community-auth-dialog form>button { background: var(--accent-primary); color: #fff; }
+html[data-theme="light"] .community-auth-divider { color: var(--text-subtle); }
+html[data-theme="light"] .community-auth-divider::before,
+html[data-theme="light"] .community-auth-divider::after { background: var(--border-soft); }
+html[data-theme="light"] .community-account-card {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .community-account-summary .row { border-color: var(--border-soft); }
+html[data-theme="light"] .community-account-summary small,
+html[data-theme="light"] .riot-account-help,
+html[data-theme="light"] .riot-account-status { color: var(--text-muted); }
+html[data-theme="light"] .community-account-summary strong { color: var(--text-primary); }
+html[data-theme="light"] .community-account-summary .connected { color: var(--accent-primary); }
+html[data-theme="light"] .riot-account-row span { color: var(--text-secondary); }
+html[data-theme="light"] .riot-account-row:first-child span { color: var(--accent-primary); }
+html[data-theme="light"] .riot-account-save { background: var(--accent-primary); color: #fff; }
+
+/* Analysis */
+html[data-theme="light"] :where(.analysis-search-shell,.analysis-confidence-note,.analysis-metric-card,.analysis-tier-row,.role-flow-intro,.role-flow-card,.role-flow-timeline,.ga-profile,.ga-panel,.ga-source-card,.ga-stat,.ga-insight-list p) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html[data-theme="light"] :where(.analysis-search-shell,.ga-profile,.ga-panel) { box-shadow: var(--shadow-soft); }
+html[data-theme="light"] :where(.analysis-page-head p,.analysis-confidence-note,.role-flow-intro span,.role-flow-card li span,.role-flow-card>p,.role-flow-timeline-head span,.ga-profile-id span,.ga-panel-head>span,.ga-source-card p,.ga-stat span,.ga-stat small,.ga-filter-row label,.ga-filter-note,.ga-champion-head p,.ga-compare-row em,.ga-grade p,.ga-growth-note) {
+  color: var(--text-muted);
+}
+html[data-theme="light"] .analysis-tier-row.is-current {
+  background: #f1f6ff;
+  border-color: #a9c3e6;
+}
+html[data-theme="light"] :where(.analysis-subtabs button,.ga-tabs button,.ga-role-tabs button,.ga-range button) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] :where(.analysis-subtabs button.active,.ga-tabs button.active,.ga-role-tabs button.active,.ga-range button.active) {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: #5138c3;
+  box-shadow: none;
+}
+html[data-theme="light"] .ga-tabs {
+  background: rgba(255,255,255,.94);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .ga-avatar { background: var(--surface-2); border-color: var(--border-default); color: var(--text-secondary); }
+html[data-theme="light"] .ga-rank-pair>div,
+html[data-theme="light"] .ga-champion-list button {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html[data-theme="light"] .ga-champion-list button:hover { background: var(--surface-hover); border-color: var(--accent-border); }
+html[data-theme="light"] .ga-role-row>div { background: #e3e8ef; }
+html[data-theme="light"] .ga-bar-pair b { background: #c9d1dc; }
+html[data-theme="light"] .ga-growth-note { border-color: var(--border-soft); }
+html[data-theme="light"] .ga-growth-note span { border-color: var(--border-default); }
+html[data-theme="light"] .ga-growth-note span.active { background: #eef4ff; border-color: #a9c3e6; color: #3d6a9e; }
+html[data-theme="light"] .role-flow-card-head,
+html[data-theme="light"] .role-flow-card li { border-color: var(--border-soft); }
+html[data-theme="light"] .role-flow-card li strong,
+html[data-theme="light"] .role-flow-intro strong { color: var(--text-primary); }
+html[data-theme="light"] .flow-pending { background: var(--surface-2); border-color: var(--border-default); color: var(--text-muted); }
+
+/* Admin */
+html[data-theme="light"] :where(.admin-server-picker,.admin-shell,.admin-work-panel,.admin-title-grid article,.admin-title-icon-dialog) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html[data-theme="light"] :where(.admin-shell,.admin-work-panel,.admin-title-icon-dialog) { box-shadow: var(--shadow-soft); }
+html[data-theme="light"] .admin-server-picker>span,
+html[data-theme="light"] .admin-server-picker small { color: var(--text-muted); }
+html[data-theme="light"] .admin-server-summary {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] :where(.admin-tabs button,.admin-subtabs button,.admin-action,.admin-button) {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html[data-theme="light"] :where(.admin-tabs button:hover,.admin-subtabs button:hover,.admin-action:hover,.admin-button:hover) {
+  background: var(--surface-hover);
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+html[data-theme="light"] :where(.admin-tabs button.active,.admin-subtabs button.active) {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: #5138c3;
+}
+html[data-theme="light"] .admin-title-icon-dialog::backdrop { background: rgba(40,48,64,.35); }
+
+/* Patch notes and generic content cards */
+html[data-theme="light"] .patchnote-list article {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .patchnote-list time { color: var(--accent-primary); }
+html[data-theme="light"] .patchnote-list li { color: var(--text-secondary); }
+html[data-theme="light"] .status-banner {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+/* Keep semantic state colors readable on white surfaces. */
+html[data-theme="light"] .kda-low,
+html[data-theme="light"] .winrate-low { color: #303849 !important; }
+html[data-theme="light"] .kda-green { color: #177a4d !important; }
+html[data-theme="light"] .kda-blue,
+html[data-theme="light"] .winrate-blue { color: #2866b1 !important; }
+html[data-theme="light"] .kda-red,
+html[data-theme="light"] .winrate-red { color: #b83f50 !important; }
+html[data-theme="light"] .positive { color: #197a55 !important; }
+html[data-theme="light"] .negative { color: #b83f50 !important; }
+html[data-theme="light"] .tier-unranked { color: #68758b !important; }
+
+/* Light-theme responsive polish */
+@media (max-width: 760px) {
+  html[data-theme="light"] .community-header { background: rgba(255,255,255,.98); }
+  html[data-theme="light"] .search-memory-panel { box-shadow: none; }
+  html[data-theme="light"] :where(.match-card,.profile-head,.role-tier-board,.champion-stats-panel,.mileage-head,.mileage-card,.current-games-panel,.ranking-board) {
+    box-shadow: 0 2px 10px rgba(35,48,72,.04);
+  }
+}
+
+/* Exact overrides for legacy component selectors still carrying dark literals. */
+html[data-theme="light"] .search-memory-column {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-soft);
+}
+html[data-theme="light"] .search-memory-column.favorites { border-color: #ddd4f3; }
+html[data-theme="light"] .search-memory-title { border-color: var(--border-soft); }
+html[data-theme="light"] .search-memory-title strong { color: var(--text-primary); }
+html[data-theme="light"] .search-memory-title span { color: var(--text-muted); }
+html[data-theme="light"] .search-memory-star:hover,
+html[data-theme="light"] .search-memory-remove:hover { background: var(--surface-hover); }
+
+html[data-theme="light"] .match-category-tabs {
+  background: var(--surface-2);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] .match-category-tab { border: 1px solid transparent; }
+html[data-theme="light"] .match-category-tab.active { box-shadow: none; }
+html[data-theme="light"] .match-mode { color: #5e49c0; }
+html[data-theme="light"] .match-duration { color: var(--text-secondary); }
+html[data-theme="light"] .award-chip { background: var(--surface-2); color: var(--text-secondary); }
+html[data-theme="light"] .preview-player { color: var(--text-secondary); }
+html[data-theme="light"] .preview-player .score,
+html[data-theme="light"] .team-head small { color: var(--text-muted); }
+html[data-theme="light"] .preview-player .player-profile-link { color: var(--text-primary); }
+html[data-theme="light"] .player-profile-link:hover { color: var(--accent-primary); }
+html[data-theme="light"] .team-preview.result-win {
+  background: linear-gradient(90deg, #edf4ff 0%, #f8fbff 100%);
+}
+html[data-theme="light"] .team-preview.result-loss {
+  background: linear-gradient(90deg, #fff0f2 0%, #fffafb 100%);
+}
+html[data-theme="light"] .team-preview.result-win .team-result-label {
+  color: #285b9f;
+  background: #e5efff;
+  border-color: #b9cff0;
+}
+html[data-theme="light"] .team-preview.result-loss .team-result-label {
+  color: #a93c4b;
+  background: #ffe8ec;
+  border-color: #efc0c8;
+}
+html[data-theme="light"] .expand-match {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .expand-match:hover,
+html[data-theme="light"] .match-card.expanded .expand-match {
+  background: var(--accent-soft);
+  color: var(--accent-primary);
+}
+html[data-theme="light"] .scoreboard th { color: var(--text-muted); border-color: var(--border-soft); }
+html[data-theme="light"] .scoreboard td { border-color: var(--border-soft); }
+html[data-theme="light"] .scoreboard tr.blue-row,
+html[data-theme="light"] .scoreboard tr.win-row { background: #f0f6ff; }
+html[data-theme="light"] .scoreboard tr.red-row,
+html[data-theme="light"] .scoreboard tr.loss-row { background: #fff2f4; }
+html[data-theme="light"] .player-sub { color: var(--text-muted); }
+html[data-theme="light"] .tier-badge { border-color: var(--border-default); color: var(--text-secondary); }
+html[data-theme="light"] :where(.champion-icon,.preview-player img,.preview-icon-empty,.loadout img,.loadout-placeholder,.rune-spells .rune-icon,.rune-spells .spell-icon,.rune-spells .loadout-placeholder) {
+  background-color: var(--surface-3);
+}
+html[data-theme="light"] .loadout-placeholder { border-color: var(--border-default); }
+html[data-theme="light"] .preview-level,
+html[data-theme="light"] .score-level {
+  background: #2f3747;
+  border-color: rgba(255,255,255,.7);
+  color: #fff;
+}
+html[data-theme="light"] .scoreboard-teams {
+  background: var(--surface-2);
+}
+html[data-theme="light"] .score-team-panel {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] .score-team-panel.blue { border-color: #c8d9f0; }
+html[data-theme="light"] .score-team-panel.red { border-color: #eed0d6; }
+html[data-theme="light"] .score-team-panel.blue .score-team-head { color: #285b9f; background: #edf4ff; }
+html[data-theme="light"] .score-team-panel.red .score-team-head { color: #a93c4b; background: #fff0f2; }
+html[data-theme="light"] .score-player-row { border-color: var(--border-soft); }
+html[data-theme="light"] .score-player-row.focus-row { background: #f3f0ff; outline-color: var(--accent-border); }
+html[data-theme="light"] .inventory-slot { background: var(--surface-2); border-color: var(--border-default); }
+html[data-theme="light"] .inventory-slot.empty { background: #f3f5f8; border-color: var(--border-soft); }
+html[data-theme="light"] .inventory-slot.quest-slot { background: #f3f0ff; border-color: #cabff1; }
+html[data-theme="light"] .score-ai-cell>small,
+html[data-theme="light"] .score-cs-cell span { color: var(--text-muted); }
+
+/* Current game exact class names from current-games.css */
+html[data-theme="light"] .current-game-card {
+  border-color: var(--border-default);
+  background: var(--surface-2);
+}
+html[data-theme="light"] .current-game-card.is-my-game {
+  border-color: var(--accent-border);
+  box-shadow: inset 3px 0 0 var(--accent-primary), 0 2px 12px rgba(101,71,223,.06);
+}
+html[data-theme="light"] .current-game-title small,
+html[data-theme="light"] .current-time,
+html[data-theme="light"] .current-roster-preview span,
+html[data-theme="light"] .current-team-averages i,
+html[data-theme="light"] .current-player-overall,
+html[data-theme="light"] .current-role,
+html[data-theme="light"] .current-player-recent,
+html[data-theme="light"] .current-champion-groups small,
+html[data-theme="light"] .current-no-data { color: var(--text-muted); }
+html[data-theme="light"] .current-game-title strong,
+html[data-theme="light"] .current-player-name button,
+html[data-theme="light"] .current-player-overall strong { color: var(--text-primary); }
+html[data-theme="light"] .current-my-game-badge {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: #5138c3;
+}
+html[data-theme="light"] .current-versus span { color: var(--text-subtle); }
+html[data-theme="light"] .current-time b { color: var(--border-strong); }
+html[data-theme="light"] .current-team-averages>span {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] .current-detail-button {
+  background: var(--surface-1);
+  border-color: var(--accent-border);
+  color: #5940c8;
+}
+html[data-theme="light"] .current-detail-button:hover { background: var(--accent-soft); border-color: var(--accent-primary); }
+html[data-theme="light"] .current-team-block {
+  background: var(--surface-1);
+  border-left-color: var(--border-strong);
+}
+html[data-theme="light"] .current-team-block.blue-team { border-left-color: var(--team-blue); }
+html[data-theme="light"] .current-team-block.red-team { border-left-color: var(--team-red); }
+html[data-theme="light"] .current-team-block h3 {
+  background: var(--surface-2);
+  border-color: var(--border-soft);
+}
+html[data-theme="light"] .current-team-block.blue-team h3 { color: var(--team-blue-text); }
+html[data-theme="light"] .current-team-block.red-team h3 { color: var(--team-red-text); }
+html[data-theme="light"] .current-team-block h3 span { color: var(--text-muted); }
+html[data-theme="light"] .current-player-row { border-color: var(--border-soft); }
+html[data-theme="light"] .current-player-tag {
+  border-color: var(--border-default);
+  color: var(--text-muted);
+  background: var(--surface-2);
+}
+html[data-theme="light"] .current-form .win { background: var(--success-soft); color: var(--success); }
+html[data-theme="light"] .current-form .loss { background: var(--danger-soft); color: var(--danger); }
+html[data-theme="light"] .current-form em { color: var(--text-subtle); }
+html[data-theme="light"] .current-most { background: var(--surface-3); }
+html[data-theme="light"] .current-most b { color: var(--text-secondary); }
+html[data-theme="light"] .current-match-dialog { color: var(--text-primary); }
+html[data-theme="light"] .current-match-modal-head h2 b,
+html[data-theme="light"] .current-match-vs { color: var(--text-muted); }
+
+/* Additional profile surfaces */
+html[data-theme="light"] .profile-stat { background: var(--surface-2); border-color: var(--border-soft); }
+html[data-theme="light"] .profile-stat span { color: var(--text-muted); }
+html[data-theme="light"] .focus-champion img,
+html[data-theme="light"] .rune-spells img,
+html[data-theme="light"] .rune-spells .loadout-placeholder,
+html[data-theme="light"] .roster-player img,
+html[data-theme="light"] .roster-icon-empty { background: var(--surface-3); }
+html[data-theme="light"] .profile-rank-toggle,
+html[data-theme="light"] .profile-filter-button,
+html[data-theme="light"] .personal-filter-button {
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+/* Status banners retain severity instead of becoming generic gray. */
+html[data-theme="light"] .status-banner {
+  background: #fff5f6;
+  border-color: #efc3ca;
+  color: #9f3848;
+}

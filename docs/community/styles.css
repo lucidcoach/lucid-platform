@@ -1,4 +1,4 @@
-@import url("css/tokens.css?v=20260911theme1");
+@import url("css/tokens.css?v=20260912light2");
 @import url("css/base.css?v=20260904l");
 @import url("css/layout.css?v=20260909convenience1");
 @import url("css/matches.css?v=20260907scoreboard1");
@@ -15,3 +15,4 @@
 @import url("css/mileage.css?v=20260911mileageux2");
 @import url("css/current-games.css?v=20260912liveui1");
 @import url("css/analysis-server.css?v=20260907ia1");
+@import url("css/light-theme.css?v=20260912light3");

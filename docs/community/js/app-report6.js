@@ -23,7 +23,8 @@ function applyTheme(theme){
   const next=theme==="dark"?"dark":"light",button=$("communityThemeBtn");
   document.documentElement.dataset.theme=next;
   localStorage.setItem(THEME_KEY,next);
-  if(button){button.textContent=next==="dark"?"☀ 기본모드":"🌙 다크모드";button.setAttribute("aria-pressed",String(next==="dark"));}
+  if(button){button.textContent=next==="dark"?"☀ 라이트모드":"🌙 다크모드";button.setAttribute("aria-pressed",String(next==="dark"));button.setAttribute("title",next==="dark"?"라이트모드로 전환":"다크모드로 전환");}
+  const themeMeta=document.querySelector('meta[name="theme-color"]');if(themeMeta)themeMeta.setAttribute("content",next==="dark"?"#080b11":"#f4f6fa");
 }
 
 function renderCommunitySupport(){
