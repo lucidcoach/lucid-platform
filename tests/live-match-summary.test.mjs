@@ -3,19 +3,25 @@ import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../docs/community/js/pages/liveMatch.js", import.meta.url), "utf8");
 const rankingSource = readFileSync(new URL("../docs/community/js/pages/ranking.js", import.meta.url), "utf8");
+const entrySource = readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8");
 assert.doesNotMatch(source, /positionRank|keyMatchups|blueAverageMmr|킬관여|서버 .*위/);
 assert.match(source, /tier-badge/);
-assert.match(source, /플레이 특징 분석 중/);
+assert.doesNotMatch(source, /플레이 특징 분석 중|current-player-tag|current-roster-preview|current-team-averages|recentSummary/);
 assert.match(source, /mostChampions/);
 assert.match(source, /recentChampions/);
 assert.match(source, /totalWinRate/);
 assert.match(source, /queueName/);
 assert.match(source, /current-my-game-badge/);
 assert.match(source, /getResolvedAnalysisPlayers/);
-assert.match(source, /최근전적/);
+assert.match(source, /recentForm\.slice\(0, 5\)/);
+assert.match(source, /최근 전적/);
 assert.match(source, /전체승률/);
 assert.match(source, /모스트 챔피언/);
+assert.match(source, /blueTier === redTier/);
+assert.match(source, /current-average-tier/);
+assert.match(source, /current-modal-versus/);
 assert.doesNotMatch(source, /MOST 1·2·3/);
 assert.match(rankingSource, /row\.winRate/);
+assert.match(entrySource, /closest\("#currentMatchDialog"\)\?\.close\(\);\s*openPlayer\(userId, guildId, \{ historyMode: "push" \}\)/);
 
 console.log("live match readability checks passed");

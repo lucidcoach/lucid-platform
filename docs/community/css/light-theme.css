@@ -683,14 +683,14 @@ html[data-theme="light"] .current-game-card.is-my-game {
 }
 html[data-theme="light"] .current-game-title small,
 html[data-theme="light"] .current-time,
-html[data-theme="light"] .current-roster-preview span,
-html[data-theme="light"] .current-team-averages i,
+html[data-theme="light"] .current-average-tier,
 html[data-theme="light"] .current-player-overall,
 html[data-theme="light"] .current-role,
 html[data-theme="light"] .current-player-recent,
 html[data-theme="light"] .current-champion-groups small,
 html[data-theme="light"] .current-no-data { color: var(--text-muted); }
 html[data-theme="light"] .current-game-title strong,
+html[data-theme="light"] .current-average-tier strong,
 html[data-theme="light"] .current-player-name button,
 html[data-theme="light"] .current-player-overall strong { color: var(--text-primary); }
 html[data-theme="light"] .current-my-game-badge {
@@ -700,10 +700,6 @@ html[data-theme="light"] .current-my-game-badge {
 }
 html[data-theme="light"] .current-versus span { color: var(--text-subtle); }
 html[data-theme="light"] .current-time b { color: var(--border-strong); }
-html[data-theme="light"] .current-team-averages>span {
-  background: var(--surface-1);
-  border-color: var(--border-default);
-}
 html[data-theme="light"] .current-detail-button {
   background: var(--surface-1);
   border-color: var(--accent-border);
@@ -714,8 +710,8 @@ html[data-theme="light"] .current-team-block {
   background: var(--surface-1);
   border-left-color: var(--border-strong);
 }
-html[data-theme="light"] .current-team-block.blue-team { border-left-color: var(--team-blue); }
-html[data-theme="light"] .current-team-block.red-team { border-left-color: var(--team-red); }
+html[data-theme="light"] .current-team-block.blue-team { border-left-color: var(--team-blue); background: linear-gradient(90deg,rgba(54,117,190,.08),var(--surface-1) 36%); }
+html[data-theme="light"] .current-team-block.red-team { border-left-color: var(--team-red); background: linear-gradient(90deg,rgba(193,65,83,.08),var(--surface-1) 36%); }
 html[data-theme="light"] .current-team-block h3 {
   background: var(--surface-2);
   border-color: var(--border-soft);
@@ -724,18 +720,13 @@ html[data-theme="light"] .current-team-block.blue-team h3 { color: var(--team-bl
 html[data-theme="light"] .current-team-block.red-team h3 { color: var(--team-red-text); }
 html[data-theme="light"] .current-team-block h3 span { color: var(--text-muted); }
 html[data-theme="light"] .current-player-row { border-color: var(--border-soft); }
-html[data-theme="light"] .current-player-tag {
-  border-color: var(--border-default);
-  color: var(--text-muted);
-  background: var(--surface-2);
-}
 html[data-theme="light"] .current-form .win { background: var(--success-soft); color: var(--success); }
 html[data-theme="light"] .current-form .loss { background: var(--danger-soft); color: var(--danger); }
 html[data-theme="light"] .current-form em { color: var(--text-subtle); }
 html[data-theme="light"] .current-most { background: var(--surface-3); }
 html[data-theme="light"] .current-most b { color: var(--text-secondary); }
 html[data-theme="light"] .current-match-dialog { color: var(--text-primary); }
-html[data-theme="light"] .current-match-modal-head h2 b,
+html[data-theme="light"] .current-modal-versus b,
 html[data-theme="light"] .current-match-vs { color: var(--text-muted); }
 
 /* Additional profile surfaces */

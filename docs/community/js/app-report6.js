@@ -10,7 +10,7 @@ import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "
 import { renderMileage } from "./pages/mileage.js?v=20260913density1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260911authsingleton1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
-import { loadLiveMatch } from "./pages/liveMatch.js?v=20260912liveui1";
+import { loadLiveMatch } from "./pages/liveMatch.js?v=20260913livecompact1";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -373,6 +373,7 @@ function bindEvents() {
     const userId = trigger.dataset.userId;
     const guildId = trigger.dataset.guildId;
     if (!userId || !guildId) return;
+    trigger.closest("#currentMatchDialog")?.close();
     openPlayer(userId, guildId, { historyMode: "push" });
   });
   document.addEventListener("keydown",event=>{if(event.key==="Escape")closeMoreMenu();});

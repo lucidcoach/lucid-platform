@@ -61,15 +61,13 @@ function sortedCurrentGames(games) {
 
 function compactCard(game) {
   const mine = isMyGame(game);
+  const blueTier = game.blueAverageTier || "미배치";
+  const redTier = game.redAverageTier || "미배치";
   return `<article class="current-game-card${mine ? " is-my-game" : ""}">
-    <div class="current-game-title"><div><small>QUEUE</small><strong>${esc(queueName(game))}</strong></div>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
+    <div class="current-game-title"><div><small>LIVE MATCH</small><strong>${esc(queueName(game))}</strong></div>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
     <div class="current-versus"><strong class="blue">블루팀</strong><span>VS</span><strong class="red">레드팀</strong></div>
     <p class="current-time"><span>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"}</span><b>·</b><span>${elapsedText(game.startedAt)}</span></p>
-    <div class="current-roster-preview"><span>${(game.blue || []).map((player) => esc(player.name)).join(" · ") || "라인업 확인 중"}</span><span>${(game.red || []).map((player) => esc(player.name)).join(" · ") || "라인업 확인 중"}</span></div>
-    <div class="current-team-averages">
-      <span><i>BLUE 평균 티어</i><strong>${esc(game.blueAverageTier || "미배치")}</strong></span>
-      <span><i>RED 평균 티어</i><strong>${esc(game.redAverageTier || "미배치")}</strong></span>
-    </div>
+    <div class="current-average-tier">${blueTier === redTier ? `평균 티어 <strong>${esc(blueTier)}</strong>` : `BLUE <strong>${esc(blueTier)}</strong><b>·</b> RED <strong>${esc(redTier)}</strong>`}</div>
     <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">자세히 보기</button>
   </article>`;
 }
@@ -91,24 +89,15 @@ function champions(rows = []) {
   }).join("");
 }
 
-function recentSummary(player) {
-  const games = Number(player.recentGames || 0);
-  const wins = Number(player.recentWins || 0);
-  const losses = Number(player.recentLosses || 0);
-  const rate = Number(player.recentWinRate || 0);
-  return `최근전적 ${wins}승 ${losses}패 (${rate.toFixed(0)}%)`;
-}
-
 function playerRow(player) {
-  const form = Array.isArray(player.recentForm) ? player.recentForm : [];
+  const form = Array.isArray(player.recentForm) ? player.recentForm.slice(0, 5) : [];
   const totalGames = Number(player.totalGames || 0);
   const totalRate = Number(player.totalWinRate || 0);
   return `<article class="current-player-row">
     <div class="current-player-topline">
       <div class="current-player-head"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt=""><div class="current-player-name"><span class="tier-badge ${tierClass(player.tier)}">${esc(player.tier || "미배치")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button></div></div>
-      <div class="current-player-recent"><span>${esc(recentSummary(player))}</span><span class="current-form">${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || `<em>기록 없음</em>`}</span></div>
+      <div class="current-player-recent"><span>최근 전적</span><span class="current-form">${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || `<em>기록 없음</em>`}</span></div>
     </div>
-    <div class="current-player-tag">플레이 특징 분석 중</div>
     <div class="current-player-overall">전체승률 <strong>${totalGames}전, ${totalRate.toFixed(1)}%</strong></div>
     <div class="current-champion-groups"><div><small>모스트 챔피언</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(player.role || "배정 라인")}</small><span>${champions(player.recentChampions)}</span></div></div>
   </article>`;
@@ -132,7 +121,7 @@ function renderPreview(gameId) {
   document.body.insertAdjacentHTML("beforeend", `<dialog id="currentMatchDialog" class="current-match-dialog" aria-labelledby="currentMatchTitle">
     <div class="current-match-modal">
       <button class="current-match-close" type="button" data-current-close aria-label="닫기">×</button>
-      <header class="current-match-modal-head"><p>LIVE MATCH · ${esc(queueName(game))}</p><h2 id="currentMatchTitle"><span class="blue">BLUE TEAM</span><b>VS</b><span class="red">RED TEAM</span></h2><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
+      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle">${esc(queueName(game))}</h2><div class="current-modal-versus"><span class="blue">BLUE TEAM</span><b>VS</b><span class="red">RED TEAM</span></div><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
       <div class="current-match-teams">
         <section class="current-team-block blue-team"><h3>블루팀 <span>평균 티어 ${esc(game.blueAverageTier || "미배치")}</span></h3>${(game.blue || []).map(playerRow).join("")}</section>
         <div class="current-match-vs" aria-hidden="true">VS</div>
