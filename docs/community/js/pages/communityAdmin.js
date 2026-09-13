@@ -1,7 +1,7 @@
 
 import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260911authsingleton1";
 import { API_BASE_URL } from "../config.js?v=20260904d";
-import { renderMileage } from "./mileage.js?v=20260913progress1";
+import { renderMileage } from "./mileage.js?v=20260913shoplayout2";
 import { championIcon } from "../assets.js?v=20260904r";
 
 const esc=(value)=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));

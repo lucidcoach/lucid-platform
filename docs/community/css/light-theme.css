@@ -396,7 +396,7 @@ html[data-theme="light"] :where(.mileage-row small,.mileage-muted,.mileage-form 
   color: var(--text-muted);
 }
 html[data-theme="light"] .mileage-balance { color: var(--accent-primary); }
-html[data-theme="light"] :where(.mileage-form input,.mileage-form select,.mileage-form textarea,.mileage-head select,.mileage-card>label select) {
+html[data-theme="light"] :where(.mileage-form input,.mileage-form select,.mileage-form textarea,.mileage-head select,.mileage-card>label select,.mileage-inventory-emoji select) {
   background: var(--surface-1) !important;
   border-color: var(--border-default) !important;
   color: var(--text-primary) !important;
