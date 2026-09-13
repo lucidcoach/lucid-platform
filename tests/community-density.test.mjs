@@ -11,7 +11,9 @@ const playerSearch = read("../docs/community/js/pages/playerSearch.js");
 assert.match(tokens, /--content:\s*1120px/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
 assert.match(profile, /#recentSearches\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
-assert.match(profile, /profile-dashboard-grid\{grid-template-columns:minmax\(350px,1\.05fr\) minmax\(320px,1fr\) minmax\(300px,1fr\)/);
+assert.match(profile, /profile-dashboard-grid\{grid-template-columns:minmax\(370px,1\.15fr\) minmax\(350px,1\.1fr\) minmax\(330px,1fr\)/);
+assert.match(profile, /@media\(max-width:1150px\)[\s\S]+grid-template-columns:minmax\(360px,1\.05fr\) minmax\(350px,1fr\)/);
+assert.match(profile, /associate-row[^}]+min-height:42px/);
 assert.match(matches, /#recentView,[\s\S]+max-width:100%!important/);
 assert.doesNotMatch(playerSearch, /<div class="profile-champion-panel">/);
 

@@ -1787,13 +1787,19 @@
 /* Compact search/profile layout: three recent items per row and three balanced panels. */
 #recentSearches{grid-template-columns:repeat(3,minmax(0,1fr))}
 #recentSearches .search-memory-row:nth-child(n+7){display:none}
-.profile-dashboard-grid{grid-template-columns:minmax(350px,1.05fr) minmax(320px,1fr) minmax(300px,1fr);gap:12px}
+.profile-dashboard-grid{grid-template-columns:minmax(370px,1.15fr) minmax(350px,1.1fr) minmax(330px,1fr);gap:12px}
 .profile-dashboard-grid>.champion-stats-panel,
 .profile-dashboard-grid>.associate-stats-panel{min-width:0;height:100%;margin:0;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel)}
-.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(94px,1fr) 110px 48px!important;gap:6px!important}
-.profile-dashboard-grid .role-tier-record{grid-template-columns:34px 34px 42px!important}
-.associate-stats-panel{padding:14px}
-.associate-row{grid-template-columns:minmax(96px,1fr) 28px 28px 44px;gap:4px;min-height:36px;line-height:1.25}
+.profile-summary-panel .profile-title-row{grid-template-columns:1fr auto!important}
+.profile-summary-panel .profile-refresh-wrap{grid-column:2;grid-row:1}
+.profile-summary-panel .profile-name-with-icon{grid-column:1/-1;grid-row:2;width:100%!important}
+.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(112px,1fr) 116px 54px!important;gap:8px!important}
+.profile-dashboard-grid .role-tier-record{grid-template-columns:36px 36px 44px!important;width:116px!important;min-width:116px!important}
+.profile-dashboard-grid>.champion-stats-panel{padding:16px 18px}
+.profile-dashboard-grid .champion-stat-head,
+.profile-dashboard-grid .champion-stat-row{grid-template-columns:minmax(135px,1fr) 46px 54px 52px;gap:6px;padding-left:8px;padding-right:8px}
+.profile-dashboard-grid>.associate-stats-panel{padding:16px 18px}
+.profile-dashboard-grid .associate-row{grid-template-columns:minmax(110px,1fr) 34px 34px 50px;gap:6px;min-height:42px;line-height:1.35}
 @media(min-width:1101px){
   .personal-match:not(.expanded) .personal-summary,
   .personal-match.expanded .personal-summary{grid-template-columns:76px 100px 400px minmax(310px,1fr) 38px!important;column-gap:8px!important;min-width:950px!important;min-height:84px!important;padding:8px 10px!important}
@@ -1804,10 +1810,13 @@
   .personal-match.expanded .personal-actions{width:38px!important;min-width:38px!important}
   .roster-player{line-height:1.2}
 }
-@media(max-width:1050px){
-  .profile-dashboard-grid{grid-template-columns:1fr}
+@media(max-width:1150px){
+  .profile-dashboard-grid{grid-template-columns:minmax(360px,1.05fr) minmax(350px,1fr)}
+  .profile-dashboard-grid>.associate-stats-panel{grid-column:1/-1}
 }
 @media(max-width:820px){
+  .profile-dashboard-grid{grid-template-columns:1fr}
+  .profile-dashboard-grid>.associate-stats-panel{grid-column:auto}
   #recentSearches{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 }
 .personal-admin-analysis-button{margin-left:auto!important;min-width:92px!important;height:34px!important;padding:0 15px!important;border:1px solid #4b73a5!important;border-radius:8px!important;background:#173052!important;color:#eef6ff!important;font-weight:850!important;font-size:11px!important;cursor:pointer!important;align-self:flex-end!important}
