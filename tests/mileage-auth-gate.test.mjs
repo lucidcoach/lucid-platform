@@ -39,8 +39,8 @@ assert.match(source, /data-use-item/);
 assert.match(source, /wallet\?page=\$\{transactionPage\}&limit=5/);
 assert.match(source, /transactionPagination/);
 assert.match(source, /mileageTransactionPager/);
-assert.match(entry, /pages\/mileage\.js\?v=20260913adminux1/);
-assert.match(page, /styles\.css\?v=20260913adminux1/);
-assert.match(page, /app-report6\.js\?v=20260913adminux1/);
+assert.match(entry, /pages\/mileage\.js\?v=20260913menus1/);
+assert.match(page, /styles\.css\?v=20260913menus1/);
+assert.match(page, /app-report6\.js\?v=20260913menus1/);
 
 console.log("mileage auth gate checks passed");

@@ -11,8 +11,24 @@
 @import url("css/auth.css?v=20260911theme1");
 @import url("css/ranking.css?v=20260911tiercutoff1");
 
-@import url("css/admin.css?v=20260911titleicon2");
+@import url("css/admin.css?v=20260913menus1");
 @import url("css/mileage.css?v=20260913adminux1");
 @import url("css/current-games.css?v=20260912liveui1");
 @import url("css/analysis-server.css?v=20260907ia1");
 @import url("css/light-theme.css?v=20260912light3");
+
+/* Search history stays prominent only on match/search views. */
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .compact-community-search{display:none}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-panel{display:flex;align-items:center;gap:8px;margin:4px 0 14px;min-width:0}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column{display:flex;align-items:center;gap:7px;min-width:0;border:0;background:transparent;overflow:visible}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column:first-child{flex:1}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-title{flex:0 0 auto;padding:0;border:0}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-list{display:flex;gap:5px;min-width:0;padding:0;overflow:hidden}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) #recentSearches .search-memory-row{display:block;flex:0 1 170px;min-width:90px;max-width:170px;padding:2px 4px}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) #recentSearches .search-memory-row:nth-child(n+4){display:none}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-star,body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-remove{display:none}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column.favorites{flex:0 0 auto;margin-left:auto}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column.favorites .search-memory-title{height:30px;padding:0 10px;border:1px solid #3b334a;border-radius:7px;background:var(--panel)}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column.favorites .search-memory-title strong::before{content:"★ "}
+body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column.favorites .search-memory-list{display:none}
+@media(max-width:760px){body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-panel{align-items:flex-start;flex-wrap:wrap}body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-column:first-child{flex-basis:100%}body:not(:has(#recentView.active)):not(:has(#searchView.active)) .search-memory-list{flex-wrap:wrap;overflow:visible}body:not(:has(#recentView.active)):not(:has(#searchView.active)) #recentSearches .search-memory-row{flex:1 1 110px;min-width:100px}}

@@ -1,5 +1,5 @@
 
-.admin-nav-tab{color:#b8c6db}.community-admin-mode .compact-community-search,.community-admin-mode .search-memory-panel{display:none}
+.admin-nav-tab{color:#b8c6db}.community-admin-mode .compact-community-search{display:none}
 .admin-page{display:grid;gap:18px}.admin-page-head{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:end}
 .admin-page-head h1{margin:0;font-size:clamp(30px,4vw,46px);letter-spacing:-.04em}.admin-page-head p:last-child{margin:10px 0 0;color:var(--muted)}
 .admin-server-picker{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;padding:14px 16px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}

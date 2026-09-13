@@ -4,6 +4,7 @@ import vm from "node:vm";
 
 const mileage = readFileSync(new URL("../docs/community/js/pages/mileage.js", import.meta.url), "utf8");
 const mileageCss = readFileSync(new URL("../docs/community/css/mileage.css", import.meta.url), "utf8");
+const communityStyles = readFileSync(new URL("../docs/community/styles.css", import.meta.url), "utf8");
 const app = readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8");
 for (const value of ["feedback", "reset", "cosmetic", "shortDescription", "linkedPageUrl"]) assert.match(mileage, new RegExp(value));
 assert.match(mileage, /data-item-detail/);
@@ -24,6 +25,11 @@ assert.match(mileageCss, /@media\(max-width:600px\).*\.mileage-quest-row\{overfl
 assert.match(mileageCss, /\.mileage-admin-workspace\{[^}]*grid-template-columns/);
 assert.match(mileageCss, /\.mileage-shop-admin-card \.mileage-form\{grid-template-columns:repeat\(2/);
 assert.match(mileageCss, /@media\(max-width:760px\).*\.mileage-shop-admin-card \.mileage-form\{grid-template-columns:1fr\}/s);
+assert.match(mileage, /page\?\.querySelector\(":scope > \.mileage-grid"\)\?\.remove\(\)/);
+assert.match(mileage, /mileage-admin-page/);
+assert.match(communityStyles, /#recentSearches \.search-memory-row:nth-child\(n\+4\)\{display:none\}/);
+assert.match(communityStyles, /#recentView\.active.*#searchView\.active/);
+assert.match(communityStyles, /\.search-memory-column\.favorites \.search-memory-list\{display:none\}/);
 assert.match(mileage, /admin\/transactions\?page=/);
 assert.match(mileage, /admin\/invites\?page=/);
 assert.match(mileage, /searchQuery\(adminAuditSearch\)/);

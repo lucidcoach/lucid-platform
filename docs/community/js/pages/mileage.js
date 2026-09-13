@@ -202,7 +202,17 @@ async function loadGuild(root,guild,{showAdmin=false}={}){
       <section class="mileage-card"><h2>보유 아이템</h2><div class="mileage-list">${rows(inventoryData.items,"보유 중인 아이템이 없습니다.",(p)=>`<div class="mileage-row"><span>${esc(p.itemIcon||"")} <strong>${esc(p.itemName)}</strong><br><small>${esc(inventoryStatus(p.status))}</small></span><span>${inventoryAction(p)}</span></div>`)}</div>${effectsData.effects?.emojiInventory?.length?`<label>프로필 이모지 <select id="mileageEmoji"><option value="">기본</option>${effectsData.effects.emojiInventory.map(emoji=>`<option value="${esc(emoji)}" ${emoji===effectsData.effects.activeEmoji?"selected":""}>${esc(emoji)}</option>`).join("")}</select></label>`:""}<h3>구매내역</h3><div class="mileage-list">${rows(purchaseData.purchases,"구매내역이 없습니다.",(p)=>`<div class="mileage-row"><span>${esc(p.itemIcon||"")} ${esc(p.itemName)}<br><small>${esc(inventoryStatus(p.status))}${p.cancellationReason?` · ${esc(p.cancellationReason)}`:""}</small></span><b>${Number(p.price).toLocaleString()}P</b></div>`)}</div></section>
       <section class="mileage-card"><h2>일일·주간 퀘스트</h2><div class="mileage-list">${rows((questData.quests||[]).filter(q=>q.active),"진행 중인 퀘스트가 없습니다.",questRow)}</div></section></div>
       ${showAdmin&&guild.canManage?`<div class="mileage-grid">${settingsCard(settingsData.settings,questData.quests||[])}${adminCards({rules:settingsData.settings.rules,shopItems:shopData.items,testPurchases:testData.items,adminPurchases:adminPurchaseData.purchases,transactions:transactionData.transactions,auditPagination:transactionData.pagination,economy:economyData.summary,invites:inviteData.invites,invitePagination:inviteData.pagination,backfillJob:backfillData.job,backfillJobs:backfillData.jobs,balances:balanceData.balances,balancePagination:balanceData.pagination})}</div>`:""}<dialog id="mileageDialog" class="mileage-dialog"></dialog><div id="mileageStatus" class="mileage-status"></div></div>`;
-    if(showAdmin&&guild.canManage)decorateAdminCards(root,{shopItems:shopData.items||[],adminPurchases:adminPurchaseData.purchases||[],invitePagination:inviteData.pagination,auditPagination:transactionData.pagination});
+    if(showAdmin&&guild.canManage){
+      const page=root.querySelector(".mileage-page"),head=page?.querySelector(".mileage-head");
+      page?.querySelector(":scope > .mileage-grid")?.remove();
+      page?.classList.add("mileage-admin-page");
+      if(head?.querySelector(".section-kicker"))head.querySelector(".section-kicker").textContent="SERVER ADMIN";
+      if(head?.querySelector("h1"))head.querySelector("h1").textContent=`${guild.guildName} 운영 관리`;
+      head?.querySelector(".mileage-newcomer")?.remove();
+      head?.querySelector(".mileage-guide-button")?.remove();
+      head?.querySelector(".mileage-balance")?.parentElement?.remove();
+      decorateAdminCards(root,{shopItems:shopData.items||[],adminPurchases:adminPurchaseData.purchases||[],invitePagination:inviteData.pagination,auditPagination:transactionData.pagination});
+    }
     transactionPage=Number(wallet.transactionPagination?.page||1);bindGuild(root,guild,{showAdmin,quests:questData.quests||[],shopItems:shopData.items||[],backfillJob:backfillData?.job,earningGuide:wallet.earningGuide||{}});
   }catch(error){root.innerHTML=`<section class="mileage-card"><h2>포인트를 불러오지 못했습니다.</h2><p>${esc(error.message)}</p></section>`;}
 }
