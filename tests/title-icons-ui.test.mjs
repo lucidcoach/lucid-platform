@@ -4,13 +4,17 @@ import { readFileSync } from "node:fs";
 const admin = readFileSync(new URL("../docs/community/js/pages/communityAdmin.js", import.meta.url), "utf8");
 const profile = readFileSync(new URL("../docs/community/js/pages/playerSearch.js", import.meta.url), "utf8");
 
-for (const text of ["이미지 편집", "이미지 제거", "customIconUrl", "championNames", "iconSource"]) {
+for (const text of ["이미지 편집", "기본 이미지로 복원", "선택 취소", "customIconUrl", "championNames", "iconSource"]) {
   assert.match(admin, new RegExp(text));
 }
 assert.match(admin, /method:"DELETE"/);
-for (const text of ["TITLE_ICON_MAX_BYTES", "validateTitleIcon", "URL.createObjectURL", "URL.revokeObjectURL", "변경 미리보기", "이미지는 256×256이어야 합니다.", "이미지는 512KB 이하여야 합니다.", "지원하지 않는 이미지 형식입니다."]) {
+for (const text of ["TITLE_ICON_MAX_BYTES", "validateTitleIcon", "URL.createObjectURL", "URL.revokeObjectURL", "선택 이미지 미리보기", "이미지는 256×256이어야 합니다.", "이미지는 512KB 이하여야 합니다.", "지원하지 않는 이미지 형식입니다.", "커스텀 이미지 사용 중", "기본 이미지 사용 중", "현재 칭호 전용 이미지를 제거하고 기본 이미지로 복원할까요?"]) {
   assert.match(admin, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 }
+assert.match(admin, /data-title-icon-save disabled/);
+assert.match(admin, /disabled=!preview\.valid/);
+assert.match(admin, /titleIconFileInfo\(file,preview\.width,preview\.height\)/);
+assert.match(admin, /preview\.errors\.map/);
 assert.match(admin, /titleSubcategory/);
 assert.match(admin, /primaryCategory/);
 assert.match(profile, /equippedTitleBadge\(p\.equippedTitle\)/);
