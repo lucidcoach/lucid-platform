@@ -1790,16 +1790,27 @@
 .profile-dashboard-grid{grid-template-columns:minmax(380px,1.2fr) minmax(350px,1.1fr) minmax(315px,.95fr);gap:12px}
 .profile-dashboard-grid>.champion-stats-panel,
 .profile-dashboard-grid>.associate-stats-panel{min-width:0;height:100%;margin:0;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel)}
-.profile-summary-panel .profile-title-row{grid-template-columns:1fr auto!important}
-.profile-summary-panel .profile-refresh-wrap{grid-column:2;grid-row:1}
-.profile-summary-panel .profile-name-with-icon{grid-column:1/-1;grid-row:2;width:100%!important}
-.profile-summary-panel>.profile-rank-switcher{margin:0;padding:0;border:0;background:transparent}
-.profile-summary-panel .profile-name-with-icon:has(.title-icon){grid-template-columns:58px minmax(0,1fr)!important}
-.profile-summary-panel .summoner-profile-stack .summoner-profile-icon.title-icon{width:56px!important;height:56px!important}
-.profile-dashboard-grid .role-tier-line{padding-right:6px!important}
-.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(112px,1fr) 110px 50px!important;gap:5px!important}
-.profile-dashboard-grid .role-tier-record{grid-template-columns:34px 34px 42px!important;width:110px!important;min-width:110px!important}
-.profile-dashboard-grid .role-tier-delta{min-width:50px!important;padding:0 5px!important}
+.profile-summary-panel{padding:14px 15px}
+.profile-summary-panel .profile-title-row{display:block!important;width:100%!important}
+.profile-summary-panel .profile-name-with-icon{display:grid!important;grid-template-columns:62px minmax(0,1fr)!important;align-items:start!important;gap:9px!important;width:100%!important}
+.profile-summary-panel .summoner-profile-stack{width:62px!important;min-width:62px!important}
+.profile-summary-panel .summoner-profile-stack .summoner-profile-icon{width:60px!important;height:60px!important}
+.profile-summary-panel .profile-identity-copy{display:grid!important;gap:6px!important;min-width:0!important}
+.profile-summary-panel .profile-equipped-title{margin:0!important}
+.profile-title-action-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px;min-width:0}
+.profile-summary-panel .profile-name-main h1{font-size:20px!important}
+.profile-summary-panel .profile-refresh-wrap{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;width:auto!important}
+.profile-summary-panel>.profile-rank-switcher{margin:10px 0 0;padding:0;border:0;background:transparent}
+.profile-summary-panel .profile-rank-switcher-body{min-height:0}
+.profile-dashboard-grid .role-tier-list{gap:4px}
+.profile-dashboard-grid .role-tier-line{min-height:38px!important;padding:4px 5px 4px 4px!important}
+.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(104px,1fr) 104px 46px!important;gap:4px!important}
+.profile-dashboard-grid .role-tier-rank{grid-template-columns:24px 32px 46px!important;gap:1px!important}
+.profile-dashboard-grid .role-tier-rank .tier-text{width:32px!important}
+.profile-dashboard-grid .role-tier-mmr{width:46px!important}
+.profile-dashboard-grid .role-tier-record{display:grid!important;grid-template-columns:60px 42px!important;gap:2px!important;width:104px!important;min-width:104px!important}
+.profile-dashboard-grid .role-tier-result{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.profile-dashboard-grid .role-tier-delta{min-width:46px!important;height:21px!important;padding:0 4px!important}
 .profile-dashboard-grid>.champion-stats-panel{padding:16px 18px}
 .profile-dashboard-grid .champion-stat-head,
 .profile-dashboard-grid .champion-stat-row{grid-template-columns:minmax(135px,1fr) 46px 54px 52px;gap:6px;padding-left:8px;padding-right:8px}
@@ -1823,6 +1834,16 @@
   .profile-dashboard-grid{grid-template-columns:1fr}
   .profile-dashboard-grid>.associate-stats-panel{grid-column:auto}
   #recentSearches{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+}
+@media(max-width:560px){
+  .profile-summary-panel{padding:13px}
+  .profile-summary-panel .profile-name-with-icon{grid-template-columns:52px minmax(0,1fr)!important;gap:8px!important}
+  .profile-summary-panel .summoner-profile-stack{width:52px!important;min-width:52px!important}
+  .profile-summary-panel .summoner-profile-stack .summoner-profile-icon{width:50px!important;height:50px!important}
+  .profile-title-action-row{gap:5px}
+  .profile-summary-panel .profile-name-main h1{font-size:17px!important}
+  .profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(100px,1fr) 100px 44px!important;gap:3px!important}
+  .profile-dashboard-grid .role-tier-record{grid-template-columns:58px 40px!important;width:100px!important;min-width:100px!important}
 }
 .personal-admin-analysis-button{margin-left:auto!important;min-width:92px!important;height:34px!important;padding:0 15px!important;border:1px solid #4b73a5!important;border-radius:8px!important;background:#173052!important;color:#eef6ff!important;font-weight:850!important;font-size:11px!important;cursor:pointer!important;align-self:flex-end!important}
 .personal-admin-analysis-button:hover{background:#21436f!important}

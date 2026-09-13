@@ -131,7 +131,7 @@ function roleTierBoard(rows = [], embedded = false) {
         <span class="role-tier-role">${escapeHtml(role)}</span>
         <span class="role-tier-main">
           <span class="role-tier-rank"><img src="${escapeHtml(tierIcon(tier))}" alt="" loading="lazy"><strong class="tier-text ${tierClass(tier)}">${escapeHtml(tier)}</strong><span class="role-tier-mmr">${lp.toLocaleString()}점</span></span>
-          <span class="role-tier-record"><em>${Number(row.wins || row.win || 0)}승</em><b>${Number(row.losses || row.loss || 0)}패</b><i>${Number(row.winRate || 0).toFixed(1)}%</i></span>
+          <span class="role-tier-record"><span class="role-tier-result"><em>${Number(row.wins || row.win || 0)}승</em><b>${Number(row.losses || row.loss || 0)}패</b></span><i>${Number(row.winRate || 0).toFixed(1)}%</i></span>
           ${roleDelta(row)}
         </span>
       </div>`;
@@ -388,11 +388,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${equippedTitleBadge(p.equippedTitle)}${roleBadges(p.roleBadges || [], p.equippedTitle)}</div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div>
-        <div class="profile-overview profile-overview-compact">
-          <div class="profile-record"><span>전적</span><strong>${Number(p.games || 0)}전 <em>${Number(p.wins || 0)}승</em> <b>${Number(p.losses || 0)}패</b></strong><small>승률 <b class="${winRateClass(p.winRate)}">${Number(p.winRate || 0).toFixed(1)}%</b></small></div>
-          <div class="profile-record"><span>평균 KDA</span><strong class="${kdaClass(p.averageKda)}">${Number(p.averageKda || 0).toFixed(2)}</strong></div>
-        </div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}<div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${roleBadges(p.roleBadges || [], p.equippedTitle)}</div></div></div>
         ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
       </div>
       ${championStatsPanel(p.championStats || {})}
