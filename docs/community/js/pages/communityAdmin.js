@@ -14,6 +14,8 @@ let missingArchived=false;
 let roflFiles=[];
 let retroRoflFiles=[];
 let roflRefreshTimer=0;
+let accountAuditPage=1;
+let accountAuditQuery="";
 const apiUrl=path=>`${API_BASE_URL.replace(/\/$/,"")}${path}`;
 async function adminRequest(path,{method="GET",body}={}){const multipart=body instanceof FormData;let response;try{response=await fetch(apiUrl(path),{method,credentials:"include",signal:AbortSignal.timeout(15000),headers:body&&!multipart?{"Content-Type":"application/json"}:{},body:body?(multipart?body:JSON.stringify(body)):undefined});}catch(error){if(error?.name==="TimeoutError")throw new Error("서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");throw new Error("네트워크 또는 CORS 오류로 API 서버에 연결하지 못했습니다.");}const data=await response.json().catch(()=>({}));if(response.status===401)throw new Error("인증이 만료되었습니다. 다시 로그인해주세요.");if(response.status===403)throw new Error("관리자 권한이 없습니다.");if(response.status>=500)throw new Error(`서버 오류 (${response.status})가 발생했습니다. 잠시 후 다시 시도해주세요.`);if(response.status===404)throw new Error("요청한 데이터를 찾을 수 없습니다.");if(!response.ok||!data.ok)throw new Error(data.message||data.error||"요청에 실패했습니다.");return data;}
 
@@ -23,6 +25,7 @@ const sections = [
   ["titles","칭호 / 업적","서버 기준 칭호와 달성 조건 확인","🏷"],
   ["mileage","포인트 관리","지급 규칙·상점·주문·감사로그","M"],
   ["riot","Riot 공식전적 동기화","등록 계정·수집 상태·공동 플레이","R"],
+  ["accounts","Riot 계정 변경 이력","등록·변경·삭제 이력과 연결 해제","ID"],
   ["events","이벤트","진행 이벤트·랭킹·보상","★"],
   ["missing","상세스탯 누락","누락된 경기 확인·목록 정리","⌕"],
   ["retro","리플레이 소급","지난 경기 ROFL 검증·복구","↶"],
@@ -457,6 +460,37 @@ function roflPanel(){
   `);
 }
 
+const accountActionLabels={create:"등록",update:"Riot ID 변경",delete:"부계정 삭제",unlink:"관리자 연결 해제",reassign:"관리자 재귀속"};
+const accountTypeLabels={main:"본계정",alt:"부계정"};
+const accountTime=value=>value?new Date(value).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+function accountPanel(){
+  return shell(`
+    ${panelTitle("Riot 계정 변경 이력","PUUID 기준 등록 소유권과 변경 작업을 조회합니다.")}
+    <section class="admin-work-panel">
+      <form id="riotAccountAuditSearch" class="admin-filter-grid account-audit-search">
+        <label>계정 검색<input name="query" value="${esc(accountAuditQuery)}" placeholder="닉네임#태그, Discord ID 또는 PUUID"></label>
+        <button class="admin-primary" type="submit">검색</button><button class="admin-select-button" type="reset">초기화</button>
+      </form>
+      <p id="riotAccountAuditStatus" class="admin-tab-feedback">최근 변경부터 표시합니다.</p>
+      <div class="admin-form-section"><h3>현재 연결 계정</h3><div id="riotAccountBindings" class="admin-table"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div></div>
+      <div class="admin-form-section"><h3 id="riotAccountAuditTitle">변경 이력</h3><div id="riotAccountAuditList" class="admin-table"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div><div id="riotAccountAuditPager" class="account-audit-pager"></div></div>
+    </section>`);
+}
+async function loadRiotAccountAudit(){
+  const bindings=document.getElementById("riotAccountBindings"),list=document.getElementById("riotAccountAuditList"),pager=document.getElementById("riotAccountAuditPager"),title=document.getElementById("riotAccountAuditTitle");
+  if(!bindings||!list||!selectedGuild)return;
+  try{
+    const params=new URLSearchParams({page:String(accountAuditPage),limit:"20"});if(accountAuditQuery)params.set("query",accountAuditQuery);
+    const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/riot-accounts?${params}`),accounts=data.accounts||[],audit=data.audit||[],meta=data.pagination||{};
+    bindings.innerHTML=accounts.length?accounts.map(row=>`<div class="admin-table-row account-binding-row"><span><strong>${esc(row.displayName)}</strong><small>Discord ${esc(row.discordUserId)}</small></span><span>${esc(accountTypeLabels[row.accountType]||row.accountType)}<small>${esc(row.riotId)}</small></span><span class="account-puuid">${row.puuid?`PUUID ${esc(row.puuid)}`:"PUUID 확인 전"}</span><button class="admin-select-button" data-account-unlink="${esc(row.riotId)}" data-account-user="${esc(row.discordUserId)}" data-account-type="${esc(row.accountType)}">연결 해제</button></div>`).join(""):`<div class="admin-empty-admin"><strong>표시할 연결 계정이 없습니다.</strong></div>`;
+    list.innerHTML=audit.length?audit.map(row=>`<div class="admin-table-row account-audit-row"><span><strong>${esc(accountTime(row.createdAt))}</strong><small>${esc(row.displayName)} · Discord ${esc(row.discordUserId)}</small></span><span><b>${esc(accountTypeLabels[row.accountType]||row.accountType)} ${esc(accountActionLabels[row.action]||row.action)}</b><small>${esc(row.riotId)}</small></span><span class="account-puuid">${row.puuid?`PUUID ${esc(row.puuid)}`:"PUUID 기록 없음"}</span><span>처리자: ${row.actorType==="user"?"본인":`관리자 ${esc(row.actorDiscordId)}`}</span></div>`).join(""):`<div class="admin-empty-admin"><strong>변경 이력이 없습니다.</strong></div>`;
+    if(title)title.textContent=`변경 이력 · ${Number(meta.total||0).toLocaleString()}건`;
+    pager.innerHTML=`<button class="admin-select-button" data-account-page="${Number(meta.page||1)-1}" ${Number(meta.page||1)<=1?"disabled":""}>이전</button><span>${Number(meta.page||1)} / ${Number(meta.pages||1)}</span><button class="admin-select-button" data-account-page="${Number(meta.page||1)+1}" ${Number(meta.page||1)>=Number(meta.pages||1)?"disabled":""}>다음</button>`;
+    bindings.querySelectorAll("[data-account-unlink]").forEach(button=>button.addEventListener("click",async()=>{if(!confirm(`'${button.dataset.accountUnlink}' 연결을 해제할까요?\n자동으로 다른 사용자에게 재귀속되지 않습니다.`))return;const status=document.getElementById("riotAccountAuditStatus");if(status)status.textContent="해제 요청을 봇에 전달 중...";try{await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/actions`,{method:"POST",body:{action:"unlink_riot_account",payload:{userId:button.dataset.accountUser,accountType:button.dataset.accountType,riotId:button.dataset.accountUnlink},requestKey:crypto.randomUUID()}});if(status)status.textContent="요청했습니다. 봇 적용 후 이력이 갱신됩니다.";setTimeout(loadRiotAccountAudit,2500);}catch(error){if(status)status.textContent=error.message;}}));
+    pager.querySelectorAll("[data-account-page]").forEach(button=>button.addEventListener("click",()=>{accountAuditPage=Number(button.dataset.accountPage);loadRiotAccountAudit();}));
+  }catch(error){list.innerHTML=`<div class="admin-empty-admin"><strong>계정 이력을 불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
+}
+
 function riotSyncPanel(){return shell(`${panelTitle("Riot 공식전적 동기화","등록 계정의 Match-V5 수집 상태와 오류를 확인합니다.")}<section class="admin-work-panel"><div class="admin-toolbar"><div><strong>24시간 자동 동기화</strong><small>수동 요청 → 최근 내전 참가자 → 장기 미동기화 계정 순으로 공정하게 처리합니다.</small></div><button id="riotSyncRefresh" class="admin-primary" type="button">새로고침</button></div><div id="riotSyncSummary" class="admin-stat-grid"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div><div class="admin-form-section"><h3>최근 배치 처리 계정</h3><div id="riotSyncRecentBatch" class="admin-table"></div></div><div class="admin-form-section"><h3>다음 처리 예정 계정</h3><div id="riotSyncNextBatch" class="admin-table"></div></div><div id="riotSyncAccounts" class="admin-table"></div></section>`);}
 
 const syncPriorityLabel={manual:"수동 요청",recent7:"최근 7일",recent30:"최근 30일",aging:"장기 미동기화"};
@@ -624,7 +658,7 @@ function renderSection(){
   }
   clearInterval(roflRefreshTimer);roflRefreshTimer=0;
   if(["retro","rofl"].includes(activeSection)&&!isCommunityAdmin())activeSection="dashboard";
-  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,riot:riotSyncPanel,events:eventsPanel,missing:missingPanel,retro:retroPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
+  const pages={dashboard,members:memberPanel,server:serverPanel,titles:titlePanel,mileage:mileagePanel,riot:riotSyncPanel,accounts:accountPanel,events:eventsPanel,missing:missingPanel,retro:retroPanel,rofl:roflPanel,logs:logsPanel,data:dataPanel,support:supportPanel};
   root.innerHTML=(pages[activeSection]||dashboard)();
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
@@ -665,6 +699,11 @@ function renderSection(){
   if(activeSection==="members"){loadMembers();root.querySelector("#memberRefresh")?.addEventListener("click",loadMembers);root.querySelector("#memberSearch")?.addEventListener("input",renderMemberRows);}
   if(activeSection==="mileage")renderMileage({rootId:"adminMileageRoot",initialGuild:selectedGuild,managersOnly:true,showAdmin:true});
   if(activeSection==="riot"){loadRiotSyncStatus();root.querySelector("#riotSyncRefresh")?.addEventListener("click",loadRiotSyncStatus);}
+  if(activeSection==="accounts"){
+    loadRiotAccountAudit();
+    root.querySelector("#riotAccountAuditSearch")?.addEventListener("submit",event=>{event.preventDefault();accountAuditQuery=String(new FormData(event.currentTarget).get("query")||"").trim();accountAuditPage=1;loadRiotAccountAudit();});
+    root.querySelector("#riotAccountAuditSearch")?.addEventListener("reset",()=>{accountAuditQuery="";accountAuditPage=1;setTimeout(loadRiotAccountAudit,0);});
+  }
   if(activeSection==="server")loadServerSettings();
   if(activeSection==="titles"){loadTitleCatalog();root.querySelector("#titleSearch")?.addEventListener("input",renderTitleCatalog);root.querySelector("#titleCategory")?.addEventListener("change",renderTitleCatalog);root.querySelector("#titleIconForm")?.addEventListener("submit",saveTitleIcon);root.querySelector("[data-title-icon-remove]")?.addEventListener("click",removeTitleIcon);root.querySelector("[data-title-icon-close]")?.addEventListener("click",()=>root.querySelector("#titleIconDialog")?.close());root.querySelector("#levelIconForm")?.addEventListener("submit",async event=>{event.preventDefault();const status=root.querySelector("#levelIconStatus");try{if(status)status.textContent="업로드 중...";const data=await adminRequest(`/api/community/admin/guilds/${encodeURIComponent(selectedGuild)}/level-icon`,{method:"POST",body:new FormData(event.currentTarget)});levelIconState=data.levelIcon;renderLevelIcon();event.currentTarget.reset();}catch(error){if(status)status.textContent=error.message;}});}
   if(activeSection==="missing"){
