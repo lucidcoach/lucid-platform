@@ -102,15 +102,16 @@ function champions(rows = []) {
 
 function playerRow(player) {
   const form = Array.isArray(player.recentForm) ? player.recentForm.slice(0, 5) : [];
-  const totalGames = Number(player.totalGames || 0);
-  const totalRate = Number(player.totalWinRate || 0);
+  const mainRole = Number(player.mainRoleGames || 0) > 0 ? player.mainRole : "";
+  const role = player.role || "배정 라인";
+  const roleWinRate = Number(player.roleWinRate || 0);
   return `<article class="current-player-row">
     <div class="current-player-topline">
       <div class="current-player-head"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt=""><div class="current-player-name"><span class="tier-badge ${tierClass(player.tier)}">${esc(player.tier || "미배치")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button></div></div>
-      <div class="current-player-recent"><span>최근 전적</span><span class="current-form">${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") || `<em>기록 없음</em>`}</span></div>
+      <div class="current-player-recent"><span>최근 전적</span><span class="current-form">${form.length ? `<b>(</b>${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("")}<b>)</b>` : `<em>기록 없음</em>`}</span></div>
     </div>
-    <div class="current-player-overall">전체승률 <strong>${totalGames}전, ${totalRate.toFixed(1)}%</strong></div>
-    <div class="current-champion-groups"><div><small>모스트 챔피언</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(player.role || "배정 라인")}</small><span>${champions(player.recentChampions)}</span></div></div>
+    <div class="current-player-context"><span>주 포지션 <strong>${esc(mainRole || "기록 없음")}</strong></span><span>${esc(role)} 승률 <strong>${Number(player.roleGames || 0) ? `${roleWinRate.toFixed(1)}%` : "기록 없음"}</strong></span></div>
+    <div class="current-champion-groups"><div><small>모스트</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(role)}</small><span>${champions(player.recentChampions)}</span></div></div>
   </article>`;
 }
 

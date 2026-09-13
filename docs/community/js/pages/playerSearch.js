@@ -278,7 +278,7 @@ function personalHistoryFilters(matches = [], userId, guildId, riotId="") {
     <div class="personal-queue-filter" role="group" aria-label="게임 유형 필터">
       <span class="personal-filter-label">게임 유형</span>
       <div class="personal-queue-buttons">
-        ${[["all","전체"],["internal","내전"],["solo","솔랭"],["flex","자랭"],["normal","일반"],["aram","칼바람"]].map(([value,label],i)=>`<button type="button" data-personal-queue="${value}" class="${i===0?"active":""}">${label}</button>`).join("")}
+        ${[["internal","내전"],["solo","솔랭"],["flex","자랭"],["normal","일반"],["aram","칼바람"],["all","전체"]].map(([value,label],i)=>`<button type="button" data-personal-queue="${value}" class="${i===0?"active":""}">${label}</button>`).join("")}
       </div>
     </div>
     <button class="personal-admin-analysis-button" type="button" data-admin-analyze-player data-user-id="${escapeHtml(userId)}" data-guild-id="${escapeHtml(guildId)}" data-riot-id="${escapeHtml(riotId)}">분석하기</button>
@@ -289,7 +289,7 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
   const input = target.querySelector("[data-personal-champion-filter]");
   const feed = target.querySelector("[data-personal-match-feed]");
   if (!input || !feed) return;
-  let category = "all";
+  let category = "internal";
 
   const render = () => {
     const query = String(input.value || "").trim().toLowerCase();
@@ -308,8 +308,10 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
   target.querySelectorAll("[data-personal-queue]").forEach((button) => button.addEventListener("click", () => {
     category = button.dataset.personalQueue || "all";
     target.querySelectorAll("[data-personal-queue]").forEach((item) => item.classList.toggle("active", item === button));
+    history.replaceState({...history.state,playerView:{...(history.state?.playerView || {}),personalQueue:category}},"",window.location.href);
     render();
   }));
+  render();
 }
 
 function officialRanksPanel(rows = [], embedded = false) {

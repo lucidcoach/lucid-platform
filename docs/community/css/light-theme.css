@@ -684,7 +684,7 @@ html[data-theme="light"] .current-game-card.is-my-game {
 html[data-theme="light"] .current-game-title small,
 html[data-theme="light"] .current-time,
 html[data-theme="light"] .current-average-tier,
-html[data-theme="light"] .current-player-overall,
+html[data-theme="light"] .current-player-context,
 html[data-theme="light"] .current-role,
 html[data-theme="light"] .current-player-recent,
 html[data-theme="light"] .current-champion-groups small,
@@ -692,7 +692,7 @@ html[data-theme="light"] .current-no-data { color: var(--text-muted); }
 html[data-theme="light"] .current-game-title strong,
 html[data-theme="light"] .current-average-tier strong,
 html[data-theme="light"] .current-player-name button,
-html[data-theme="light"] .current-player-overall strong { color: var(--text-primary); }
+html[data-theme="light"] .current-player-context strong { color: var(--text-primary); }
 html[data-theme="light"] .current-my-game-badge {
   background: var(--accent-soft);
   border-color: var(--accent-border);

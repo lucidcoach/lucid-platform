@@ -175,6 +175,7 @@ async function applyRoute({ fromPop = false, routeState = null } = {}) {
     if (fromPop && saved && filter) {
       filter.value = saved.championFilter || "";
       filter.dispatchEvent(new Event("input"));
+      document.querySelector(`[data-personal-queue="${saved.personalQueue || "internal"}"]`)?.click();
       requestAnimationFrame(() => window.scrollTo(0, Number(saved.scrollY || 0)));
     }
     return;
@@ -333,7 +334,8 @@ function bindEvents() {
     if (fullAnalysisTrigger) {
       event.preventDefault(); event.stopPropagation();
       const championFilter = document.querySelector("[data-personal-champion-filter]")?.value || "";
-      history.replaceState({...(history.state || {}),playerView:{championFilter,scrollY:window.scrollY}},"",window.location.href);
+      const personalQueue = document.querySelector("[data-personal-queue].active")?.dataset.personalQueue || "internal";
+      history.replaceState({...(history.state || {}),playerView:{championFilter,personalQueue,scrollY:window.scrollY}},"",window.location.href);
       openAnalysisFromMatch({
         userId: fullAnalysisTrigger.dataset.userId, guildId: fullAnalysisTrigger.dataset.guildId,
         matchId: fullAnalysisTrigger.dataset.matchId, champion: fullAnalysisTrigger.dataset.champion, role: fullAnalysisTrigger.dataset.role,
