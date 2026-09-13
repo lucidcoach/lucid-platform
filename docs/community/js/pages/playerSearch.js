@@ -40,7 +40,7 @@ const TIER_ICON = {
 };
 
 function equippedTitleBadge(title) {
-  if (!title?.displayTitle) return `<div class="profile-equipped-title is-empty"><b>칭호 없음</b></div>`;
+  if (!title?.displayTitle) return `<div class="profile-equipped-title is-empty"><i aria-hidden="true">◇</i><b>칭호 없음</b></div>`;
   let icons = "";
   if (title.iconSource === "custom" && title.customIconUrl) {
     icons = `<img src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="">`;
@@ -404,7 +404,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}<div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-live-button" type="button" data-profile-live hidden>● LIVE</button><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${roleBadges(p.roleBadges || [], p.equippedTitle)}</div></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}</div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${roleBadges(p.roleBadges || [], p.equippedTitle)}</div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-live-button" type="button" data-profile-live hidden>● LIVE</button><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div></div>
         ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
       </div>
       ${championStatsPanel(p.championStats || {})}
