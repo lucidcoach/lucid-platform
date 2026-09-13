@@ -59,7 +59,10 @@ export function previewTestCoachingCoupon(testPurchaseId, productId) {
 export function filterReservations(bookings, status, query) {
   return bookings.filter((booking) => {
     const statusMatches = status === "all" || booking.status === status;
-    const haystack = [booking.studentName, booking.coachName, booking.contact, booking.memo].join(" ").toLowerCase();
+    const haystack = [
+      booking.id, booking.studentName, booking.coachName, booking.contact, booking.memo,
+      booking.createdAtText, booking.payment?.orderId, booking.payment?.status,
+    ].join(" ").toLowerCase();
     return statusMatches && (!query || haystack.includes(query));
   });
 }

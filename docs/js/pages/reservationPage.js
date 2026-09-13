@@ -23,7 +23,7 @@ import {
   updateRefundRequest,
   updateReservationStatus,
 } from "../reservations.js?v=20260911coupon1";
-import { byId as $, escapeHtml, formatDateTime } from "../utils.js";
+import { byId as $, escapeHtml, formatDateTime, formatWon } from "../utils.js";
 import { fetchAdminSettlements, reconcileAdminPayment, updateAdminSettlement } from "../admin.js";
 
 export function createReservationPage({
@@ -124,6 +124,7 @@ async function startTossPayment(reservationId, button) {
       alert("쿠폰 사용이 완료되어 추가 결제 없이 신청되었습니다.");
       return;
     }
+    if (result.testMode) alert("토스 테스트 결제입니다. 실제 금액은 청구되지 않습니다.");
     if (typeof window.TossPayments !== "function") throw new Error("결제 모듈을 불러오지 못했습니다. 페이지를 새로고침해주세요.");
     const returnUrl = new URL(window.location.href);
     ["payment", "paymentKey", "orderId", "amount", "code", "message"].forEach((key) => returnUrl.searchParams.delete(key));
@@ -500,6 +501,9 @@ function renderBookingDetail() {
       ${renderDetailItem("희망 시간", booking.preferredTime)}
       ${renderDetailItem("현재 상태", booking.status)}
       ${renderDetailItem("결제 상태", paymentStatusLabel(booking))}
+      ${booking.payment ? renderDetailItem("주문번호", booking.payment.orderId || "-") : ""}
+      ${booking.payment ? renderDetailItem("결제금액", `${formatWon(booking.payment.originalAmount)} - ${formatWon(booking.payment.discountAmount)} = ${formatWon(booking.payment.amount)}`) : ""}
+      ${booking.payment?.couponName ? renderDetailItem("사용 쿠폰", booking.payment.couponName) : ""}
       ${renderDetailItem("요청사항", booking.memo, true)}
     </div>
     ${paymentStatus(booking) === "PAID" ? `<button class="danger" type="button" id="refundPaymentBtn">전액 환불</button>` : ""}

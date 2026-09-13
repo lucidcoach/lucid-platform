@@ -62,6 +62,7 @@ function renderStudentHome() {
               <span>
                 <strong>${escapeHtml(row.lesson)}</strong>
                 <small>${escapeHtml(row.coachName)} · ${escapeHtml(row.coachPrice)} · ${escapeHtml(row.time)}</small>
+                ${row.payment ? `<small>정상가 ${formatWon(row.payment.originalAmount)} · 쿠폰 할인 ${formatWon(row.payment.discountAmount)} · 결제금액 ${formatWon(row.payment.amount)}${row.payment.couponName ? ` · ${escapeHtml(row.payment.couponName)}` : ""}</small>` : ""}
                 <small class="student-review-state">${escapeHtml(paymentStatusLabel(row))}</small>
               </span>
               <div class="student-actions">
