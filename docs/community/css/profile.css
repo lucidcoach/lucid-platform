@@ -1787,14 +1787,19 @@
 /* Compact search/profile layout: three recent items per row and three balanced panels. */
 #recentSearches{grid-template-columns:repeat(3,minmax(0,1fr))}
 #recentSearches .search-memory-row:nth-child(n+7){display:none}
-.profile-dashboard-grid{grid-template-columns:minmax(370px,1.18fr) minmax(350px,1.1fr) minmax(325px,.97fr);gap:12px}
+.profile-dashboard-grid{grid-template-columns:minmax(380px,1.2fr) minmax(350px,1.1fr) minmax(315px,.95fr);gap:12px}
 .profile-dashboard-grid>.champion-stats-panel,
 .profile-dashboard-grid>.associate-stats-panel{min-width:0;height:100%;margin:0;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel)}
 .profile-summary-panel .profile-title-row{grid-template-columns:1fr auto!important}
 .profile-summary-panel .profile-refresh-wrap{grid-column:2;grid-row:1}
 .profile-summary-panel .profile-name-with-icon{grid-column:1/-1;grid-row:2;width:100%!important}
-.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(112px,1fr) 116px 54px!important;gap:8px!important}
-.profile-dashboard-grid .role-tier-record{grid-template-columns:36px 36px 44px!important;width:116px!important;min-width:116px!important}
+.profile-summary-panel>.profile-rank-switcher{margin:0;padding:0;border:0;background:transparent}
+.profile-summary-panel .profile-name-with-icon:has(.title-icon){grid-template-columns:58px minmax(0,1fr)!important}
+.profile-summary-panel .summoner-profile-stack .summoner-profile-icon.title-icon{width:56px!important;height:56px!important}
+.profile-dashboard-grid .role-tier-line{padding-right:6px!important}
+.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(112px,1fr) 110px 50px!important;gap:5px!important}
+.profile-dashboard-grid .role-tier-record{grid-template-columns:34px 34px 42px!important;width:110px!important;min-width:110px!important}
+.profile-dashboard-grid .role-tier-delta{min-width:50px!important;padding:0 5px!important}
 .profile-dashboard-grid>.champion-stats-panel{padding:16px 18px}
 .profile-dashboard-grid .champion-stat-head,
 .profile-dashboard-grid .champion-stat-row{grid-template-columns:minmax(135px,1fr) 46px 54px 52px;gap:6px;padding-left:8px;padding-right:8px}
