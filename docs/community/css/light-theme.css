@@ -698,6 +698,12 @@ html[data-theme="light"] .current-my-game-badge {
   border-color: var(--accent-border);
   color: #5138c3;
 }
+html[data-theme="light"] .current-series-summary {
+  background: var(--surface-1);
+  border-color: var(--border-default);
+  color: var(--text-muted);
+}
+html[data-theme="light"] .current-series-summary strong { color: #705b19; }
 html[data-theme="light"] .current-versus span { color: var(--text-subtle); }
 html[data-theme="light"] .current-time b { color: var(--border-strong); }
 html[data-theme="light"] .current-detail-button {

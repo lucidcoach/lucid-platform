@@ -59,13 +59,24 @@ function sortedCurrentGames(games) {
     .map(({ game }) => game);
 }
 
+function seriesSummary(game) {
+  const series = game?.series;
+  if (!series || Number(series.bestOf || 1) <= 1) return "";
+  const score = `1팀 ${Number(series.team1Score || 0)} : ${Number(series.team2Score || 0)} 2팀`;
+  const state = series.sideChoicePending
+    ? `${Number(series.currentSet || 1)}세트 진영 선택 대기 · ${series.choosingTeam || "패배팀"}`
+    : `${Number(series.currentSet || 1)}세트 진행 중`;
+  return `<div class="current-series-summary"><strong>BO${Number(series.bestOf)} · ${esc(score)}</strong><span>${esc(state)}</span></div>`;
+}
+
 function compactCard(game) {
   const mine = isMyGame(game);
   const blueTier = game.blueAverageTier || "미배치";
   const redTier = game.redAverageTier || "미배치";
   return `<article class="current-game-card${mine ? " is-my-game" : ""}">
     <div class="current-game-title"><div><small>LIVE MATCH</small><strong>${esc(queueName(game))}</strong></div>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
-    <div class="current-versus"><strong class="blue">블루팀</strong><span>VS</span><strong class="red">레드팀</strong></div>
+    ${seriesSummary(game)}
+    <div class="current-versus"><strong class="blue">BLUE ${esc(game.series?.blueTeam || "블루팀")}</strong><span>VS</span><strong class="red">RED ${esc(game.series?.redTeam || "레드팀")}</strong></div>
     <p class="current-time"><span>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"}</span><b>·</b><span>${elapsedText(game.startedAt)}</span></p>
     <div class="current-average-tier">${blueTier === redTier ? `평균 티어 <strong>${esc(blueTier)}</strong>` : `BLUE <strong>${esc(blueTier)}</strong><b>·</b> RED <strong>${esc(redTier)}</strong>`}</div>
     <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">자세히 보기</button>
@@ -121,7 +132,7 @@ function renderPreview(gameId) {
   document.body.insertAdjacentHTML("beforeend", `<dialog id="currentMatchDialog" class="current-match-dialog" aria-labelledby="currentMatchTitle">
     <div class="current-match-modal">
       <button class="current-match-close" type="button" data-current-close aria-label="닫기">×</button>
-      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle">${esc(queueName(game))}</h2><div class="current-modal-versus"><span class="blue">BLUE TEAM</span><b>VS</b><span class="red">RED TEAM</span></div><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
+      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle">${esc(queueName(game))}</h2>${seriesSummary(game)}<div class="current-modal-versus"><span class="blue">BLUE ${esc(game.series?.blueTeam || "TEAM")}</span><b>VS</b><span class="red">RED ${esc(game.series?.redTeam || "TEAM")}</span></div><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
       <div class="current-match-teams">
         <section class="current-team-block blue-team"><h3>블루팀 <span>평균 티어 ${esc(game.blueAverageTier || "미배치")}</span></h3>${(game.blue || []).map(playerRow).join("")}</section>
         <div class="current-match-vs" aria-hidden="true">VS</div>
@@ -138,10 +149,10 @@ function renderPreview(gameId) {
 
 window.addEventListener("lucid:auth-changed", () => { if (currentGames.length) renderList(); });
 
-export async function loadLiveMatch() {
+export async function loadLiveMatch({ quiet = false } = {}) {
   const root = $("liveMatchRoot");
   if (!root) return;
-  root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p>`;
+  if (!quiet) root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p>`;
   try {
     const data = await apiGet("/api/community/current-games");
     currentGames = Array.isArray(data.games) ? data.games : [];
@@ -151,3 +162,7 @@ export async function loadLiveMatch() {
     root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 불러오지 못했습니다.</p>`;
   }
 }
+
+window.setInterval(() => {
+  if (!document.hidden && $("liveMatchRoot")) loadLiveMatch({ quiet: true });
+}, 15000);
