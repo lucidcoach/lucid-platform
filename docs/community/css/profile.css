@@ -1797,21 +1797,22 @@
 .profile-summary-panel .summoner-profile-stack .summoner-profile-icon{width:60px!important;height:60px!important}
 .profile-summary-panel .profile-identity-copy{display:grid!important;gap:6px!important;min-width:0!important}
 .profile-summary-panel .profile-equipped-title{margin:0!important}
+.profile-summary-panel .profile-equipped-title.is-empty{border-style:dashed;background:transparent;color:var(--muted)}
 .profile-title-action-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px;min-width:0}
 .profile-summary-panel .profile-name-main h1{font-size:20px!important}
 .profile-summary-panel .profile-refresh-wrap{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;width:auto!important}
 .profile-live-button{height:28px;padding:0 8px;border:1px solid var(--danger);border-radius:7px;background:var(--danger-soft);color:var(--danger);font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap}
 .profile-live-button:hover,.profile-live-button:focus-visible{filter:brightness(1.18);outline:2px solid color-mix(in srgb,var(--danger) 38%,transparent);outline-offset:1px}
-.profile-summary-panel>.profile-rank-switcher{margin:10px 0 0;padding:0;border:0;background:transparent}
+.profile-summary-panel>.profile-rank-switcher{margin:14px 0 0;padding:0;border:0;background:transparent}
 .profile-summary-panel .profile-rank-switcher-body{min-height:0}
 .profile-dashboard-grid .role-tier-list{gap:4px}
 .profile-dashboard-grid .role-tier-line{min-height:38px!important;padding:4px 5px 4px 4px!important}
-.profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(104px,1fr) 104px 46px!important;gap:4px!important}
+.profile-dashboard-grid .role-tier-main{grid-template-columns:104px 103px 46px!important;justify-content:start;gap:3px!important}
 .profile-dashboard-grid .role-tier-rank{grid-template-columns:24px 32px 46px!important;gap:1px!important}
 .profile-dashboard-grid .role-tier-rank .tier-text{width:32px!important}
 .profile-dashboard-grid .role-tier-mmr{width:46px!important}
-.profile-dashboard-grid .role-tier-record{display:grid!important;grid-template-columns:60px 42px!important;gap:2px!important;width:104px!important;min-width:104px!important}
-.profile-dashboard-grid .role-tier-result{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.profile-dashboard-grid .role-tier-record{display:grid!important;grid-template-columns:60px 40px!important;gap:1px!important;width:103px!important;min-width:103px!important}
+.profile-dashboard-grid .role-tier-result{display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
 .profile-dashboard-grid .role-tier-delta{min-width:46px!important;height:21px!important;padding:0 4px!important}
 .profile-dashboard-grid>.champion-stats-panel{padding:16px 18px}
 .profile-dashboard-grid .champion-stat-head,
@@ -1844,7 +1845,10 @@
   .profile-summary-panel .summoner-profile-stack .summoner-profile-icon{width:50px!important;height:50px!important}
   .profile-title-action-row{gap:5px}
   .profile-summary-panel .profile-name-main h1{font-size:17px!important}
-  .profile-dashboard-grid .role-tier-main{grid-template-columns:minmax(100px,1fr) 100px 44px!important;gap:3px!important}
+  .profile-dashboard-grid .role-tier-main{grid-template-columns:100px 100px 44px!important;justify-content:start;gap:2px!important}
+  .profile-dashboard-grid .role-tier-rank{grid-template-columns:24px 30px 44px!important;gap:1px!important}
+  .profile-dashboard-grid .role-tier-rank .tier-text{width:30px!important}
+  .profile-dashboard-grid .role-tier-mmr{width:44px!important}
   .profile-dashboard-grid .role-tier-record{grid-template-columns:58px 40px!important;width:100px!important;min-width:100px!important}
 }
 .personal-admin-analysis-button{margin-left:auto!important;min-width:92px!important;height:34px!important;padding:0 15px!important;border:1px solid #4b73a5!important;border-radius:8px!important;background:#173052!important;color:#eef6ff!important;font-weight:850!important;font-size:11px!important;cursor:pointer!important;align-self:flex-end!important}

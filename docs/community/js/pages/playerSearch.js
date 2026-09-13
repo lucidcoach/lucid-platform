@@ -40,7 +40,7 @@ const TIER_ICON = {
 };
 
 function equippedTitleBadge(title) {
-  if (!title?.displayTitle) return "";
+  if (!title?.displayTitle) return `<div class="profile-equipped-title is-empty"><b>칭호 없음</b></div>`;
   let icons = "";
   if (title.iconSource === "custom" && title.customIconUrl) {
     icons = `<img src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="">`;
