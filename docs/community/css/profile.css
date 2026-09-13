@@ -1803,7 +1803,7 @@
 .profile-summary-panel .profile-refresh-wrap{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;width:auto!important}
 .profile-live-button{height:28px;padding:0 8px;border:1px solid var(--danger);border-radius:7px;background:var(--danger-soft);color:var(--danger);font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap}
 .profile-live-button:hover,.profile-live-button:focus-visible{filter:brightness(1.18);outline:2px solid color-mix(in srgb,var(--danger) 38%,transparent);outline-offset:1px}
-.profile-summary-panel>.profile-rank-switcher{margin:14px 0 0;padding:0;border:0;background:transparent}
+.profile-summary-panel>.profile-rank-switcher{margin:16px 0 0;padding:0;border:0;background:transparent}
 .profile-summary-panel .profile-rank-switcher-body{min-height:0}
 .profile-dashboard-grid .role-tier-list{gap:4px}
 .profile-dashboard-grid .role-tier-line{min-height:38px!important;padding:4px 5px 4px 4px!important}

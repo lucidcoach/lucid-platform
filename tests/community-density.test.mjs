@@ -12,7 +12,7 @@ assert.match(tokens, /--content:\s*1120px/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
 assert.match(profile, /#recentSearches\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
 assert.match(profile, /profile-dashboard-grid\{grid-template-columns:minmax\(380px,1\.2fr\) minmax\(350px,1\.1fr\) minmax\(315px,\.95fr\)/);
-assert.match(profile, /profile-summary-panel>\.profile-rank-switcher\{margin:14px 0 0;padding:0;border:0;background:transparent\}/);
+assert.match(profile, /profile-summary-panel>\.profile-rank-switcher\{margin:16px 0 0;padding:0;border:0;background:transparent\}/);
 assert.match(profile, /role-tier-main\{grid-template-columns:104px 103px 46px!important;justify-content:start;gap:3px!important\}/);
 assert.match(profile, /summoner-profile-stack \.summoner-profile-icon\{width:60px!important;height:60px!important\}/);
 assert.match(playerSearch, /profile-title-action-row">\$\{equippedTitleBadge\(p\.equippedTitle\)}<div class="profile-refresh-wrap/);
