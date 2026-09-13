@@ -393,10 +393,8 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
         </div>
         ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
       </div>
-      <div class="profile-champion-panel">
-        ${championStatsPanel(p.championStats || {})}
-        ${associatesPanel(p.recentAssociates || {})}
-      </div>
+      ${championStatsPanel(p.championStats || {})}
+      ${associatesPanel(p.recentAssociates || {})}
     </section>
     ${serverStats ? serverStatsPanel(serverStats) : ""}
     ${personalHistoryFilters(matches, userId, guildId, p.name || "")}

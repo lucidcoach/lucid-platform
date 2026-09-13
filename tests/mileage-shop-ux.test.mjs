@@ -46,7 +46,7 @@ assert.doesNotMatch(mileage, /calls\.push\([^\n]*admin\/transactions/);
 assert.doesNotMatch(mileage, /calls\.push\([^\n]*admin\/invites/);
 assert.doesNotMatch(mileage, /calls\.push\([^\n]*admin\/balances/);
 assert.match(mileage, /data-admin-shop-category/);
-assert.match(mileage, /data-admin-shop-category="all".*feedback.*reset.*cosmetic/s);
+assert.match(mileage, /data-admin-shop-category="all".*reset.*feedback.*cosmetic/s);
 assert.match(mileage, /data-new-shop-item/);
 assert.match(mileage, /data-open-inventory/);
 assert.match(mileage, /data-inventory-tab="items".*data-inventory-tab="purchases"/s);
