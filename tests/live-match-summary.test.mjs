@@ -9,6 +9,13 @@ assert.match(source, /플레이 특징 분석 중/);
 assert.match(source, /mostChampions/);
 assert.match(source, /recentChampions/);
 assert.match(source, /totalWinRate/);
+assert.match(source, /queueName/);
+assert.match(source, /current-my-game-badge/);
+assert.match(source, /getResolvedAnalysisPlayers/);
+assert.match(source, /최근전적/);
+assert.match(source, /전체승률/);
+assert.match(source, /모스트 챔피언/);
+assert.doesNotMatch(source, /MOST 1·2·3/);
 assert.match(rankingSource, /row\.winRate/);
 
 console.log("live match readability checks passed");
