@@ -21,8 +21,16 @@ assert.match(mileage, /승\/패·챔피언 승률 초기화 · 티어 유지/);
 assert.match(mileage, /현재 큐는 유지하고 팀 구성만 다시 편성합니다/);
 assert.match(mileageCss, /\.mileage-short-description\{[^}]*white-space:normal/);
 assert.match(mileageCss, /@media\(max-width:600px\).*\.mileage-quest-row\{overflow-wrap:anywhere\}/s);
+assert.match(mileageCss, /\.mileage-admin-workspace\{[^}]*grid-template-columns/);
+assert.match(mileageCss, /\.mileage-shop-admin-card \.mileage-form\{grid-template-columns:repeat\(2/);
+assert.match(mileageCss, /@media\(max-width:760px\).*\.mileage-shop-admin-card \.mileage-form\{grid-template-columns:1fr\}/s);
 assert.match(mileage, /admin\/transactions\?page=/);
 assert.match(mileage, /admin\/invites\?page=/);
+assert.match(mileage, /searchQuery\(adminAuditSearch\)/);
+assert.match(mileage, /searchQuery\(adminInviteSearch\)/);
+assert.match(mileage, /data-admin-shop-category/);
+assert.match(mileage, /mileage-admin-workspace/);
+assert.doesNotMatch(mileage, /JSON\.stringify\(p\.usageMetadata\)/);
 assert.match(mileage, /const auditRows=.*userName/);
 assert.match(mileage, /const inviteRows=.*inviterName/);
 assert.match(mileage, /admin\/balances\?page=/);
@@ -33,7 +41,7 @@ assert.match(app, /moreMenu\.contains\(event\.target\)/);
 assert.match(app, /event\.key==="Escape"/);
 
 const context={};
-vm.runInNewContext(`${mileage.replace(/^import .*$/gm,"").replace("export async function renderMileage","async function renderMileage")}\nglobalThis.ui={stockText,productCopy,capRow,questRow};`,context);
+vm.runInNewContext(`${mileage.replace(/^import .*$/gm,"").replace("export async function renderMileage","async function renderMileage")}\nglobalThis.ui={stockText,productCopy,capRow,questRow,auditRows,adminPurchaseRows};`,context);
 assert.equal(context.ui.stockText({stock:null}),"");
 assert.equal(context.ui.stockText({stock:5}),"재고 5개");
 assert.match(context.ui.capRow("기본 활동 · 오늘",0,100),/0 \/ 100P.*<progress/s);
@@ -49,5 +57,11 @@ assert.match(context.ui.questRow({period:"weekly",name:"신입 듀오",condition
 assert.match(context.ui.questRow({period:"weekly",name:"설정 변경",conditions:{period:"weekly",match_count:7},progress:{match_count:1},reward:99}),/1 \/ 7판.*보상 99P/s);
 assert.match(context.ui.productCopy({effectType:"stats_reset",effectConfig:{scope:"top"}}).detail,/탑 표시 전적만.*티어\/MMR/);
 assert.match(context.ui.productCopy({effectType:"team_reroll"}).detail,/참가자·포지션·경기 방식은 유지/);
+assert.match(context.ui.auditRows([{userName:"its not you#shst",type:"MATCH_COMPLETE",reason:"서버원과 함께 게임",amount:10,earnedAt:"2026-09-13T12:50:00Z"}]),/9\/13 21:50 · 획득/);
+const purchase=context.ui.adminPurchaseRows([{id:"internal-id",itemName:"원딜 전적 초기화권",userName:"닉네임#태그",status:"fulfilled",effectType:"stats_reset",effectConfig:{scope:"adc"},usedAt:"2026-09-11T06:29:00Z",usageMetadata:{resetAt:"secret-detail"}}]);
+assert.match(purchase,/구매자<\/b> 닉네임#태그/);
+assert.match(purchase,/상태<\/b> 사용 완료/);
+assert.match(purchase,/처리 내용<\/b> 원딜 전적 초기화/);
+assert.doesNotMatch(purchase,/secret-detail|resetAt/);
 
 console.log("mileage shop UX checks passed");
