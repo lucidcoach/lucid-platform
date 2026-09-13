@@ -6,6 +6,7 @@ import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260911public1";
 import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260911authsingleton1";
+import { currentGameForPlayer, openCurrentGame } from "./liveMatch.js?v=20260914profilelive1";
 
 
 function updateUrl(params, mode = "push") {
@@ -56,6 +57,19 @@ function equippedTitleBadge(title) {
     : title.displayTitle;
   return `<div class="profile-equipped-title">${icons ? `<i>${icons}</i>` : ""}<b>${escapeHtml(name)}</b></div>`;
 }
+
+function syncProfileLiveButton(target, userId, guildId) {
+  const button = target?.querySelector("[data-profile-live]");
+  if (!button) return;
+  const game = currentGameForPlayer(userId, guildId);
+  button.hidden = !game;
+  button.dataset.gameId = game?.gameId || "";
+}
+
+window.addEventListener("lucid:current-games-updated", () => {
+  const target = $("searchResults");
+  if (target?.dataset.profileUserId) syncProfileLiveButton(target, target.dataset.profileUserId, target.dataset.profileGuildId);
+});
 
 function roleBadges(rows = [], equippedTitle = null) {
   const titleName = String(equippedTitle?.displayTitle || "").replace(String(equippedTitle?.iconEmoji || ""), "").trim();
@@ -384,11 +398,13 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     const profileIcon = titleProfileIcon(p.equippedTitle, scrimIcon);
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
+    target.dataset.profileUserId = String(userId);
+    target.dataset.profileGuildId = String(guildId);
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
       <div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}<div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${roleBadges(p.roleBadges || [], p.equippedTitle)}</div></div></div>
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}<div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-live-button" type="button" data-profile-live hidden>● LIVE</button><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div>${roleBadges(p.roleBadges || [], p.equippedTitle)}</div></div></div>
         ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
       </div>
       ${championStatsPanel(p.championStats || {})}
@@ -402,6 +418,8 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     bindRankSwitch(target);
     bindAssociates(target, p.recentAssociates || {});
     bindPersonalHistoryFilters(target, matches, userId);
+    syncProfileLiveButton(target, userId, guildId);
+    target.querySelector("[data-profile-live]")?.addEventListener("click", (event) => openCurrentGame(event.currentTarget.dataset.gameId));
     target.querySelector("[data-admin-analyze-player]")?.addEventListener("click", (event) => {
       const button = event.currentTarget;
       const requestedUserId = button.dataset.userId || String(userId);

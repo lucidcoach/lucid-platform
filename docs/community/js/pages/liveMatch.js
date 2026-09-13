@@ -123,10 +123,10 @@ function renderList() {
   root.innerHTML = currentGames.length
     ? `<div class="current-game-list">${currentGames.map(compactCard).join("")}</div>`
     : `<p class="current-empty">현재 진행 중인 내전이 없습니다</p>`;
-  root.querySelectorAll("[data-current-game]").forEach((button) => button.addEventListener("click", () => renderPreview(button.dataset.currentGame)));
+  root.querySelectorAll("[data-current-game]").forEach((button) => button.addEventListener("click", () => openCurrentGame(button.dataset.currentGame)));
 }
 
-function renderPreview(gameId) {
+export function openCurrentGame(gameId) {
   const game = currentGames.find((item) => String(item.gameId) === String(gameId));
   if (!game) return;
   $("currentMatchDialog")?.remove();
@@ -148,6 +148,15 @@ function renderPreview(gameId) {
   dialog.showModal();
 }
 
+export function currentGameForPlayer(userId, guildId) {
+  const priorities = { IN_GAME: 4, ACTIVE: 4, SERIES_ACTIVE: 3, SIDE_CHOICE: 3, READY: 2, LINEUP_CREATED: 1 };
+  return currentGames
+    .filter((game) => String(game.guildId) === String(guildId)
+      && [...(game.blue || []), ...(game.red || [])].some((player) => String(player.userId) === String(userId)))
+    .sort((a, b) => (priorities[String(b.status || "ACTIVE").toUpperCase()] || 0) - (priorities[String(a.status || "ACTIVE").toUpperCase()] || 0)
+      || (parsedDate(b.startedAt)?.getTime() || 0) - (parsedDate(a.startedAt)?.getTime() || 0))[0] || null;
+}
+
 window.addEventListener("lucid:auth-changed", () => { if (currentGames.length) renderList(); });
 
 export async function loadLiveMatch({ quiet = false } = {}) {
@@ -158,9 +167,11 @@ export async function loadLiveMatch({ quiet = false } = {}) {
     const data = await apiGet("/api/community/current-games");
     currentGames = Array.isArray(data.games) ? data.games : [];
     renderList();
+    window.dispatchEvent(new CustomEvent("lucid:current-games-updated"));
   } catch (_error) {
     currentGames = [];
     root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 불러오지 못했습니다.</p>`;
+    window.dispatchEvent(new CustomEvent("lucid:current-games-updated"));
   }
 }
 

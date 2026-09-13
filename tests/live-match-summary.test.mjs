@@ -28,6 +28,8 @@ assert.match(source, /sideChoicePending/);
 assert.match(source, /blueTeam/);
 assert.match(source, /redTeam/);
 assert.match(source, /setInterval[\s\S]*15000/);
+assert.match(source, /export function currentGameForPlayer/);
+assert.match(source, /IN_GAME: 4, ACTIVE: 4, SERIES_ACTIVE: 3, SIDE_CHOICE: 3, READY: 2, LINEUP_CREATED: 1/);
 assert.doesNotMatch(source, /MOST 1·2·3/);
 assert.match(rankingSource, /row\.winRate/);
 assert.match(entrySource, /closest\("#currentMatchDialog"\)\?\.close\(\);\s*openPlayer\(userId, guildId, \{ historyMode: "push" \}\)/);

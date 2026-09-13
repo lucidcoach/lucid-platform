@@ -18,6 +18,8 @@ assert.match(profile, /summoner-profile-stack \.summoner-profile-icon\{width:60p
 assert.match(playerSearch, /profile-title-action-row">\$\{equippedTitleBadge\(p\.equippedTitle\)}<div class="profile-refresh-wrap/);
 assert.match(playerSearch, /role-tier-result/);
 assert.doesNotMatch(playerSearch, /profile-overview profile-overview-compact/);
+assert.match(playerSearch, /data-profile-live hidden>● LIVE/);
+assert.match(playerSearch, /currentGameForPlayer\(userId, guildId\)/);
 assert.match(profile, /profile-dashboard-grid>\.associate-stats-panel\{padding:16px\}/);
 assert.match(profile, /@media\(max-width:1150px\)[\s\S]+grid-template-columns:minmax\(360px,1\.05fr\) minmax\(350px,1fr\)/);
 assert.match(profile, /associate-row[^}]+min-height:42px/);
