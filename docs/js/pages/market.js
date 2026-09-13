@@ -567,25 +567,31 @@ function getCoachDetailTone(coach) {
 function normalizeAvailabilitySlot(slot) {
   const startsAt = slot.startsAt || slot.starts_at || slot.start || slot.startAt || "";
   const endsAt = slot.endsAt || slot.ends_at || slot.end || slot.endAt || "";
+  const startsAtMs = Date.parse(startsAt);
   return {
     id: String(slot.id || slot.slotId || slot.slot_id || ""),
     startsAt,
     endsAt,
     status: String(slot.status || "open").toLowerCase(),
     label: slot.label || formatDateTime(startsAt) + (endsAt ? ` ~ ${formatDateTime(endsAt)}` : ""),
-    available: slot.available !== false && slot.isAvailable !== false && !["cancelled", "canceled"].includes(String(slot.status || "").toLowerCase()),
+    available: Number.isFinite(startsAtMs) && startsAtMs > Date.now() && slot.available !== false && slot.isAvailable !== false && !["cancelled", "canceled"].includes(String(slot.status || "").toLowerCase()),
   };
 }
+
+const availabilityDateKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
+const availabilityDateLabel = (value) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short" }).format(new Date(value));
+const availabilityTimeLabel = (value) => new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 
 async function loadPublicAvailability(coachId) {
   const key = String(coachId || "");
   if (!key || state.availabilityLoadStates[key] === "loading") return;
   state.availabilityLoadStates[key] = "loading";
+  renderAvailabilityPicker(state.coaches.find((coach) => String(coach.id) === key));
   try {
     const fromDate = new Date();
     const raw = await fetchCoachAvailability(key, {
       from: isoDateOnly(fromDate),
-      to: isoDateOnly(addLocalDays(fromDate, 30)),
+      to: isoDateOnly(addLocalDays(fromDate, 13)),
     });
     state.availabilityByCoach[key] = Array.isArray(raw) ? raw.map(normalizeAvailabilitySlot).filter((slot) => slot.id && slot.available && slot.status === "open") : [];
     state.availabilityLoadStates[key] = "loaded";
@@ -600,38 +606,49 @@ async function loadPublicAvailability(coachId) {
 
 function renderAvailabilityPicker(coach) {
   const picker = $("bookingAvailabilityPicker");
-  const select = $("bookingAvailabilitySlot");
+  const dateSelect = $("bookingAvailabilityDate");
+  const timeList = $("bookingAvailabilityTimes");
+  const slotInput = $("bookingAvailabilitySlot");
   const error = $("bookingAvailabilityError");
   const timeInput = $("bookingForm")?.elements?.time;
   const timeField = $("bookingTimeField");
-  if (!picker || !select || !coach) return;
+  const submitButton = $("bookingSubmitBtn");
+  if (!picker || !dateSelect || !timeList || !slotInput || !coach) return;
   const slots = state.availabilityByCoach[String(coach.id)] || [];
-  if (!slots.length) {
-    picker.hidden = true;
-    if (error) error.hidden = true;
-    if (timeField) timeField.hidden = false;
-    select.required = false;
-    if (timeInput) {
-      timeInput.readOnly = false;
-      timeInput.required = true;
-      timeInput.placeholder = "예: 2026-08-20 21:00 (코치와 협의)";
-    }
-    return;
-  }
   picker.hidden = false;
-  if (error) error.hidden = true;
   if (timeField) timeField.hidden = true;
-  select.required = true;
-  select.innerHTML = `<option value="">가능한 시간을 선택하세요</option>${slots.map((slot) => `<option value="${escapeHtml(slot.id)}" data-time="${escapeHtml(slot.label)}">${escapeHtml(slot.label)}</option>`).join("")}`;
   if (timeInput) {
     timeInput.readOnly = true;
     timeInput.required = false;
     timeInput.value = "";
-    select.addEventListener("change", () => {
-      const option = select.selectedOptions[0];
-      timeInput.value = option?.dataset.time || "";
-    });
   }
+  slotInput.value = "";
+  if (!slots.length) {
+    dateSelect.hidden = true;
+    timeList.innerHTML = `<p class="availability-empty">${state.availabilityLoadStates[String(coach.id)] === "loading" ? "예약 가능 시간을 불러오는 중입니다." : "현재 예약 가능한 시간이 없습니다."}</p>`;
+    if (error) error.hidden = true;
+    slotInput.required = false;
+    if (submitButton) submitButton.disabled = true;
+    return;
+  }
+  dateSelect.hidden = false;
+  slotInput.required = true;
+  if (submitButton) submitButton.disabled = false;
+  if (error) error.hidden = true;
+  const dates = [...new Map(slots.map((slot) => [availabilityDateKey(slot.startsAt), slot])).entries()];
+  dateSelect.innerHTML = dates.map(([date, slot]) => `<option value="${date}">${escapeHtml(availabilityDateLabel(slot.startsAt))}</option>`).join("");
+  const renderTimes = () => {
+    const visible = slots.filter((slot) => availabilityDateKey(slot.startsAt) === dateSelect.value);
+    timeList.innerHTML = visible.map((slot) => `<button type="button" class="availability-time-button" data-availability-slot="${escapeHtml(slot.id)}" data-time="${escapeHtml(slot.label)}" aria-pressed="false">${escapeHtml(availabilityTimeLabel(slot.startsAt))}</button>`).join("");
+    timeList.querySelectorAll("[data-availability-slot]").forEach((button) => button.addEventListener("click", () => {
+      slotInput.value = button.dataset.availabilitySlot;
+      if (timeInput) timeInput.value = button.dataset.time;
+      timeList.querySelectorAll("[data-availability-slot]").forEach((item) => { const selected = item === button; item.classList.toggle("selected", selected); item.setAttribute("aria-pressed", String(selected)); });
+      if (error) error.hidden = true;
+    }));
+  };
+  dateSelect.addEventListener("change", () => { slotInput.value = ""; if (timeInput) timeInput.value = ""; renderTimes(); });
+  renderTimes();
 }
 
 async function loadCoachReviews(coachId) {
@@ -776,10 +793,6 @@ function mountBookingForm(mountId, coach) {
   }
   renderAvailabilityPicker(coach);
   $("bookingForm").noValidate = true;
-  $("bookingAvailabilitySlot")?.addEventListener("change", () => {
-    const error = $("bookingAvailabilityError");
-    if (error) error.hidden = Boolean($("bookingAvailabilitySlot").value);
-  });
   $("bookingForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!state.currentUser) {
@@ -796,7 +809,7 @@ function mountBookingForm(mountId, coach) {
     if (availabilitySlot?.required && !availabilitySlot.value) {
       const error = $("bookingAvailabilityError");
       if (error) error.hidden = false;
-      availabilitySlot.focus();
+      $("bookingAvailabilityTimes")?.querySelector("button")?.focus();
       return;
     }
     if (!event.target.checkValidity()) {

@@ -368,6 +368,10 @@
 }
 .availability-picker small { color: var(--muted); font-size: 12px; }
 .availability-picker select { background: var(--panel); color: var(--text); }
+.availability-time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; max-height: 164px; overflow-y: auto; }
+.availability-time-button { min-height: 38px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--text); font-weight: 800; }
+.availability-time-button:hover, .availability-time-button.selected { border-color: var(--brand); background: var(--brand); color: #fff; }
+.availability-time-list .availability-empty { grid-column: 1 / -1; margin: 0; padding: 10px; text-align: center; }
 .booking-validation-error { color: var(--danger) !important; font-weight: 800; }
 .booking-student-auto {
   padding: 10px;

@@ -19,7 +19,7 @@
   <meta name="twitter:title" content="Lucid Coach">
   <meta name="twitter:description" content="게임 코칭을 찾고, 원하는 코치와 연결되는 Lucid Coach">
   <meta name="twitter:image" content="https://lucidgame.kr/assets/og-lucid-brand-20260907.jpg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260913slots1">
 </head>
 <body>
   <div class="app-shell">
@@ -378,9 +378,11 @@
       <label><span id="bookingContactLabel"></span><input name="contact" required></label>
       <label id="bookingTimeField"><span id="bookingTimeLabel"></span><input name="time" required></label>
       <div class="availability-picker" id="bookingAvailabilityPicker" hidden>
-        <label><span>예약 가능한 시간 선택</span><select id="bookingAvailabilitySlot" name="availabilitySlotId"></select></label>
-         <small>코치가 등록한 빈 시간만 선택할 수 있습니다.</small>
-         <small class="booking-validation-error" id="bookingAvailabilityError" role="alert" hidden>예약 가능한 시간을 선택해주세요.</small>
+        <label><span>예약 날짜</span><select id="bookingAvailabilityDate"></select></label>
+        <div class="availability-time-list" id="bookingAvailabilityTimes" role="group" aria-label="예약 가능한 시간"></div>
+        <input id="bookingAvailabilitySlot" name="availabilitySlotId" type="hidden">
+        <small>코치가 등록한 빈 시간만 선택할 수 있습니다.</small>
+        <small class="booking-validation-error" id="bookingAvailabilityError" role="alert" hidden>예약 가능한 시간을 선택해주세요.</small>
       </div>
       <label><span id="bookingMemoLabel"></span><textarea name="memo" rows="3"></textarea></label>
       <button type="submit" class="primary" id="bookingSubmitBtn"></button>
@@ -448,6 +450,6 @@
   </footer>
 
   <script src="https://js.tosspayments.com/v2/standard"></script>
-  <script type="module" src="app.js?v=20260911dryrun1"></script>
+  <script type="module" src="app.js?v=20260913slots1"></script>
 </body>
 </html>
