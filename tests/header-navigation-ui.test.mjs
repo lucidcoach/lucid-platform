@@ -25,6 +25,8 @@ assert.match(tokens, /--layout-max-width:\s*1120px/);
 assert.match(coachShell, /--layout-max-width:1120px/);
 assert.match(tokens, /--header-height:\s*66px/);
 assert.match(coachShell, /--header-height:66px/);
+assert.match(coachShell, /\.service-nav-item\{display:inline-flex;align-items:center;justify-content:center[^}]+color:var\(--text\)/);
+assert.match(coachShell, /\.service-nav-item:visited\{color:var\(--text\)\}/);
 for (const token of ["--surface-input", "--favorite", "--favorite-hover"]) assert.match(tokens, new RegExp(token));
 assert.doesNotMatch(page, /id="communityLogoutBtn"/);
 assert.match(auth, /preferredDisplayName \|\| riotAccounts\[0\]/);
