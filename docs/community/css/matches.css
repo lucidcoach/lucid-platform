@@ -725,7 +725,7 @@
 }
 .scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(0,1fr)!important}
 .scoreboard-layout .score-player-row{
-  grid-template-columns:82px minmax(0,108px) 44px 72px 92px 84px minmax(180px,1fr)!important;
+  grid-template-columns:82px 108px 44px 72px 92px 84px 96px!important;
   column-gap:5px!important;
   justify-content:start!important;
   min-width:0!important;
@@ -741,7 +741,7 @@
 .scoreboard-layout .score-identity{padding-left:2px!important}
 .scoreboard-layout .scoreboard-profile-link,.scoreboard-layout .score-identity>span:last-child{display:block;width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 .scoreboard-layout .score-cs-cell{justify-self:stretch!important;place-items:center!important;text-align:center!important}
-.scoreboard-layout .score-damage-cell{justify-self:stretch!important;align-self:stretch!important}
+.scoreboard-layout .score-damage-cell{justify-self:stretch!important;align-self:stretch!important;width:96px!important;min-width:96px!important;max-width:96px!important}
 .scoreboard-layout .score-damage-track,
 .scoreboard-layout .score-damage-cell>strong{width:100%!important;min-width:0!important;max-width:none!important}
 .personal-analysis-panel{width:auto!important;min-width:0!important;max-width:none!important;padding:16px!important}

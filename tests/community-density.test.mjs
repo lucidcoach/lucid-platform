@@ -40,11 +40,11 @@ assert.match(utils, /return `BO\$\{bestOf\}\\n매치 \$\{seriesGame\}`/);
 assert.match(matches, /\.match-mode,\.result-meta>div\{white-space:pre-line\}/);
 assert.match(matches, /scoreboard-layout\.has-personal-analysis\{[\s\S]+grid-template-columns:minmax\(0,1fr\) minmax\(240px,280px\)!important/);
 assert.match(matches, /@media\(max-width:1100px\)[\s\S]+scoreboard-layout\.has-personal-analysis\{grid-template-columns:minmax\(0,1fr\)!important/);
-assert.match(matches, /grid-template-columns:82px minmax\(0,108px\) 44px 72px 92px 84px minmax\(180px,1fr\)!important/);
+assert.match(matches, /grid-template-columns:82px 108px 44px 72px 92px 84px 96px!important/);
 assert.match(matches, /scoreboard-profile-link,[^}]+text-overflow:ellipsis!important/);
 assert.match(matches, /#recentView \.match-card \.preview-player\{height:25px/);
 assert.match(matches, /score-combat-loadout\{width:82px!important;min-width:82px!important;grid-template-columns:34px 40px!important/);
 assert.match(matches, /score-cs-cell\{justify-self:stretch!important;place-items:center!important;text-align:center!important/);
-assert.match(matches, /score-damage-cell\{justify-self:stretch!important;align-self:stretch!important/);
+assert.match(matches, /score-damage-cell\{justify-self:stretch!important;align-self:stretch!important;width:96px!important/);
 
 console.log("community density checks passed");
