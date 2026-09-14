@@ -692,29 +692,6 @@
   max-width:100%!important;
   grid-template-columns:minmax(0,1fr)!important;
 }
-#recentView .scoreboard-layout .score-player-row{
-  grid-template-columns:66px minmax(122px,1fr) 54px 86px 104px 86px minmax(88px,120px)!important;
-  column-gap:6px!important;
-  padding-left:8px!important;
-  padding-right:8px!important;
-}
-#recentView .scoreboard-layout .score-identity{
-  width:auto!important;
-  min-width:0!important;
-}
-#recentView .scoreboard-layout .score-damage-cell{
-  width:100%!important;
-  min-width:88px!important;
-  max-width:120px!important;
-  padding:0!important;
-}
-#recentView .scoreboard-layout .score-damage-track,
-#recentView .scoreboard-layout .score-damage-cell>strong{
-  width:100%!important;
-  min-width:0!important;
-  max-width:none!important;
-}
-
 /* Match summaries follow the shared content width with tighter desktop rhythm. */
 #recentView,
 #recentView .match-feed,
@@ -748,10 +725,11 @@
 }
 .scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(0,1fr)!important}
 .scoreboard-layout .score-player-row{
-  grid-template-columns:58px minmax(100px,1fr) 44px 76px 96px 66px 78px!important;
+  grid-template-columns:58px minmax(0,150px) 44px 76px 96px 66px minmax(180px,1fr)!important;
   column-gap:6px!important;
+  justify-content:start!important;
   min-width:0!important;
-  padding-inline:7px!important;
+  padding:6px 7px!important;
 }
 .scoreboard-layout .score-combat-loadout{width:58px!important;min-width:58px!important}
 .scoreboard-layout .score-identity,
@@ -761,7 +739,7 @@
 .scoreboard-layout .score-cs-cell,
 .scoreboard-layout .score-damage-cell{width:auto!important;min-width:0!important;max-width:none!important}
 .scoreboard-layout .score-identity{padding-left:2px!important}
-.scoreboard-layout .scoreboard-profile-link{display:block;width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.scoreboard-layout .scoreboard-profile-link,.scoreboard-layout .score-identity>span:last-child{display:block;width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 .scoreboard-layout .score-damage-track,
 .scoreboard-layout .score-damage-cell>strong{width:100%!important;min-width:0!important;max-width:none!important}
 .personal-analysis-panel{width:auto!important;min-width:0!important;max-width:none!important;padding:16px!important}

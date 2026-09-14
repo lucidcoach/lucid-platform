@@ -40,5 +40,7 @@ assert.match(utils, /return `BO\$\{bestOf\}\\n매치 \$\{seriesGame\}`/);
 assert.match(matches, /\.match-mode,\.result-meta>div\{white-space:pre-line\}/);
 assert.match(matches, /scoreboard-layout\.has-personal-analysis\{[\s\S]+grid-template-columns:minmax\(0,1fr\) minmax\(240px,280px\)!important/);
 assert.match(matches, /@media\(max-width:1100px\)[\s\S]+scoreboard-layout\.has-personal-analysis\{grid-template-columns:minmax\(0,1fr\)!important/);
+assert.match(matches, /grid-template-columns:58px minmax\(0,150px\) 44px 76px 96px 66px minmax\(180px,1fr\)!important/);
+assert.match(matches, /scoreboard-profile-link,[^}]+text-overflow:ellipsis!important/);
 
 console.log("community density checks passed");
