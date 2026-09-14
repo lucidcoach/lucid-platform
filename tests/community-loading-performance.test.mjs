@@ -16,6 +16,7 @@ assert.doesNotMatch(card, /scoreboard\(match\)/);
 assert.match(recent, /placeholder\.outerHTML = scoreboard\(match\)/);
 assert.match(playerCard, /data-lazy-scoreboard/);
 assert.match(playerSearch, /renderScoreboardRows\(data\.match, userId\)/);
+assert.doesNotMatch(playerSearch, /server-stats/);
 assert.match(css, /content-visibility:auto/);
 
 console.log("community loading performance checks passed");

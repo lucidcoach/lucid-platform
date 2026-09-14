@@ -196,31 +196,6 @@ function bindAssociates(target, data = {}) {
 }
 
 
-function percentileText(row={}){
-  const pct=Number(row.topPercent??row.percentileTop??row.percentile);
-  if(Number.isFinite(pct)&&pct>0)return `상위 ${pct.toFixed(pct<10?1:0)}%`;
-  const rank=Number(row.rank||0),total=Number(row.total||row.population||0);
-  if(rank>0&&total>0)return `${rank}위 / ${total}명`;
-  if(rank>0)return `${rank}위`;
-  return "집계 중";
-}
-function serverStatCard(row={}){
-  const label=row.label||row.name||row.metric||"지표";
-  const value=row.displayValue??row.value??"-";
-  const rank=percentileText(row);
-  const tone=Number(row.topPercent||100)<=20?"elite":Number(row.topPercent||100)<=40?"good":"";
-  return `<article class="server-stat-card ${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><div><b>${escapeHtml(rank)}</b><small>${escapeHtml(row.note||row.scope||"")}</small></div></article>`;
-}
-function serverStatsPanel(data={}){
-  const rows=data.stats||data.metrics||data.rankings||[];
-  const role=data.role||data.position||"주 포지션";
-  const sample=Number(data.sampleGames||data.games||0);
-  return `<section class="server-stats-panel"><div class="server-stats-head"><div><small>SERVER PERFORMANCE</small><h2>${escapeHtml(role)} 서버 내 지표</h2><p>같은 Discord 서버의 같은 포지션 유저와 비교합니다.</p></div><span>${sample?`${sample}경기 기준`:"서버 표본"}</span></div><div class="server-stat-grid">${rows.length?rows.slice(0,6).map(serverStatCard).join(""):`<div class="server-stat-empty"><strong>서버 통계가 쌓이는 중입니다.</strong><span>DPM, 15분 킬관여, 갱킹 성공률 같은 포지션별 지표가 여기에 표시됩니다.</span></div>`}</div></section>`;
-}
-async function loadServerStats(userId,guildId){
-  try{return await apiGet(`/api/community/players/${encodeURIComponent(userId)}/server-stats?guildId=${encodeURIComponent(guildId)}`);}catch(_){return null;}
-}
-
 function bindChampionStats(target, groups = {}) {
   const list = target.querySelector("[data-champion-list]");
   const more = target.querySelector("[data-champion-more]");
@@ -395,9 +370,8 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
   const target=$("searchResults");
   renderLoading(target,4);
   try {
-    const [data, serverStats, replayData] = await Promise.all([
+    const [data, replayData] = await Promise.all([
       apiGet(`/api/community/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=${PLAYER_MATCH_LIMIT}`),
-      loadServerStats(userId,guildId),
       isCommunityAdmin() ? apiGet("/api/community/admin/replays?limit=500").catch(() => ({ replays:[] })) : Promise.resolve({ replays:[] }),
     ]);
     const replayMap = new Map((replayData.replays || []).map((row) => [`${row.guildId}:${row.matchId}`, row]));
@@ -423,7 +397,6 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       ${championStatsPanel(p.championStats || {})}
       ${associatesPanel(p.recentAssociates || {})}
     </section>
-    ${serverStats ? serverStatsPanel(serverStats) : ""}
     ${personalHistoryFilters(matches, userId, guildId, p.name || "")}
     <div class="match-feed personal-feed" data-personal-match-feed>${matches.map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
