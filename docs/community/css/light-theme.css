@@ -161,11 +161,11 @@ html[data-theme="light"] .search-memory-row {
 }
 html[data-theme="light"] .search-memory-row:hover {
   border-color: var(--accent-border);
-  background: #f5f2ff;
+  background: var(--primary-subtle);
 }
 html[data-theme="light"] .search-memory-open { color: var(--text-primary); }
-html[data-theme="light"] .search-memory-star { color: #a06c0a; }
-html[data-theme="light"] .search-memory-star.active { color: #d18a00; }
+html[data-theme="light"] .search-memory-star { color: var(--text-muted); }
+html[data-theme="light"] .search-memory-star.active { color: var(--favorite); }
 html[data-theme="light"] .search-memory-remove { color: var(--text-subtle); }
 html[data-theme="light"] .search-memory-remove:hover { color: var(--danger); }
 html[data-theme="light"] .search-memory-empty { color: var(--text-muted); }
@@ -588,7 +588,7 @@ html[data-theme="light"] .search-memory-column {
   border-color: var(--border-default);
   box-shadow: var(--shadow-soft);
 }
-html[data-theme="light"] .search-memory-column.favorites { border-color: #ddd4f3; }
+html[data-theme="light"] .search-memory-column.favorites { border-color: color-mix(in srgb,var(--primary) 34%,var(--border-soft)); }
 html[data-theme="light"] .search-memory-title { border-color: var(--border-soft); }
 html[data-theme="light"] .search-memory-title strong { color: var(--text-primary); }
 html[data-theme="light"] .search-memory-title span { color: var(--text-muted); }

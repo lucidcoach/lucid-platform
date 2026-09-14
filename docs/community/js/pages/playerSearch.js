@@ -185,7 +185,7 @@ function bindAssociates(target, data = {}) {
   const tabs = [...target.querySelectorAll("[data-associate-kind]")];
   if (!list) return;
   const render = (kind) => {
-    const rows = Array.isArray(data?.[kind]) ? data[kind].slice(0, 6) : [];
+    const rows = Array.isArray(data?.[kind]) ? data[kind].slice(0, 5) : [];
     list.innerHTML = rows.length ? rows.map(associateRow).join("") : `<div class="associate-empty">최근 20게임에서 2판 이상 만난 소환사가 없습니다.</div>`;
   };
   tabs.forEach((button) => button.addEventListener("click", () => {
@@ -207,6 +207,39 @@ function showChampionStatsPage(target, groups, { userId, guildId, name }, push =
   target.innerHTML = `<section class="champion-stats-page"><div class="champion-stats-page-head"><button class="ghost-button" type="button" data-champion-back>← 프로필</button><div><p class="section-kicker">CHAMPION STATISTICS</p><h1>${escapeHtml(name || "내")} 챔피언 통계</h1></div></div>${championStatsPanel(groups, { detail:true })}</section>`;
   bindChampionStats(target, groups, { detail:true });
   target.querySelector("[data-champion-back]")?.addEventListener("click", () => history.back());
+}
+
+function lpTrendPanel(matches = [], userId) {
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const points = matches.map((match) => {
+    const player = (match.players || []).find((row) => String(row.userId) === String(userId));
+    const time = new Date(match.time || 0).getTime();
+    const value = Number(player?.afterMmr || player?.mmr || 0);
+    return { time, value, before:Number(player?.beforeMmr || value), tier:String(player?.tier || "-") };
+  }).filter((row) => row.time >= cutoff && Number.isFinite(row.value) && row.value > 0).sort((a, b) => a.time - b.time);
+
+  if (!points.length) return `<section class="lp-trend-panel"><div class="lp-trend-head"><strong>최근 30일</strong></div><div class="lp-trend-empty">최근 LP 데이터가 부족합니다.</div></section>`;
+
+  const values = points.map((row) => row.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(1, max - min);
+  const chartPoints = points.map((row, index) => {
+    const x = points.length === 1 ? 160 : 8 + index * 304 / (points.length - 1);
+    const y = 84 - (row.value - min) * 68 / range;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const delta = Math.round(points.at(-1).value - points[0].before);
+  const peak = points.reduce((best, row) => row.value > best.value ? row : best, points[0]);
+  const peakLp = tierLeaguePoints(peak.tier, peak.value);
+  return `<section class="lp-trend-panel">
+    <div class="lp-trend-head"><strong>최근 30일</strong><span class="${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta > 0 ? "▲" : delta < 0 ? "▼" : "-"} ${Math.abs(delta)} LP</span></div>
+    <div class="lp-trend-peak">최고티어: ${escapeHtml(peak.tier)} ${peakLp.toLocaleString()}점</div>
+    <svg class="lp-trend-chart" viewBox="0 0 320 96" preserveAspectRatio="none" role="img" aria-label="최근 30일 LP 추이">
+      <path class="lp-trend-grid" d="M8 16H312M8 50H312M8 84H312"/>
+      ${points.length === 1 ? `<circle cx="160" cy="50" r="4"/>` : `<polyline points="${chartPoints}"/>`}
+    </svg>
+  </section>`;
 }
 
 function bindChampionStats(target, groups = {}, options = {}) {
@@ -397,10 +430,10 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
     target.innerHTML=`<section class="profile-dashboard-grid">
-      <div class="profile-summary-panel">
+      <div class="profile-left-column"><div class="profile-summary-panel">
         <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}</div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-live-button" type="button" data-profile-live hidden>● LIVE</button><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div></div>
         ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
-      </div>
+      </div>${lpTrendPanel(internalMatches, userId)}</div>
       ${championStatsPanel(p.championStats || {})}
       ${associatesPanel(p.recentAssociates || {})}
     </section>

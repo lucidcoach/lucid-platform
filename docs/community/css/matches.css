@@ -728,3 +728,61 @@
 #recentView .match-card .preview-player{height:20px;gap:5px;margin:1px 0;line-height:1.2}
 #recentView .match-card .expand-match,
 #recentView .match-card.expanded .expand-match{width:32px!important;min-width:32px!important;max-width:32px!important}
+
+/* Expanded scoreboards fit their card; compact analysis stacks before it can force page overflow. */
+.personal-match,
+.personal-match.expanded,
+.personal-match.expanded .match-details,
+.scoreboard-layout,
+.scoreboard-layout.has-personal-analysis,
+.scoreboard-layout .scoreboard-teams{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow-x:hidden!important;
+  box-sizing:border-box!important;
+}
+.scoreboard-layout.has-personal-analysis{
+  grid-template-columns:minmax(0,1fr) minmax(240px,280px)!important;
+  column-gap:10px!important;
+}
+.scoreboard-layout .scoreboard-teams{grid-template-columns:minmax(0,1fr)!important}
+.scoreboard-layout .score-player-row{
+  grid-template-columns:58px minmax(100px,1fr) 44px 76px 96px 66px 78px!important;
+  column-gap:6px!important;
+  min-width:0!important;
+  padding-inline:7px!important;
+}
+.scoreboard-layout .score-combat-loadout{width:58px!important;min-width:58px!important}
+.scoreboard-layout .score-identity,
+.scoreboard-layout .score-ai-cell,
+.scoreboard-layout .score-kda-cell,
+.scoreboard-layout .score-inventory,
+.scoreboard-layout .score-cs-cell,
+.scoreboard-layout .score-damage-cell{width:auto!important;min-width:0!important;max-width:none!important}
+.scoreboard-layout .score-identity{padding-left:2px!important}
+.scoreboard-layout .scoreboard-profile-link{display:block;width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.scoreboard-layout .score-damage-track,
+.scoreboard-layout .score-damage-cell>strong{width:100%!important;min-width:0!important;max-width:none!important}
+.personal-analysis-panel{width:auto!important;min-width:0!important;max-width:none!important;padding:16px!important}
+@media(max-width:1100px){
+  .scoreboard-layout.has-personal-analysis{grid-template-columns:minmax(0,1fr)!important}
+  .personal-analysis-panel{min-height:110px!important;border-left:0!important;border-top:1px solid rgba(42,53,72,.7)!important}
+  .personal-match:not(.expanded) .personal-summary,
+  .personal-match.expanded .personal-summary{width:100%!important;min-width:0!important;grid-template-columns:70px 100px minmax(330px,360px) minmax(250px,1fr) 38px!important;column-gap:8px!important;overflow:hidden!important}
+  .personal-match .personal-combat-group{grid-template-columns:90px 48px 96px 78px!important;column-gap:16px!important;width:360px!important;min-width:0!important;max-width:360px!important}
+  .personal-match:not(.expanded) .roster-mini,
+  .personal-match.expanded .roster-mini{min-width:250px!important;grid-template-columns:minmax(117px,1fr) minmax(117px,1fr)!important;gap:1px 6px!important}
+  .personal-match .focus-visual{width:100px!important;min-width:100px!important}
+  .personal-match .compact-focus-layout{grid-template-columns:50px 46px!important;width:100px!important;min-width:100px!important;gap:4px!important}
+  .personal-match .focus-champion,
+  .personal-match .focus-champion>img{width:50px!important;height:50px!important}
+  .personal-match .focus-loadout-side,
+  .personal-match .focus-loadout-side .profile-rune-spells{width:46px!important;min-width:46px!important;transform:none!important}
+  .personal-match .focus-loadout-side .profile-rune-spells{grid-template-columns:22px 22px!important;grid-template-rows:22px 22px!important;gap:3px 2px!important}
+  .personal-match .focus-loadout-side .profile-spell-stack{width:22px!important;grid-template-rows:22px 22px!important;gap:3px!important}
+  .personal-match .focus-loadout-side .profile-spell-icon,
+  .personal-match .focus-loadout-side .profile-main-rune,
+  .personal-match .focus-loadout-side .profile-secondary-rune,
+  .personal-match .focus-loadout-side .profile-rune-icon{width:22px!important;height:22px!important}
+}

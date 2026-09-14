@@ -9,7 +9,7 @@ const matches = read("../docs/community/css/matches.css");
 const playerSearch = read("../docs/community/js/pages/playerSearch.js");
 const utils = read("../docs/community/js/utils.js");
 
-assert.match(tokens, /--content:\s*1120px/);
+assert.match(tokens, /--layout-max-width:\s*1120px/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
 assert.match(profile, /#recentSearches\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
 assert.match(profile, /profile-dashboard-grid\{grid-template-columns:minmax\(380px,1\.2fr\) minmax\(350px,1\.1fr\) minmax\(315px,\.95fr\)/);
@@ -34,5 +34,7 @@ assert.match(matches, /#recentView,[\s\S]+max-width:100%!important/);
 assert.doesNotMatch(playerSearch, /<div class="profile-champion-panel">/);
 assert.match(utils, /return `BO\$\{bestOf\}\\n매치 \$\{seriesGame\}`/);
 assert.match(matches, /\.match-mode,\.result-meta>div\{white-space:pre-line\}/);
+assert.match(matches, /scoreboard-layout\.has-personal-analysis\{[\s\S]+grid-template-columns:minmax\(0,1fr\) minmax\(240px,280px\)!important/);
+assert.match(matches, /@media\(max-width:1100px\)[\s\S]+scoreboard-layout\.has-personal-analysis\{grid-template-columns:minmax\(0,1fr\)!important/);
 
 console.log("community density checks passed");
