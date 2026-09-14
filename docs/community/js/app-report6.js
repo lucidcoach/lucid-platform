@@ -3,19 +3,19 @@ import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260909convenience1";
 import { loadRecent } from "./pages/recentMatches.js?v=20260914perf1";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260914profileperf2";
-import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260911authsingleton1";
-import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260911authsingleton1";
-import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260914titleholders1";
-import { renderMileage } from "./pages/mileage.js?v=20260913density1";
-import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260911authsingleton1";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260914header1";
+import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260914header1";
+import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260914header1";
+import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260914header1";
+import { renderMileage } from "./pages/mileage.js?v=20260914header1";
+import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260914header1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
-import { loadLiveMatch } from "./pages/liveMatch.js?v=20260914perf1";
+import { loadLiveMatch } from "./pages/liveMatch.js?v=20260914header1";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
 const FAVORITE_SEARCH_KEY = "lucid-community-favorite-searches-v1";
-const RECENT_SEARCH_LIMIT = 8;
+const RECENT_SEARCH_LIMIT = 5;
 const FAVORITE_SEARCH_LIMIT = 12;
 const THEME_KEY = "coach-theme";
 
@@ -23,8 +23,8 @@ function applyTheme(theme){
   const next=theme==="dark"?"dark":"light",button=$("communityThemeBtn");
   document.documentElement.dataset.theme=next;
   localStorage.setItem(THEME_KEY,next);
-  if(button){button.textContent=next==="dark"?"☀ 라이트모드":"🌙 다크모드";button.setAttribute("aria-pressed",String(next==="dark"));button.setAttribute("title",next==="dark"?"라이트모드로 전환":"다크모드로 전환");}
-  const themeMeta=document.querySelector('meta[name="theme-color"]');if(themeMeta)themeMeta.setAttribute("content",next==="dark"?"#080b11":"#f4f6fa");
+  if(button){button.textContent=next==="dark"?"☀":"🌙";button.setAttribute("aria-pressed",String(next==="dark"));button.setAttribute("title",next==="dark"?"라이트 모드로 전환":"다크 모드로 전환");}
+  const themeMeta=document.querySelector('meta[name="theme-color"]');if(themeMeta)themeMeta.setAttribute("content",next==="dark"?"#121212":"#f6f7f9");
 }
 
 function renderCommunitySupport(){

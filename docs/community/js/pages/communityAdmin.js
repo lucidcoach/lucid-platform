@@ -1,5 +1,5 @@
 
-import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260911authsingleton1";
+import { getCurrentUser, isCommunityAdmin } from "../auth.js?v=20260914header1";
 import { API_BASE_URL } from "../config.js?v=20260904d";
 import { renderMileage } from "./mileage.js?v=20260913economy1";
 import { championIcon } from "../assets.js?v=20260904r";

@@ -3,26 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080b11">
+  <meta name="theme-color" content="#121212">
   <title>Lucid Community</title>
   <meta name="description" content="Lucid Bot 내전 전적, AI Score, 개인 기록을 확인하는 커뮤니티">
   <script>document.documentElement.dataset.theme=localStorage.getItem("coach-theme")||((matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light")</script>
-  <link rel="stylesheet" href="styles.css?v=20260914perf1">
+  <link rel="stylesheet" href="styles.css?v=20260914header1">
 </head>
 <body>
   <header class="community-header">
     <div class="header-inner">
-      <div class="service-switcher community-service-switcher" aria-label="LUCID 서비스 전환">
-        <a class="service-switch" href="../" aria-label="강의로 이동">
-          <span class="service-icon"><img src="../assets/logo.jpg" alt=""></span>
-          <span class="service-copy"><strong>강의</strong></span>
-        </a>
-        <a class="service-switch active" href="./" aria-label="커뮤니티 홈">
-          <span class="service-icon community-icon" aria-hidden="true">◫</span>
-          <span class="service-copy"><strong>커뮤니티</strong></span>
-        </a>
-      </div>
+      <a class="lucid-brand" href="./" aria-label="Lucid 커뮤니티 홈"><img src="../assets/logo.jpg" alt=""><strong>Lucid</strong></a>
       <nav class="community-nav" aria-label="커뮤니티 메뉴">
+        <a class="nav-tab service-nav-item current-service" href="./" aria-current="page">커뮤니티</a>
+        <a class="nav-tab service-nav-item" href="../">강의 <span aria-hidden="true">↗</span></a>
         <button class="nav-tab active" type="button" data-view="recent">내전</button>
         <button class="nav-tab" type="button" data-view="analysis">게임 분석 <span class="nav-beta">BETA</span></button>
         <button class="nav-tab" type="button" data-view="ranking">랭킹</button>
@@ -39,8 +32,17 @@
       <div class="community-auth-actions" aria-label="계정">
         <button id="communityThemeBtn" class="community-auth-button theme" type="button" aria-label="화면 테마 변경"></button>
         <button id="communityLoginBtn" class="community-auth-button account" type="button">로그인</button>
-        <button id="communityLinkBtn" class="community-auth-button discord" type="button">Discord로 연결</button>
-        <button id="communityLogoutBtn" class="community-auth-button logout" type="button" hidden>로그아웃</button>
+        <button id="communityLinkBtn" type="button" hidden>Discord 연결</button>
+        <details id="communityProfileMenu" class="profile-menu" hidden>
+          <summary id="communityProfileMenuName">내 정보</summary>
+          <div class="profile-menu-popover">
+            <div class="profile-menu-identity"><strong id="communityProfileMenuFullName">내 정보</strong><small id="communityProfileDiscordState"></small></div>
+            <button type="button" data-community-account>내 정보</button>
+            <button type="button" data-community-account>계정 연결 관리</button>
+            <button type="button" data-community-account>설정</button>
+            <button id="communityProfileLogout" class="danger" type="button">로그아웃</button>
+          </div>
+        </details>
       </div>
 
     </div>
@@ -59,11 +61,6 @@
         </div>
       </form>
     </section>
-    <section class="search-memory-panel" aria-label="검색 기록과 즐겨찾기">
-      <div class="search-memory-column"><div class="search-memory-title"><strong>최근 검색</strong></div><div class="search-memory-list" id="recentSearches"></div></div>
-      <div class="search-memory-column favorites"><div class="search-memory-title"><strong>즐겨찾기</strong></div><div class="search-memory-list" id="favoriteSearches"></div></div>
-    </section>
-
     <section id="statusBanner" class="status-banner" hidden></section>
 
     <section id="recentView" class="content-view active">
@@ -94,6 +91,10 @@
     </section>
 
     <section id="searchView" class="content-view">
+      <section class="search-memory-panel" aria-label="검색 기록과 즐겨찾기">
+        <div class="search-memory-column"><div class="search-memory-title"><strong>최근 검색</strong></div><div class="search-memory-list" id="recentSearches"></div></div>
+        <div class="search-memory-column favorites"><div class="search-memory-title"><strong>즐겨찾기</strong></div><div class="search-memory-list" id="favoriteSearches"></div></div>
+      </section>
       <div id="searchResults"></div>
     </section>
     <section id="analysisView" class="content-view">
@@ -191,6 +192,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js?v=20260914perf4"></script>
+  <script type="module" src="js/app-report6.js?v=20260914header1"></script>
 </body>
 </html>

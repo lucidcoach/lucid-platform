@@ -61,23 +61,28 @@ async function resolveRegisteredPlayers(){
 function renderAuthActions(){
   const login=document.getElementById("communityLoginBtn");
   const discord=document.getElementById("communityLinkBtn");
-  const logoutBtn=document.getElementById("communityLogoutBtn");
+  const profile=document.getElementById("communityProfileMenu");
   if(!login||!discord) return;
   if(currentUser){
-    login.textContent=currentUser.displayName || currentUser.email || "내 정보";
-    login.classList.add("active-user");
-    login.title="커뮤니티 내 정보";
+    const primary=currentUser.preferredDisplayName || riotAccounts[0] || resolvedPlayers[0]?.riotId || resolvedPlayers[0]?.name || currentUser.discordDisplayName || currentUser.discord_display_name || "내 정보";
+    login.hidden=true;
+    if(profile){
+      profile.hidden=false;
+      document.getElementById("communityProfileMenuName").textContent=primary;
+      document.getElementById("communityProfileMenuFullName").textContent=primary;
+      document.getElementById("communityProfileDiscordState").textContent=currentUser.discordConnected||currentUser.discord_connected?"Discord 연결됨":"Discord 연결 필요";
+    }
     const connected=Boolean(currentUser.discordConnected||currentUser.discord_connected||currentUser.discordDisplayName||currentUser.discord_display_name);
     discord.textContent=connected?`Discord · ${currentUser.discordDisplayName||currentUser.discord_display_name||"연결됨"}`:"Discord 연결";
     discord.classList.toggle("active-user",connected);
-    if(logoutBtn) logoutBtn.hidden=false;
   }else{
+    login.hidden=false;
+    if(profile){ profile.hidden=true; profile.removeAttribute("open"); }
     login.textContent="로그인";
     login.classList.remove("active-user");
     login.title="로그인";
     discord.textContent="Discord로 연결";
     discord.classList.remove("active-user");
-    if(logoutBtn) logoutBtn.hidden=true;
   }
   window.dispatchEvent(new CustomEvent("lucid:auth-changed",{detail:{user:currentUser,admin:isCommunityAdmin(),coach:isCommunityCoach(),analyzeAll:canAnalyzeAllPlayers(),riotAccounts:getRiotAccounts(),players:getResolvedAnalysisPlayers()}}));
 }
@@ -127,11 +132,12 @@ export async function saveRiotAccounts(values=[]){
 export async function initCommunityAuth(){
   const loginBtn=document.getElementById("communityLoginBtn");
   const discordBtn=document.getElementById("communityLinkBtn");
-  const logoutBtn=document.getElementById("communityLogoutBtn");
+  const logoutBtn=document.getElementById("communityProfileLogout");
   const form=document.getElementById("communityAuthForm");
   document.getElementById("communityAuthClose")?.addEventListener("click",closeModal);
   document.getElementById("communityAuthModal")?.addEventListener("click",e=>{ if(e.target?.id==="communityAuthModal") closeModal(); });
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal(); document.getElementById("communityProfileMenu")?.removeAttribute("open"); } });
+  document.addEventListener("click",e=>{ const menu=document.getElementById("communityProfileMenu");if(menu?.open&&!menu.contains(e.target))menu.removeAttribute("open"); });
   loginBtn?.addEventListener("click",()=>{ if(currentUser) window.dispatchEvent(new CustomEvent("lucid:open-account")); else openModal(); });
   discordBtn?.addEventListener("click",()=>{
     const connected=Boolean(currentUser?.discordConnected||currentUser?.discord_connected||currentUser?.discordDisplayName||currentUser?.discord_display_name);
@@ -141,6 +147,10 @@ export async function initCommunityAuth(){
     }
     startOAuth("discord");
   });
+  document.querySelectorAll("[data-community-account]").forEach(button=>button.addEventListener("click",()=>{
+    document.getElementById("communityProfileMenu")?.removeAttribute("open");
+    window.dispatchEvent(new CustomEvent("lucid:open-account"));
+  }));
   document.querySelectorAll("[data-community-oauth]").forEach(button=>button.addEventListener("click",()=>startOAuth(button.dataset.communityOauth)));
   logoutBtn?.addEventListener("click",async()=>{ await logoutCommunityUser(); window.dispatchEvent(new CustomEvent("lucid:logged-out")); });
   form?.addEventListener("submit",async e=>{

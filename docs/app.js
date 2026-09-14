@@ -93,7 +93,7 @@ import {
 import { createMarketPage } from "./js/pages/market.js?v=20260913slots1";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
 import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911coupon1";
-import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260907accountfix1";
+import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260914header1";
 import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260907accountfix1";
 import { createCoachSelfPage } from "./js/pages/coachSelf.js";
 import { createImageCropController } from "./js/components/imageCrop.js";
@@ -257,8 +257,20 @@ function bindEvents() {
   $("loginOpenBtn")?.addEventListener("click", handleLoginButtonClick);
   $("discordConnectBtn")?.addEventListener("click", handleDiscordButtonClick);
   $("guestBuyOpenBtn")?.addEventListener("click", () => {
-    if (state.currentUser) logoutUser();
-    else openAuthModal("guest");
+    openAuthModal("guest");
+  });
+  document.querySelectorAll("[data-profile-account]").forEach((button) => button.addEventListener("click", () => {
+    state.activeView = "account";
+    $("profileMenu")?.removeAttribute("open");
+    render();
+  }));
+  $("profileLogoutBtn")?.addEventListener("click", logoutUser);
+  document.addEventListener("click", (event) => {
+    const menu = $("profileMenu");
+    if (menu?.open && !menu.contains(event.target)) menu.removeAttribute("open");
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") $("profileMenu")?.removeAttribute("open");
   });
   $("authCloseBtn")?.addEventListener("click", closeAuthModal);
   $("authModal")?.addEventListener("click", (event) => {

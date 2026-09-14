@@ -1786,7 +1786,19 @@
 
 /* Compact search/profile layout: three recent items per row and three balanced panels. */
 #recentSearches{grid-template-columns:repeat(3,minmax(0,1fr))}
-#recentSearches .search-memory-row:nth-child(n+7){display:none}
+#recentSearches .search-memory-row:nth-child(n+6){display:none}
+
+/* Profile summaries stay compact; the full champion table has its own route. */
+.champion-stats-panel .profile-section-title strong,.associate-stats-panel .profile-section-title strong{font-size:17px}
+.champion-role-tab,.associate-tab{min-height:34px;font-size:13px}
+.champion-stat-head{font-size:13px}
+.champion-stat-row{min-height:52px;padding-block:8px;font-size:14px}
+.champion-stat-name{gap:10px}.champion-stat-name strong{font-size:14px}
+.champion-more-button{min-height:36px;font-size:13px}
+.associate-row{min-height:50px;grid-template-columns:minmax(120px,1fr) 42px 42px 56px;gap:7px;font-size:14px}
+.associate-row button{font-size:14px;font-weight:800}
+.champion-stats-page{max-width:960px;margin:0 auto}.champion-stats-page-head{display:flex;align-items:center;gap:16px;margin-bottom:16px}.champion-stats-page-head h1{margin:2px 0 0}.champion-stats-page .champion-stats-panel{margin:0}.champion-stats-page .champion-stat-head,.champion-stats-page .champion-stat-row{grid-template-columns:minmax(220px,1fr) 90px 90px 90px}
+@media(max-width:620px){.champion-stats-page-head{align-items:flex-start;flex-direction:column}.champion-stats-page .champion-stat-head,.champion-stats-page .champion-stat-row{grid-template-columns:minmax(120px,1fr) 52px 55px 55px}.champion-stat-row,.associate-row{font-size:12px}.associate-row{grid-template-columns:minmax(100px,1fr) 34px 34px 48px;gap:4px}}
 .profile-dashboard-grid{grid-template-columns:minmax(380px,1.2fr) minmax(350px,1.1fr) minmax(315px,.95fr);gap:12px;align-items:start}
 .profile-dashboard-grid>.champion-stats-panel,
 .profile-dashboard-grid>.associate-stats-panel{min-width:0;height:auto;margin:0;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel)}

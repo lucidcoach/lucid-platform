@@ -19,23 +19,16 @@
   <meta name="twitter:title" content="Lucid Coach">
   <meta name="twitter:description" content="게임 코칭을 찾고, 원하는 코치와 연결되는 Lucid Coach">
   <meta name="twitter:image" content="https://lucidgame.kr/assets/og-lucid-brand-20260907.jpg">
-  <link rel="stylesheet" href="styles.css?v=20260913slots1">
+  <link rel="stylesheet" href="styles.css?v=20260914header1">
 </head>
 <body>
   <div class="app-shell">
     <header class="sidebar site-header">
       <div class="site-header-inner">
-        <div class="service-switcher" aria-label="LUCID 서비스 전환">
-          <button class="service-switch active" id="homeLogo" type="button" aria-label="강의 홈">
-            <span class="service-icon"><img src="assets/logo.jpg" alt=""></span>
-            <span class="service-copy"><strong>강의</strong></span>
-          </button>
-          <a class="service-switch" href="community/" aria-label="커뮤니티로 이동">
-            <span class="service-icon community-icon" aria-hidden="true">◫</span>
-            <span class="service-copy"><strong>커뮤니티</strong></span>
-          </a>
-        </div>
+        <button class="lucid-brand" id="homeLogo" type="button" aria-label="Lucid 강의 홈"><img src="assets/logo.jpg" alt=""><strong>Lucid</strong></button>
         <nav class="nav" aria-label="주요 메뉴">
+          <a class="nav-item service-nav-item" href="community/">커뮤니티</a>
+          <a class="nav-item service-nav-item current-service" href="./" aria-current="page">강의 <span aria-hidden="true">↗</span></a>
           <button class="nav-item active" data-view="market" id="navMarket" type="button"></button>
           <button class="nav-item" data-action="coachSearch" id="navCoachSearch" type="button">코치 찾기</button>
           <button class="nav-item" data-view="student" id="navStudent" type="button"></button>
@@ -46,8 +39,18 @@
           <div class="user-actions">
             <button class="secondary user-action" id="loginOpenBtn" type="button">로그인</button>
             <button class="secondary user-action guest-buy-button" id="guestBuyOpenBtn" type="button">비회원 상담 문의</button>
-            <button class="secondary user-action discord-header-button" id="discordConnectBtn" type="button" hidden>Discord 연결</button>
-            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-pressed="false" aria-label="화면 테마 변경">테마</button>
+            <button id="discordConnectBtn" type="button" hidden>Discord 연결</button>
+            <button class="theme-toggle" id="themeToggleBtn" type="button" aria-pressed="false" aria-label="화면 테마 변경"></button>
+            <details id="profileMenu" class="profile-menu" hidden>
+              <summary id="profileMenuName">내 정보</summary>
+              <div class="profile-menu-popover">
+                <div class="profile-menu-identity"><strong id="profileMenuFullName">내 정보</strong><small id="profileDiscordState"></small></div>
+                <button type="button" data-profile-account>내 정보</button>
+                <button type="button" data-profile-account>계정 연결 관리</button>
+                <button type="button" data-profile-account>설정</button>
+                <button id="profileLogoutBtn" class="danger" type="button">로그아웃</button>
+              </div>
+            </details>
           </div>
           <details class="admin-menu" hidden>
             <summary>관리</summary>
@@ -450,6 +453,6 @@
   </footer>
 
   <script src="https://js.tosspayments.com/v2/standard"></script>
-  <script type="module" src="app.js?v=20260913slots1"></script>
+  <script type="module" src="app.js?v=20260914header1"></script>
 </body>
 </html>

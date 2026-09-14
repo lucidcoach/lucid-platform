@@ -1,14 +1,31 @@
 /* 2026-09-02 commercial UI overhaul. Loaded last so existing feature CSS stays intact. */
 :root {
-  --bg: #f6f7fb;
+  --bg: #f6f7f9;
   --panel: #ffffff;
-  --panel-2: #f8f9fc;
-  --text: #171923;
-  --muted: #6f7485;
-  --line: #e3e6ee;
-  --brand: #7257ff;
-  --brand-dark: #5b42e8;
-  --brand-soft: #f0edff;
+  --panel-2: #ffffff;
+  --surface-hover: #f1f2f4;
+  --surface-active: #e7e8ec;
+  --text: #17181b;
+  --muted: #60636b;
+  --line: #e2e4e8;
+  --brand: #6355e8;
+  --brand-dark: #5547d8;
+  --brand-soft: #eeecff;
+  --focus-ring:#6355e8;
+  --surface:var(--panel);
+  --surface-raised:var(--panel-2);
+  --border:var(--line);
+  --border-strong:#cdd0d5;
+  --text-primary:var(--text);
+  --text-secondary:#60636b;
+  --text-muted:#92959d;
+  --primary:var(--brand);
+  --primary-hover:var(--brand-dark);
+  --primary-subtle:var(--brand-soft);
+  --on-primary:#fff;
+  --on-surface:var(--text);
+  --on-danger:#fff;
+  --danger:#bd3f51;
   --success: #20b26b;
   --shadow: 0 16px 40px rgba(31, 34, 48, .08);
   --shadow-soft: 0 8px 24px rgba(31, 34, 48, .06);
@@ -16,15 +33,22 @@
   --radius-md: 14px;
 }
 body[data-theme="dark"] {
-  --bg: #090b11;
-  --panel: #11141c;
-  --panel-2: #0d1017;
-  --text: #f5f7fb;
-  --muted: #9299aa;
-  --line: #232836;
-  --brand: #8a71ff;
-  --brand-dark: #a797ff;
-  --brand-soft: rgba(122, 92, 255, .14);
+  --bg: #121212;
+  --panel: #191a1d;
+  --panel-2: #222328;
+  --surface-hover: #292a30;
+  --surface-active: #303138;
+  --text: #f2f3f5;
+  --muted: #a9abb3;
+  --line: #303138;
+  --brand: #8b7cff;
+  --brand-dark: #9d91ff;
+  --brand-soft: #282442;
+  --focus-ring:#a990ff;
+  --border-strong:#464750;
+  --text-secondary:#a9abb3;
+  --text-muted:#757780;
+  --danger:#ff6b77;
   --success: #42d58b;
   --shadow: 0 22px 60px rgba(0, 0, 0, .34);
   --shadow-soft: 0 10px 30px rgba(0, 0, 0, .22);
@@ -32,10 +56,15 @@ body[data-theme="dark"] {
 html { scroll-behavior: smooth; }
 body { min-width: 320px; background: var(--bg); }
 button, input, select, textarea { border-radius: 10px; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
-  outline: 2px solid var(--brand);
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+button:not(:disabled),a[href],summary,[role="button"]{cursor:pointer}
+button:disabled,[aria-disabled="true"]{cursor:not-allowed;opacity:.48}
+:where(button,a[href],summary,[role="button"]){transition:background-color 150ms ease,color 150ms ease,border-color 150ms ease,opacity 150ms ease}
+@media(hover:hover){:where(button:not(:disabled):not([aria-disabled="true"]):hover,a[href]:hover,summary:hover,[role="button"]:hover){background-color:var(--surface-hover)}}
+:where(button:not(:disabled):not([aria-disabled="true"]):active,a[href]:active,summary:active,[role="button"]:active){background-color:var(--surface-active)}
 .primary {
   background: linear-gradient(135deg, var(--brand), #6647f3) !important;
   color: #fff !important;
@@ -89,7 +118,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   font-size: 14px;
   text-align: center;
 }
-.nav-item:hover { background: var(--panel); color: var(--text); }
+.nav-item:hover { background: var(--surface-hover); color: var(--text); }
+.nav-item:active { background:var(--surface-active); }
 .nav-item.active { background: transparent; color: var(--text); }
 .nav-item.active::after {
   content: "";
@@ -103,6 +133,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .nav-beta { margin-left: 4px; color: var(--brand-dark); font-size: 9px; letter-spacing: .06em; vertical-align: 1px; }
 .site-header-tools { display: flex; align-items: center; }
+.lucid-brand{display:inline-flex;align-items:center;gap:8px;padding:0;border:0;background:transparent;color:var(--text);font-weight:900}.lucid-brand img{width:34px;height:34px;border-radius:9px}.lucid-brand:hover{color:var(--brand)}
+.service-nav-item{text-decoration:none;white-space:nowrap}.service-nav-item.current-service{color:var(--brand)}.service-nav-item.current-service::after{content:"";position:absolute;left:13px;right:13px;bottom:2px;height:2px;border-radius:2px;background:var(--brand)}
+.profile-menu{position:relative}.profile-menu>summary{display:flex;align-items:center;max-width:210px;min-height:36px;padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;list-style:none}.profile-menu>summary::-webkit-details-marker{display:none}.profile-menu>summary::after{content:"▾";margin-left:8px;color:var(--muted)}.profile-menu>summary:hover{background:var(--surface-hover)}.profile-menu[open]>summary{background:var(--surface-active);border-color:var(--brand)}.profile-menu-popover{position:absolute;top:calc(100% + 8px);right:0;z-index:100;display:grid;width:230px;padding:7px;border:1px solid var(--line);border-radius:11px;background:var(--panel-2);box-shadow:var(--shadow)}.profile-menu-identity{display:grid;gap:3px;padding:9px 10px 11px;border-bottom:1px solid var(--line)}.profile-menu-identity strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.profile-menu-identity small{color:var(--muted)}.profile-menu-popover button{min-height:38px;padding:0 10px;border:0;border-radius:7px;background:transparent;color:var(--muted);text-align:left}.profile-menu-popover button:hover{background:var(--surface-hover);color:var(--text)}.profile-menu-popover button:active{background:var(--surface-active)}.profile-menu-popover button.danger{color:#d64c5f}
 .side-role-menu { display: flex; align-items: center; gap: 6px; margin: 0; }
 .side-role-menu > .label { display: none; }
 .role-menu-button {
@@ -443,8 +476,9 @@ td { border-top: 1px solid var(--line); }
   .site-header-tools .discord-header-button { display: none !important; }
 }
 @media (max-width: 620px) {
-  .site-header-tools .theme-toggle { display: none; }
+  .site-header-tools .theme-toggle { display: inline-grid; place-items:center; width:34px; padding:0; }
   .site-header-tools .user-action { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-menu>summary{max-width:140px}.profile-menu-popover{position:fixed;top:64px;right:12px;max-width:calc(100vw - 24px)}
 }
 
 

@@ -1,6 +1,6 @@
 import { apiGet } from "../api.js?v=20260907current1";
 import { championIcon } from "../assets.js?v=20260907current1";
-import { getCurrentUser, getResolvedAnalysisPlayers } from "../auth.js?v=20260911authsingleton1";
+import { getCurrentUser, getResolvedAnalysisPlayers } from "../auth.js?v=20260914header1";
 import { $, escapeHtml, tierClass } from "../utils.js?v=20260905ai";
 
 const esc = (value) => escapeHtml(String(value ?? ""));

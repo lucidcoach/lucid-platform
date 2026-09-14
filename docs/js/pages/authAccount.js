@@ -147,6 +147,7 @@ function renderUserActions() {
   const loginButton = $("loginOpenBtn");
   const guestButton = $("guestBuyOpenBtn");
   const discordButton = $("discordConnectBtn");
+  const profileMenu = $("profileMenu");
   const adminMenu = document.querySelector(".admin-menu");
   if (adminMenu) {
     adminMenu.hidden = !isAdminUser();
@@ -154,16 +155,28 @@ function renderUserActions() {
   }
   if (!loginButton || !guestButton) return;
   if (state.currentUser) {
-    const accountRole = isAdminUser() ? "관리자" : (isCoachUser() ? "코치" : "수강생");
-    loginButton.textContent = `${accountRole} · ${state.currentUser.displayName || state.currentUser.email || "내 계정"}`;
+    const primaryRiotId = state.currentUser.preferredDisplayName
+      || state.currentUser.riotAccounts?.[0]
+      || state.currentUser.analysisPlayers?.[0]?.riotId
+      || state.currentUser.analysisPlayers?.[0]?.name
+      || state.currentUser.discordDisplayName
+      || state.currentUser.discord_display_name
+      || "내 정보";
+    loginButton.hidden = true;
+    guestButton.hidden = true;
+    if (profileMenu) {
+      profileMenu.hidden = false;
+      $("profileMenuName").textContent = primaryRiotId;
+      $("profileMenuFullName").textContent = primaryRiotId;
+      $("profileDiscordState").textContent = state.currentUser.discordConnected || state.currentUser.discord_connected ? "Discord 연결됨" : "Discord 연결 필요";
+    }
     const studentNav = $("navStudent");
     if (studentNav) studentNav.textContent = isCoachUser() ? "코치 현황" : "내 수강";
     loginButton.title = "내 정보 열기";
     loginButton.setAttribute("aria-label", "내 정보 열기");
     loginButton.classList.add("active-user");
-    guestButton.textContent = "로그아웃";
     if (discordButton) {
-      discordButton.hidden = false;
+      discordButton.hidden = true;
       const connected = Boolean(state.currentUser.discordConnected || state.currentUser.discord_connected || state.currentUser.discordDisplayName || state.currentUser.discord_display_name);
       discordButton.textContent = connected ? `Discord · ${state.currentUser.discordDisplayName || state.currentUser.discord_display_name || "연결됨"}` : "Discord 연결";
       discordButton.title = connected ? "Discord 계정 연결됨 · 내 정보에서 확인" : "Discord 계정 연결";
@@ -171,6 +184,12 @@ function renderUserActions() {
       discordButton.classList.toggle("active-user", connected);
     }
   } else {
+    loginButton.hidden = false;
+    guestButton.hidden = false;
+    if (profileMenu) {
+      profileMenu.hidden = true;
+      profileMenu.removeAttribute("open");
+    }
     loginButton.textContent = "로그인";
     const studentNav = $("navStudent");
     if (studentNav) studentNav.textContent = "내 수강";
@@ -179,7 +198,7 @@ function renderUserActions() {
     loginButton.classList.remove("active-user");
     guestButton.textContent = "비회원 상담 문의";
     if (discordButton) {
-      discordButton.hidden = false;
+      discordButton.hidden = true;
       discordButton.textContent = "Discord로 계속하기";
       discordButton.title = "Discord로 계속하기";
       discordButton.setAttribute("aria-label", "Discord로 계속하기");
@@ -225,7 +244,8 @@ function applyTheme(theme) {
   localStorage.setItem(THEME_KEY, nextTheme);
   const button = $("themeToggleBtn");
   if (button) {
-    button.textContent = nextTheme === "dark" ? "라이트모드" : "다크모드";
+    button.textContent = nextTheme === "dark" ? "☀" : "🌙";
+    button.title = nextTheme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환";
     button.setAttribute("aria-pressed", String(nextTheme === "dark"));
   }
 }

@@ -5,7 +5,7 @@ import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints,
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260914profileperf1";
 import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260907hotfix1";
-import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260911authsingleton1";
+import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260914header1";
 import { currentGameForPlayer, openCurrentGame } from "./liveMatch.js?v=20260914profilelive1";
 
 
@@ -157,14 +157,14 @@ function championRow(row) {
   </div>`;
 }
 
-function championStatsPanel(groups = {}) {
+function championStatsPanel(groups = {}, { detail = false } = {}) {
   const tabs = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
   return `<section class="champion-stats-panel">
     <div class="profile-section-title"><strong>챔피언 통계</strong></div>
     <div class="champion-role-tabs" role="tablist">${tabs.map((role, i) => `<button type="button" class="champion-role-tab${i === 0 ? " active" : ""}" data-champion-role="${escapeHtml(role)}">${escapeHtml(role)}</button>`).join("")}</div>
     <div class="champion-stat-head"><span>챔피언</span><span>게임</span><span>승률</span><span>KDA</span></div>
     <div class="champion-stat-list" data-champion-list></div>
-    <button class="champion-more-button" type="button" data-champion-more hidden>더 보기</button>
+    ${detail ? "" : `<button class="champion-more-button" type="button" data-champion-more hidden>더보기</button>`}
   </section>`;
 }
 
@@ -174,7 +174,7 @@ function associateRow(row) {
 
 function associatesPanel(data = {}) {
   return `<section class="associate-stats-panel">
-    <div class="profile-section-title"><strong>최근 같이 게임한 소환사</strong><span>최근 ${Number(data.sampleGames || 0)}게임 · 2판 이상</span></div>
+    <div class="profile-section-title"><strong>최근 같이 게임한 소환사</strong></div>
     <div class="associate-tabs" role="tablist"><button class="associate-tab active" type="button" data-associate-kind="allies">같은 팀</button><button class="associate-tab" type="button" data-associate-kind="opponents">상대 팀</button></div>
     <div class="associate-list" data-associate-list></div>
   </section>`;
@@ -196,34 +196,41 @@ function bindAssociates(target, data = {}) {
 }
 
 
-function bindChampionStats(target, groups = {}) {
+function showChampionStatsPage(target, groups, { userId, guildId, name }, push = true) {
+  if (push) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("player", String(userId));
+    url.searchParams.set("guild", String(guildId));
+    url.searchParams.set("champions", "1");
+    history.pushState({}, "", `${url.pathname}${url.search}`);
+  }
+  target.innerHTML = `<section class="champion-stats-page"><div class="champion-stats-page-head"><button class="ghost-button" type="button" data-champion-back>← 프로필</button><div><p class="section-kicker">CHAMPION STATISTICS</p><h1>${escapeHtml(name || "내")} 챔피언 통계</h1></div></div>${championStatsPanel(groups, { detail:true })}</section>`;
+  bindChampionStats(target, groups, { detail:true });
+  target.querySelector("[data-champion-back]")?.addEventListener("click", () => history.back());
+}
+
+function bindChampionStats(target, groups = {}, options = {}) {
   const list = target.querySelector("[data-champion-list]");
   const more = target.querySelector("[data-champion-more]");
   const tabs = [...target.querySelectorAll("[data-champion-role]")];
-  if (!list || !more) return;
+  if (!list) return;
   let role = "전체";
-  let expanded = false;
 
   const render = () => {
     const rows = Array.isArray(groups?.[role]) ? groups[role] : [];
-    const visible = expanded ? rows : rows.slice(0, 6);
+    const visible = options.detail ? rows : rows.slice(0, 6);
     list.innerHTML = visible.length
       ? visible.map(championRow).join("")
       : `<div class="champion-stat-empty">해당 라인의 저장된 상세 기록이 없습니다.</div>`;
-    more.hidden = rows.length <= 6;
-    more.textContent = expanded ? "접기" : `더 보기 (${rows.length})`;
+    if (more) more.hidden = rows.length <= 6;
   };
 
   tabs.forEach((button) => button.addEventListener("click", () => {
     tabs.forEach((item) => item.classList.toggle("active", item === button));
     role = button.dataset.championRole || "전체";
-    expanded = false;
     render();
   }));
-  more.addEventListener("click", () => {
-    expanded = !expanded;
-    render();
-  });
+  more?.addEventListener("click", () => showChampionStatsPage(target, groups, options));
   render();
 }
 
@@ -400,7 +407,11 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     ${personalHistoryFilters(matches, userId, guildId, p.name || "")}
     <div class="match-feed personal-feed" data-personal-match-feed>${matches.map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
 
-    bindChampionStats(target, p.championStats || {});
+    if (new URL(window.location.href).searchParams.get("champions") === "1") {
+      showChampionStatsPage(target, p.championStats || {}, { userId, guildId, name:p.name || "" }, false);
+      return;
+    }
+    bindChampionStats(target, p.championStats || {}, { userId, guildId, name:p.name || "" });
     bindRankSwitch(target);
     bindAssociates(target, p.recentAssociates || {});
     bindPersonalHistoryFilters(target, matches, userId);
