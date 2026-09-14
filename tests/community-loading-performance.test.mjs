@@ -8,7 +8,7 @@ const card = read("../docs/community/js/components/matchCard.js");
 const css = read("../docs/community/css/matches.css");
 
 assert.doesNotMatch(entry, /Promise\.all\(\[loadRecent\(\),loadLiveMatch\(\)\]\)[\s\S]*applyRoute\(\)/);
-assert.match(entry, /Promise\.all\(\[applyRoute\(\),loadLiveMatch\(\)\]\)/);
+assert.match(entry, /await applyRoute\(\);\s*void loadLiveMatch\(\);/);
 assert.match(card, /data-lazy-scoreboard/);
 assert.doesNotMatch(card, /scoreboard\(match\)/);
 assert.match(recent, /placeholder\.outerHTML = scoreboard\(match\)/);

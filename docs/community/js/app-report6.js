@@ -404,4 +404,5 @@ renderSearchMemory();
 const assetsReady=loadGameAssets();
 await initCommunityAuth();
 await assetsReady;
-await Promise.all([applyRoute(),loadLiveMatch()]);
+await applyRoute();
+void loadLiveMatch();
