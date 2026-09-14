@@ -719,6 +719,7 @@
 #recentView,
 #recentView .match-feed,
 #recentView .match-card{width:100%!important;max-width:100%!important}
+#recentView .match-card{content-visibility:auto;contain-intrinsic-size:auto 110px}
 #recentView .match-card .match-summary,
 #recentView .match-card.expanded .match-summary{grid-template-columns:76px minmax(0,1fr) 32px!important;min-height:92px!important}
 #recentView .match-card .match-meta{padding:10px 9px}

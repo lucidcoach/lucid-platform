@@ -5,6 +5,7 @@ import { $, escapeHtml, tierClass } from "../utils.js?v=20260905ai";
 
 const esc = (value) => escapeHtml(String(value ?? ""));
 let currentGames = [];
+let currentGamesSignature = "";
 
 function parsedDate(value) {
   if (!value) return null;
@@ -165,16 +166,21 @@ export async function loadLiveMatch({ quiet = false } = {}) {
   if (!quiet) root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p>`;
   try {
     const data = await apiGet("/api/community/current-games");
-    currentGames = Array.isArray(data.games) ? data.games : [];
+    const nextGames = Array.isArray(data.games) ? data.games : [];
+    const signature = JSON.stringify(nextGames);
+    if (quiet && signature === currentGamesSignature) return;
+    currentGames = nextGames;
+    currentGamesSignature = signature;
     renderList();
     window.dispatchEvent(new CustomEvent("lucid:current-games-updated"));
   } catch (_error) {
     currentGames = [];
+    currentGamesSignature = "";
     root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 불러오지 못했습니다.</p>`;
     window.dispatchEvent(new CustomEvent("lucid:current-games-updated"));
   }
 }
 
 window.setInterval(() => {
-  if (!document.hidden && $("liveMatchRoot")) loadLiveMatch({ quiet: true });
-}, 15000);
+  if (!document.hidden && document.querySelector("#recentView.active, #searchView.active")) loadLiveMatch({ quiet: true });
+}, 30000);

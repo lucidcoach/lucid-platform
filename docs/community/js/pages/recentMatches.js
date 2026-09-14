@@ -3,8 +3,22 @@ import { RECENT_PAGE_SIZE } from "../config.js?v=20260904r";
 import { state } from "../state.js?v=20260904r";
 import { $, escapeHtml } from "../utils.js?v=20260904r";
 import { renderLoading, showStatus } from "../view.js?v=20260904r";
-import { matchCard } from "../components/matchCard.js?v=20260914seriesmatch1";
-import { bindExpanders } from "../components/scoreboard.js?v=20260904v";
+import { matchCard } from "../components/matchCard.js?v=20260914perf1";
+import { bindExpanders, scoreboard } from "../components/scoreboard.js?v=20260904v";
+
+function bindLazyScoreboards(root, matches) {
+  const rows = new Map(matches.map(match => [`${match.guildId}:${match.matchId}`, match]));
+  root.querySelectorAll(".match-card").forEach(card => {
+    const button = card.querySelector(".expand-match");
+    if (!button || button.dataset.scoreboardBound) return;
+    button.dataset.scoreboardBound = "1";
+    button.addEventListener("click", () => {
+      const placeholder = card.querySelector("[data-lazy-scoreboard]");
+      const match = rows.get(`${card.dataset.guildId}:${card.dataset.matchId}`);
+      if (placeholder && match) placeholder.outerHTML = scoreboard(match);
+    }, { once: true });
+  });
+}
 
 export async function loadRecent({ append = false } = {}) {
   if (state.recentLoading) return;
@@ -14,10 +28,12 @@ export async function loadRecent({ append = false } = {}) {
   if (!append) { state.recentOffset = 0; renderLoading(target,4); }
   try {
     const data = await apiGet(`/api/community/matches?limit=${RECENT_PAGE_SIZE}&offset=${state.recentOffset}&category=${encodeURIComponent(state.recentCategory || "all")}`);
-    const html = (data.matches || []).map(matchCard).join("");
+    const matches = data.matches || [];
+    const html = matches.map(matchCard).join("");
     if (append) target.insertAdjacentHTML("beforeend",html); else target.innerHTML = html || `<div class="empty-state"><strong>아직 표시할 내전 기록이 없습니다.</strong><span>Lucid Bot 경기 기록이 쌓이면 여기에 표시됩니다.</span></div>`;
-    state.recentOffset += (data.matches || []).length;
-    $("loadMoreBtn").hidden = state.recentOffset >= Number(data.total || 0) || !(data.matches || []).length;
+    state.recentOffset += matches.length;
+    $("loadMoreBtn").hidden = state.recentOffset >= Number(data.total || 0) || !matches.length;
+    bindLazyScoreboards(target, matches);
     bindExpanders(target);
   } catch (error) {
     const notConfigured = error.code === "community_guild_not_configured";

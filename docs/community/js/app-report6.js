@@ -1,7 +1,7 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260909convenience1";
-import { loadRecent } from "./pages/recentMatches.js?v=20260914seriesmatch1";
+import { loadRecent } from "./pages/recentMatches.js?v=20260914perf1";
 import { state } from "./state.js?v=20260904r";
 import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260914profilecard2";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260911authsingleton1";
@@ -10,7 +10,7 @@ import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "
 import { renderMileage } from "./pages/mileage.js?v=20260913density1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260911authsingleton1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
-import { loadLiveMatch } from "./pages/liveMatch.js?v=20260914profilelive1";
+import { loadLiveMatch } from "./pages/liveMatch.js?v=20260914perf1";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -188,7 +188,7 @@ async function applyRoute({ fromPop = false, routeState = null } = {}) {
   }
   switchView("recent");
   selectScrimTab("recent");
-  if (!fromPop) loadRecent();
+  if (!fromPop) await loadRecent();
 }
 
 function goRecent({ push = true } = {}) {
@@ -401,8 +401,7 @@ bindEvents();
 bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
+const assetsReady=loadGameAssets();
 await initCommunityAuth();
-await syncAdminAccess();
-await loadGameAssets();
-await Promise.all([loadRecent(),loadLiveMatch()]);
-applyRoute();
+await assetsReady;
+await Promise.all([applyRoute(),loadLiveMatch()]);
