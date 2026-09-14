@@ -1834,6 +1834,7 @@
 .profile-dashboard-grid>.champion-stats-panel{padding:16px 18px}
 .profile-dashboard-grid .champion-stat-head,
 .profile-dashboard-grid .champion-stat-row{grid-template-columns:minmax(135px,1fr) 46px 54px 52px;gap:6px;padding-left:8px;padding-right:8px}
+.profile-dashboard-grid .champion-stat-row{min-height:44px;padding-top:6px;padding-bottom:6px}
 .profile-dashboard-grid>.associate-stats-panel{padding:16px}
 .profile-dashboard-grid .associate-row{grid-template-columns:minmax(110px,1fr) 34px 34px 50px;gap:6px;min-height:42px;line-height:1.35}
 @media(min-width:1101px){
@@ -1882,27 +1883,41 @@
   .personal-admin-analysis-button{margin-left:0!important;width:100%!important}
 }
 
-/* Profile summary balance: native SVG trend, five associates, compact match roster. */
-.profile-dashboard-grid{align-items:stretch}
-.profile-left-column{display:grid;grid-template-rows:auto minmax(112px,1fr);gap:12px;min-width:0;height:100%}
+/* Profile summary balance: compact native SVG trend and five associates. */
+.profile-dashboard-grid{align-items:start}
+.profile-left-column{display:grid;grid-template-rows:auto auto;gap:12px;min-width:0}
 .profile-left-column>.profile-summary-panel{margin:0}
 .profile-dashboard-grid>.champion-stats-panel,
-.profile-dashboard-grid>.associate-stats-panel{display:flex;flex-direction:column;height:100%}
-.profile-dashboard-grid .champion-stat-list,
-.profile-dashboard-grid .associate-list{flex:1}
-.lp-trend-panel{display:grid;grid-template-rows:auto auto minmax(72px,1fr);min-width:0;padding:13px 15px;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel);overflow:hidden}
+.profile-dashboard-grid>.associate-stats-panel{display:flex;flex-direction:column;height:auto}
+.lp-trend-panel{display:grid;gap:7px;min-width:0;padding:11px 13px;border:1px solid var(--line-soft);border-radius:11px;background:var(--panel);overflow:hidden}
+.lp-trend-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px}
+.lp-trend-tab{min-width:0;height:25px;padding:0 3px;border:1px solid var(--line-soft);border-radius:6px;background:var(--surface-input);color:var(--text-secondary);font-size:10px;font-weight:800;cursor:pointer}
+.lp-trend-tab:hover{background:var(--surface-hover);color:var(--text-primary)}
+.lp-trend-tab.active{border-color:transparent;background:var(--primary-subtle);color:var(--primary)}
+.lp-trend-tab:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
+.lp-trend-panel>[data-lp-trend-content]{display:grid;grid-template-rows:auto auto 68px}
 .lp-trend-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .lp-trend-head strong{font-size:14px}
 .lp-trend-head span{font-size:12px;font-weight:850;color:var(--muted);white-space:nowrap}
 .lp-trend-head .up{color:var(--success)}
 .lp-trend-head .down{color:var(--danger)}
 .lp-trend-peak{margin-top:3px;color:var(--muted);font-size:11px;text-align:right}
-.lp-trend-chart{width:100%;min-height:72px;overflow:visible}
+.lp-trend-chart{width:100%;height:68px;overflow:visible}
 .lp-trend-chart .lp-trend-grid{fill:none;stroke:var(--line-soft);stroke-width:1}
 .lp-trend-chart polyline{fill:none;stroke:var(--primary);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .lp-trend-chart circle{fill:var(--primary)}
-.lp-trend-empty{display:grid;place-items:center;min-height:78px;color:var(--muted);font-size:12px}
+.lp-trend-empty{display:grid;place-items:center;min-height:94px;color:var(--muted);font-size:12px}
 .associate-row button{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Neutral surfaces are the default; purple is reserved for active/action states. */
+.profile-summary-panel,.champion-stats-panel,.associate-stats-panel,.search-memory-column,.search-memory-row,.search-candidate,.personal-history-toolbar,.official-rank-list>div{background:var(--surface)!important;border-color:var(--border-soft)!important}
+.search-control input,.personal-champion-search-filter input,.personal-queue-buttons,.associate-tab,.champion-role-tab{background:var(--surface-input)!important;border-color:var(--border-default)!important}
+.search-memory-row:hover,.search-candidate:hover{background:var(--surface-hover)!important;border-color:var(--border-strong)!important}
+.profile-favorite-button{background:var(--surface-input);border-color:var(--border-default);color:var(--text-muted)}
+.profile-favorite-button:hover{background:var(--surface-hover);border-color:var(--border-strong);color:var(--favorite-hover)}
+.profile-favorite-button.active{color:var(--favorite)}
+.profile-refresh-button{border-color:var(--border-default);background:var(--surface-input);color:var(--text-primary)}
+.profile-refresh-button:hover{border-color:var(--border-strong);background:var(--surface-hover)}
 
 @media(min-width:1101px){
   .personal-match:not(.expanded) .personal-summary,
@@ -1926,8 +1941,7 @@
   .personal-match .roster-profile-link{display:block;width:100%!important;min-width:0!important;max-width:none!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 }
 @media(max-width:820px){
-  .profile-left-column{height:auto}
-  .lp-trend-panel{min-height:130px}
+  .lp-trend-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:1100px) and (min-width:921px){
   .personal-match:not(.expanded) .personal-summary,

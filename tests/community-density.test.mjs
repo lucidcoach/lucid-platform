@@ -10,6 +10,8 @@ const playerSearch = read("../docs/community/js/pages/playerSearch.js");
 const utils = read("../docs/community/js/utils.js");
 
 assert.match(tokens, /--layout-max-width:\s*1120px/);
+assert.match(tokens, /--surface-1:\s*#1a1a1c/);
+assert.match(tokens, /--accent-primary:\s*#7b68ff/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
 assert.match(profile, /#recentSearches\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
 assert.match(profile, /profile-dashboard-grid\{grid-template-columns:minmax\(380px,1\.2fr\) minmax\(350px,1\.1fr\) minmax\(315px,\.95fr\)/);

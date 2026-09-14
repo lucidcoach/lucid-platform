@@ -3,29 +3,29 @@
 
   /* Semantic theme tokens. Keep legacy aliases below for existing components. */
   --page-bg: #121212;
-  --surface-1: #191a1d;
-  --surface-2: #222328;
-  --surface-3: #151619;
-  --surface-hover: #292a30;
-  --surface-active: #303138;
-  --surface-elevated: #222328;
-  --surface-input: #11151d;
+  --surface-1: #1a1a1c;
+  --surface-2: #202124;
+  --surface-3: #17181b;
+  --surface-hover: #26272b;
+  --surface-active: #2c2d32;
+  --surface-elevated: #202124;
+  --surface-input: #17181b;
 
   --text-primary: #f2f3f5;
-  --text-secondary: #a9abb3;
-  --text-muted: #757780;
-  --text-subtle: #757780;
+  --text-secondary: #b0b4bc;
+  --text-muted: #8b9098;
+  --text-subtle: #8b9098;
   --text-inverse: #ffffff;
 
-  --border-default: #303138;
-  --border-soft: #26272c;
-  --border-strong: #464750;
+  --border-default: #2f3136;
+  --border-soft: #292a2e;
+  --border-strong: #3a3d44;
 
-  --accent-primary: #8b7cff;
-  --accent-hover: #9d91ff;
-  --accent-active: #7566e8;
-  --accent-soft: #282442;
-  --accent-border: #665bd0;
+  --accent-primary: #7b68ff;
+  --accent-hover: #8b79ff;
+  --accent-active: #6b59e8;
+  --accent-soft: #2a2440;
+  --accent-border: #7b68ff;
 
   --team-blue: #6aa8ff;
   --team-blue-text: #a9caff;

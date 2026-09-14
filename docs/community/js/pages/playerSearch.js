@@ -209,16 +209,18 @@ function showChampionStatsPage(target, groups, { userId, guildId, name }, push =
   target.querySelector("[data-champion-back]")?.addEventListener("click", () => history.back());
 }
 
-function lpTrendPanel(matches = [], userId) {
+const LP_TREND_ROLES = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
+
+function lpTrendContent(matches = [], userId, role = "전체") {
   const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const points = matches.map((match) => {
     const player = (match.players || []).find((row) => String(row.userId) === String(userId));
     const time = new Date(match.time || 0).getTime();
     const value = Number(player?.afterMmr || player?.mmr || 0);
-    return { time, value, before:Number(player?.beforeMmr || value), tier:String(player?.tier || "-") };
-  }).filter((row) => row.time >= cutoff && Number.isFinite(row.value) && row.value > 0).sort((a, b) => a.time - b.time);
+    return { time, value, before:Number(player?.beforeMmr || value), tier:String(player?.tier || "-"), role:normalizeRoleKey(player?.role || player?.position || player?.lane) };
+  }).filter((row) => row.time >= cutoff && Number.isFinite(row.value) && row.value > 0 && (role === "전체" || row.role === role)).sort((a, b) => a.time - b.time);
 
-  if (!points.length) return `<section class="lp-trend-panel"><div class="lp-trend-head"><strong>최근 30일</strong></div><div class="lp-trend-empty">최근 LP 데이터가 부족합니다.</div></section>`;
+  if (!points.length) return `<div class="lp-trend-empty">기록 부족</div>`;
 
   const values = points.map((row) => row.value);
   const min = Math.min(...values);
@@ -232,14 +234,34 @@ function lpTrendPanel(matches = [], userId) {
   const delta = Math.round(points.at(-1).value - points[0].before);
   const peak = points.reduce((best, row) => row.value > best.value ? row : best, points[0]);
   const peakLp = tierLeaguePoints(peak.tier, peak.value);
-  return `<section class="lp-trend-panel">
+  return `
     <div class="lp-trend-head"><strong>최근 30일</strong><span class="${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta > 0 ? "▲" : delta < 0 ? "▼" : "-"} ${Math.abs(delta)} LP</span></div>
     <div class="lp-trend-peak">최고티어: ${escapeHtml(peak.tier)} ${peakLp.toLocaleString()}점</div>
     <svg class="lp-trend-chart" viewBox="0 0 320 96" preserveAspectRatio="none" role="img" aria-label="최근 30일 LP 추이">
       <path class="lp-trend-grid" d="M8 16H312M8 50H312M8 84H312"/>
       ${points.length === 1 ? `<circle cx="160" cy="50" r="4"/>` : `<polyline points="${chartPoints}"/>`}
-    </svg>
+    </svg>`;
+}
+
+function lpTrendPanel(matches = [], userId) {
+  return `<section class="lp-trend-panel">
+    <div class="lp-trend-tabs" role="tablist" aria-label="포지션별 LP 추이">${LP_TREND_ROLES.map((role, index) => `<button type="button" class="lp-trend-tab${index === 0 ? " active" : ""}" data-lp-trend-role="${role}" role="tab" aria-selected="${index === 0}">${role}</button>`).join("")}</div>
+    <div data-lp-trend-content>${lpTrendContent(matches, userId)}</div>
   </section>`;
+}
+
+function bindLpTrend(target, matches, userId) {
+  const content = target.querySelector("[data-lp-trend-content]");
+  const tabs = [...target.querySelectorAll("[data-lp-trend-role]")];
+  if (!content) return;
+  tabs.forEach((button) => button.addEventListener("click", () => {
+    tabs.forEach((tab) => {
+      const active = tab === button;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+    content.innerHTML = lpTrendContent(matches, userId, button.dataset.lpTrendRole || "전체");
+  }));
 }
 
 function bindChampionStats(target, groups = {}, options = {}) {
@@ -447,6 +469,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     bindChampionStats(target, p.championStats || {}, { userId, guildId, name:p.name || "" });
     bindRankSwitch(target);
     bindAssociates(target, p.recentAssociates || {});
+    bindLpTrend(target, internalMatches, userId);
     bindPersonalHistoryFilters(target, matches, userId);
     syncProfileLiveButton(target, userId, guildId);
     target.querySelector("[data-profile-live]")?.addEventListener("click", (event) => openCurrentGame(event.currentTarget.dataset.gameId));
