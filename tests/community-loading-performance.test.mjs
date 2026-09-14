@@ -17,6 +17,9 @@ assert.match(recent, /placeholder\.outerHTML = scoreboard\(match\)/);
 assert.match(playerCard, /data-lazy-scoreboard/);
 assert.match(playerSearch, /renderScoreboardRows\(data\.match, userId\)/);
 assert.doesNotMatch(playerSearch, /server-stats/);
+assert.doesNotMatch(playerSearch, /Promise\.all\(\[\s*apiGet\(`\/api\/community\/players[\s\S]*admin\/replays/);
+assert.match(playerSearch, /void hydrateReplayDownloads\(target, internalMatches, userId, guildId\)/);
+assert.match(playerSearch, /data-personal-match-feed><\/div>/);
 assert.match(css, /content-visibility:auto/);
 
 console.log("community loading performance checks passed");

@@ -41,6 +41,6 @@ assert.match(source, /transactionPagination/);
 assert.match(source, /mileageTransactionPager/);
 assert.match(entry, /pages\/mileage\.js\?v=20260914header1/);
 assert.match(page, /styles\.css\?v=20260914trend2/);
-assert.match(page, /app-report6\.js\?v=20260914brand2/);
+assert.match(page, /app-report6\.js\?v=20260914profileperf2/);
 
 console.log("mileage auth gate checks passed");

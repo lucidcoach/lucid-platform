@@ -407,6 +407,21 @@ function bindReplayDownloads(target) {
   }));
 }
 
+async function hydrateReplayDownloads(target, matches, userId, guildId) {
+  if (!isCommunityAdmin()) return;
+  const replayData = await apiGet("/api/community/admin/replays?limit=500").catch(() => ({ replays:[] }));
+  if (target.dataset.profileUserId !== String(userId) || target.dataset.profileGuildId !== String(guildId)) return;
+  const replayMap = new Map((replayData.replays || []).map((row) => [`${row.guildId}:${row.matchId}`, row]));
+  for (const match of matches) {
+    const replay = replayMap.get(`${match.guildId}:${match.matchId}`);
+    if (replay) match.replay = replay;
+    const actions = target.querySelector(`.personal-match[data-analysis-match-id="${CSS.escape(String(match.matchId))}"] .personal-actions`);
+    if (!replay?.id || !actions || actions.querySelector("[data-replay-download]")) continue;
+    actions.insertAdjacentHTML("beforeend", `<button class="replay-download" type="button" data-replay-download="${escapeHtml(replay.id)}" data-replay-filename="${escapeHtml(replay.filename || "lucid-replay.rofl")}" aria-label="ROFL 다운로드" title="ROFL 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 19h14"/></svg></button>`);
+  }
+  bindReplayDownloads(target);
+}
+
 function bindLazyScoreboards(target, matches, userId) {
   const rows = new Map(matches.map(match => [String(match.matchId), match]));
   target.querySelectorAll(".personal-match").forEach(card => {
@@ -432,12 +447,8 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
   const target=$("searchResults");
   renderLoading(target,4);
   try {
-    const [data, replayData] = await Promise.all([
-      apiGet(`/api/community/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=${PLAYER_MATCH_LIMIT}`),
-      isCommunityAdmin() ? apiGet("/api/community/admin/replays?limit=500").catch(() => ({ replays:[] })) : Promise.resolve({ replays:[] }),
-    ]);
-    const replayMap = new Map((replayData.replays || []).map((row) => [`${row.guildId}:${row.matchId}`, row]));
-    const internalMatches = (data.matches || []).map((match) => ({ ...match, source:match.source || "LUCID_INTERNAL", category:"internal", replay:replayMap.get(`${match.guildId}:${match.matchId}`) || null }));
+    const data = await apiGet(`/api/community/players/${encodeURIComponent(userId)}?guildId=${encodeURIComponent(guildId)}&limit=${PLAYER_MATCH_LIMIT}`);
+    const internalMatches = (data.matches || []).map((match) => ({ ...match, source:match.source || "LUCID_INTERNAL", category:"internal" }));
     const matches = [...internalMatches, ...(data.publicMatches || [])].sort((a,b) => new Date(b.time || 0) - new Date(a.time || 0));
     const p=data.player;
     const scrimIconUrl = p.scrimIconPath ? `${API_BASE_URL.replace(/\/$/, "")}${p.scrimIconPath}` : "";
@@ -460,7 +471,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       ${associatesPanel(p.recentAssociates || {})}
     </section>
     ${personalHistoryFilters(matches, userId, guildId, p.name || "")}
-    <div class="match-feed personal-feed" data-personal-match-feed>${matches.map((m)=>playerMatchCard(m,userId)).join("") || `<div class="empty-state"><strong>상세 스탯이 있는 경기 기록이 없습니다.</strong></div>`}</div>`;
+    <div class="match-feed personal-feed" data-personal-match-feed></div>`;
 
     if (new URL(window.location.href).searchParams.get("champions") === "1") {
       showChampionStatsPage(target, p.championStats || {}, { userId, guildId, name:p.name || "" }, false);
@@ -492,7 +503,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     });
     bindLazyScoreboards(target, internalMatches, userId);
     bindExpanders(target);
-    bindReplayDownloads(target);
+    void hydrateReplayDownloads(target, internalMatches, userId, guildId);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
       window.dispatchEvent(new CustomEvent("lucid:favorite-toggle", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
       const nowFavorite = !event.currentTarget.classList.contains("active");
