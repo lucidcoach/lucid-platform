@@ -15,6 +15,7 @@ assert.ok(searchView < memory && memory < searchResults, "recent searches must b
 assert.equal(page.match(/class="search-memory-panel"/g)?.length, 1);
 assert.match(entry, /RECENT_SEARCH_LIMIT = 5/);
 assert.match(page, /communityProfileMenu/);
+assert.match(page, /nav-hierarchy-divider/);
 assert.doesNotMatch(page, /id="communityLogoutBtn"/);
 assert.match(auth, /preferredDisplayName \|\| riotAccounts\[0\]/);
 for (const token of ["--surface-hover", "--surface-active", "--primary-hover", "--primary-active", "--nav-hover", "--focus-ring"]) assert.match(tokens, new RegExp(token));
