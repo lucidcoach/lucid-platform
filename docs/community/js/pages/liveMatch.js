@@ -134,7 +134,7 @@ export function openCurrentGame(gameId) {
   document.body.insertAdjacentHTML("beforeend", `<dialog id="currentMatchDialog" class="current-match-dialog" aria-labelledby="currentMatchTitle">
     <div class="current-match-modal">
       <button class="current-match-close" type="button" data-current-close aria-label="닫기">×</button>
-      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle">${esc(queueName(game))}</h2>${seriesSummary(game)}<div class="current-modal-versus"><span class="blue">BLUE ${esc(game.series?.blueTeam || "TEAM")}</span><b>VS</b><span class="red">RED ${esc(game.series?.redTeam || "TEAM")}</span></div><small>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"} · ${elapsedText(game.startedAt)}</small></header>
+      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle">${esc(queueName(game))}</h2>${seriesSummary(game)}</header>
       <div class="current-match-teams">
         <section class="current-team-block blue-team"><h3>블루팀 <span>평균 티어 ${esc(game.blueAverageTier || "미배치")}</span></h3>${(game.blue || []).map(playerRow).join("")}</section>
         <div class="current-match-vs" aria-hidden="true">VS</div>
