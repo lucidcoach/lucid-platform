@@ -3,8 +3,8 @@ import { API_BASE_URL, PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260911public1";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260914seriesmatch1";
-import { bindExpanders } from "../components/scoreboard.js?v=20260907hotfix1";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260914profileperf1";
+import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260907hotfix1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260911authsingleton1";
 import { currentGameForPlayer, openCurrentGame } from "./liveMatch.js?v=20260914profilelive1";
 
@@ -370,6 +370,25 @@ function bindReplayDownloads(target) {
   }));
 }
 
+function bindLazyScoreboards(target, matches, userId) {
+  const rows = new Map(matches.map(match => [String(match.matchId), match]));
+  target.querySelectorAll(".personal-match").forEach(card => {
+    const button = card.querySelector(".personal-expand");
+    const placeholder = card.querySelector("[data-lazy-scoreboard]");
+    if (!button || !placeholder) return;
+    button.addEventListener("click", async () => {
+      placeholder.textContent = "상세 불러오는 중...";
+      try {
+        const match = rows.get(String(card.dataset.analysisMatchId));
+        const data = await apiGet(`/api/community/matches/${encodeURIComponent(match.matchId)}?guildId=${encodeURIComponent(match.guildId)}`);
+        placeholder.innerHTML = renderScoreboardRows(data.match, userId);
+      } catch (_) {
+        placeholder.textContent = "상세 정보를 불러오지 못했습니다.";
+      }
+    }, { once:true });
+  });
+}
+
 export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
   updateUrl({ player: userId, guild: guildId }, historyMode);
   switchView("search");
@@ -431,6 +450,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       if(button.dataset.riotId)url.searchParams.set("riotId",button.dataset.riotId);
       window.location.assign(`${url.pathname}${url.search}`);
     });
+    bindLazyScoreboards(target, internalMatches, userId);
     bindExpanders(target);
     bindReplayDownloads(target);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {
