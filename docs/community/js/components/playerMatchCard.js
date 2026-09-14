@@ -1,5 +1,5 @@
 import { championIcon } from "../assets.js?v=20260905ab";
-import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260911public1";
+import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260914seriesmatch1";
 import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260905ab";
 import { scoreboard } from "./scoreboard.js?v=20260911public1";
 

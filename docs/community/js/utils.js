@@ -39,6 +39,9 @@ export function matchCategory(match) {
 }
 
 export function normalizeMode(match) {
+  const bestOf = Number(match?.bestOf || 1);
+  const seriesGame = Number(match?.seriesGame || 0);
+  if ([3, 5].includes(bestOf) && seriesGame > 0) return `BO${bestOf}\n매치 ${seriesGame}`;
   const category = matchCategory(match);
   if (category === "normal") return "일반";
   if (category === "solo") return "솔랭";

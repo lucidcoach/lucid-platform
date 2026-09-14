@@ -7,6 +7,7 @@ const layout = read("../docs/community/css/layout.css");
 const profile = read("../docs/community/css/profile.css");
 const matches = read("../docs/community/css/matches.css");
 const playerSearch = read("../docs/community/js/pages/playerSearch.js");
+const utils = read("../docs/community/js/utils.js");
 
 assert.match(tokens, /--content:\s*1120px/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
@@ -29,5 +30,7 @@ assert.match(profile, /@media\(max-width:1150px\)[\s\S]+grid-template-columns:mi
 assert.match(profile, /associate-row[^}]+min-height:42px/);
 assert.match(matches, /#recentView,[\s\S]+max-width:100%!important/);
 assert.doesNotMatch(playerSearch, /<div class="profile-champion-panel">/);
+assert.match(utils, /return `BO\$\{bestOf\}\\n매치 \$\{seriesGame\}`/);
+assert.match(matches, /\.match-mode,\.result-meta>div\{white-space:pre-line\}/);
 
 console.log("community density checks passed");

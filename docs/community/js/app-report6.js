@@ -1,9 +1,9 @@
 import { loadGameAssets } from "./assets.js?v=20260904r";
 import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260909convenience1";
-import { loadRecent } from "./pages/recentMatches.js?v=20260904x";
+import { loadRecent } from "./pages/recentMatches.js?v=20260914seriesmatch1";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260914profileheader1";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260914seriesmatch1";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260911authsingleton1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260911authsingleton1";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260914titleiconpreview2";
