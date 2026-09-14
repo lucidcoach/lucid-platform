@@ -6,7 +6,9 @@ const tokens = read("../docs/community/css/tokens.css");
 const layout = read("../docs/community/css/layout.css");
 const profile = read("../docs/community/css/profile.css");
 const matches = read("../docs/community/css/matches.css");
+const styles = read("../docs/community/styles.css");
 const playerSearch = read("../docs/community/js/pages/playerSearch.js");
+const playerMatchCard = read("../docs/community/js/components/playerMatchCard.js");
 const utils = read("../docs/community/js/utils.js");
 
 assert.match(tokens, /--layout-max-width:\s*1120px/);
@@ -15,7 +17,9 @@ assert.match(tokens, /--accent-primary:\s*#7b68ff/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
 assert.match(layout, /\.community-home-button\{\s*height:48px/);
 assert.match(read("../docs/community/css/ranking.css"), /\.ranking-role\{min-width:78px\}/);
-assert.match(profile, /\.search-memory-panel\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);align-items:stretch/);
+assert.match(styles, /#searchView\{--profile-columns:minmax\(380px,1\.2fr\) minmax\(350px,1\.1fr\) minmax\(315px,\.95fr\);--profile-gap:12px\}/);
+assert.match(styles, /#searchView \.search-memory-column:first-child\{grid-column:1\/3\}/);
+assert.match(styles, /#searchView \.search-memory-column\.favorites\{grid-column:3\}/);
 assert.match(profile, /\.search-memory-column\{display:grid;grid-template-rows:38px 1fr/);
 assert.match(profile, /\.search-memory-column\.favorites\{width:auto;max-width:none;justify-self:stretch;border-color:var\(--border-soft\)\}/);
 assert.match(profile, /\.search-memory-row\{[^}]*height:34px[^}]*border:1px solid var\(--border-soft\)/);
@@ -50,5 +54,22 @@ assert.match(matches, /#recentView \.match-card \.preview-player\{height:25px/);
 assert.match(matches, /score-combat-loadout\{width:82px!important;min-width:82px!important;grid-template-columns:34px 40px!important/);
 assert.match(matches, /score-cs-cell\{justify-self:stretch!important;place-items:center!important;text-align:center!important/);
 assert.match(matches, /score-damage-cell\{justify-self:stretch!important;align-self:stretch!important;width:96px!important/);
+assert.match(styles, /personal-match:is\(\.expanded,:not\(\.expanded\)\) \.personal-summary\{[\s\S]+grid-template-columns:85px 118px 400px minmax\(0,1fr\) 38px!important/);
+assert.match(styles, /scoreboard-layout \.score-player-row\{[\s\S]+grid-template-columns:82px 158px 54px 84px 104px 90px 96px!important/);
+assert.match(styles, /scoreboard-layout \.score-identity\{width:158px!important;min-width:0!important;padding-left:0!important;gap:8px!important\}/);
+assert.match(styles, /html\{scrollbar-gutter:stable\}/);
+assert.match(playerMatchCard, /<div class="personal-summary">[\s\S]+<\/div><div class="build-detail-panel">[\s\S]+\$\{details\}<\/article>/);
+assert.match(playerSearch, /dataset\.state === "loading" \|\| placeholder\.dataset\.state === "loaded"/);
+assert.match(playerSearch, /dataset\.state = "error"/);
+assert.doesNotMatch(styles, /\.expanded\s+\*/);
+
+const { bindExpanders } = await import(new URL("../docs/community/js/components/scoreboard.js", import.meta.url));
+let expanded = false;
+let click;
+const card = { classList:{ toggle:()=>{ expanded=!expanded; }, contains:()=>expanded } };
+const button = { dataset:{}, textContent:"⌄", closest:()=>card, addEventListener:(_event,handler)=>{ click=handler; } };
+const root = { querySelectorAll:(selector)=>selector.includes("expand-match") ? [button] : [] };
+bindExpanders(root);
+for (const expected of [true,false,true]) { click(); assert.equal(expanded,expected); assert.equal(button.textContent,expected ? "⌃" : "⌄"); }
 
 console.log("community density checks passed");
