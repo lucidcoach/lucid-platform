@@ -6,7 +6,7 @@ const source = readFileSync(new URL("../docs/community/js/pages/communityAdmin.j
 for (const text of ["챔피언 숙련", "챔피언:", "기본 칭호:", "특수 칭호:", "최초 획득:", "서버 최초", "복합 서버 최초"]) {
   assert.match(source, new RegExp(text));
 }
-for (const field of ["row.champion", "row.defaultTitle", "row.overrideTitle", "row.claimed", "row.claimantName"]) {
+for (const field of ["row.champion", "row.defaultTitle", "row.overrideTitle", "row.claimed", "row.claimantName", "row.holders", "holderText"]) {
   assert.match(source, new RegExp(field.replace(".", "\\.")));
 }
 
