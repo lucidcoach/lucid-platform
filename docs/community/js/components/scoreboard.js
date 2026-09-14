@@ -42,11 +42,15 @@ function teamMaxDamage(match, team) {
     .map((row) => Number(row?.damage || 0)));
 }
 
-function aiRank(match, player) {
+export function aiRank(match, player) {
+  const savedRank = Number(player?.aiRank);
+  const savedTotal = Number(player?.aiRankTotal);
+  if (Number.isInteger(savedRank) && savedRank > 0 && Number.isInteger(savedTotal) && savedTotal >= savedRank) return {rank:savedRank,total:savedTotal};
   if (player?.aiScore == null) return null;
   const score = Number(player?.aiScore);
-  const rows = (match?.players || []).filter((row) => Number.isFinite(Number(row?.aiScore)));
-  if (!Number.isFinite(score) || !rows.length) return null;
+  const players = match?.players || [];
+  const rows = players.filter((row) => row?.aiScore != null && row.aiScore !== "" && Number.isFinite(Number(row.aiScore)));
+  if (!Number.isFinite(score) || players.length < 2 || rows.length !== players.length) return null;
   const rank = 1 + rows.filter((row) => Number(row.aiScore) > score).length;
   return { rank, total: rows.length };
 }

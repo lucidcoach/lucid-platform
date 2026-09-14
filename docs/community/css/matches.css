@@ -719,6 +719,13 @@
   overflow-x:hidden!important;
   box-sizing:border-box!important;
 }
+.match-category-tabs{border-color:var(--border-default);background:var(--surface-input)}
+.match-category-tab{color:var(--text-muted)}
+.match-category-tab:hover{background:var(--surface-hover);color:var(--text-primary)}
+.match-category-tab.active{background:var(--primary-subtle);color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.expand-match,.match-card.expanded .expand-match{display:flex;align-items:center;justify-content:center;padding:0;line-height:1;color:var(--text-muted);transform:none}
+.expand-match:hover{background:var(--surface-hover);color:var(--text-primary)}
+.expand-match:disabled{background:var(--surface);color:var(--text-muted);cursor:not-allowed}
 .scoreboard-layout.has-personal-analysis{
   grid-template-columns:minmax(0,1fr) minmax(240px,280px)!important;
   column-gap:10px!important;

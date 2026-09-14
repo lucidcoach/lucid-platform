@@ -3,8 +3,8 @@ import { API_BASE_URL, PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260911public1";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260914profileperf1";
-import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260907hotfix1";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260915airank1";
+import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260915airank1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260914header1";
 import { currentGameForPlayer, openCurrentGame } from "./liveMatch.js?v=20260915livefit1";
 
@@ -45,7 +45,7 @@ function equippedTitleBadge(title) {
   if (title.iconSource === "custom" && title.customIconUrl) {
     icons = `<img src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="">`;
   } else if (title.iconSource === "champion") {
-    icons = (title.championNames || []).map((name) => {
+    icons = [...new Set(title.championNames || [])].map((name) => {
       const url = championIcon(name);
       return url ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(name)}">` : "";
     }).join("");
@@ -70,20 +70,6 @@ window.addEventListener("lucid:current-games-updated", () => {
   const target = $("searchResults");
   if (target?.dataset.profileUserId) syncProfileLiveButton(target, target.dataset.profileUserId, target.dataset.profileGuildId);
 });
-
-function titleProfileIcon(title, fallback) {
-  if (title?.iconSource === "custom" && title.customIconUrl) {
-    return `<img class="summoner-profile-icon title-icon" src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="${escapeHtml(title.displayTitle || "장착 칭호")}">`;
-  }
-  if (title?.iconSource === "champion" && title.championNames?.length) {
-    const url = championIcon(title.championNames[0]);
-    if (url) return `<img class="summoner-profile-icon title-icon" src="${escapeHtml(url)}" alt="${escapeHtml(title.championNames[0])}">`;
-  }
-  if (title?.iconSource === "emoji" && title.iconEmoji) {
-    return `<span class="summoner-profile-icon fallback title-icon" aria-label="${escapeHtml(title.displayTitle || "장착 칭호")}">${escapeHtml(title.iconEmoji)}</span>`;
-  }
-  return fallback;
-}
 
 function tierIcon(tier = "") {
   const key = String(tier || "").match(/^(GM|[CMDEP G S B I])/i)?.[1]?.replaceAll(" ", "").toUpperCase()
@@ -344,6 +330,7 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
     );
     feed.innerHTML = visible.map((match) => playerMatchCard(match, userId)).join("")
       || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
+    bindLazyScoreboards(feed, visible, userId);
     bindExpanders(feed);
     bindReplayDownloads(feed);
   };
@@ -427,17 +414,28 @@ function bindLazyScoreboards(target, matches, userId) {
   target.querySelectorAll(".personal-match").forEach(card => {
     const button = card.querySelector(".personal-expand");
     const placeholder = card.querySelector("[data-lazy-scoreboard]");
-    if (!button || !placeholder) return;
+    if (!button || !placeholder || button.dataset.scoreboardBound) return;
+    button.dataset.scoreboardBound = "1";
     button.addEventListener("click", async () => {
+      if (placeholder.dataset.state === "loading" || placeholder.dataset.state === "loaded") return;
+      const match = rows.get(String(card.dataset.analysisMatchId));
+      if (!match?.matchId || !match?.guildId) {
+        placeholder.dataset.state = "error";
+        placeholder.textContent = "상세 데이터가 없습니다.";
+        return;
+      }
+      placeholder.dataset.state = "loading";
       placeholder.textContent = "상세 불러오는 중...";
       try {
-        const match = rows.get(String(card.dataset.analysisMatchId));
         const data = await apiGet(`/api/community/matches/${encodeURIComponent(match.matchId)}?guildId=${encodeURIComponent(match.guildId)}`);
+        if (!data?.match) throw new Error("missing match detail");
         placeholder.innerHTML = renderScoreboardRows(data.match, userId);
+        placeholder.dataset.state = "loaded";
       } catch (_) {
+        placeholder.dataset.state = "error";
         placeholder.textContent = "상세 정보를 불러오지 못했습니다.";
       }
-    }, { once:true });
+    });
   });
 }
 
@@ -455,7 +453,7 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     const scrimIcon = scrimIconUrl
       ? `<img class="summoner-profile-icon" src="${escapeHtml(scrimIconUrl)}" alt="내전 레벨 아이콘">`
       : `<span class="summoner-profile-icon fallback" aria-label="내전 레벨 아이콘">${escapeHtml(p.scrimIconEmoji || "🎮")}</span>`;
-    const profileIcon = titleProfileIcon(p.equippedTitle, scrimIcon);
+    const profileIcon = scrimIcon;
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
     const aliases=(p.aliases || []).filter(Boolean);
     target.dataset.profileUserId = String(userId);
@@ -501,7 +499,6 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       if(button.dataset.riotId)url.searchParams.set("riotId",button.dataset.riotId);
       window.location.assign(`${url.pathname}${url.search}`);
     });
-    bindLazyScoreboards(target, internalMatches, userId);
     bindExpanders(target);
     void hydrateReplayDownloads(target, internalMatches, userId, guildId);
     target.querySelector("[data-profile-favorite]")?.addEventListener("click", (event) => {

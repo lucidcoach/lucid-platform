@@ -21,3 +21,8 @@
 .server-analysis-layout>:only-child{grid-column:1/-1}
 .server-radar-wrap{position:relative}
 .server-radar-empty{position:absolute;left:50%;top:53%;width:180px;transform:translate(-50%,-50%);color:#9aabc0;font-size:11px;text-align:center}
+.server-analysis-loading{color:var(--text-muted)}
+.server-role-tabs button,.analysis-source-tabs button{border-color:var(--border-default);background:var(--surface-input);color:var(--text-muted)}
+.server-role-tabs button:hover,.analysis-source-tabs button:hover{border-color:var(--border-strong);background:var(--surface-hover);color:var(--text-primary)}
+.server-role-tabs button.active,.analysis-source-tabs button.active{border-color:var(--primary);background:var(--primary-subtle);color:var(--primary);box-shadow:none}
+.analysis-history-card>button{border-color:var(--primary);background:var(--primary);color:var(--on-primary)}

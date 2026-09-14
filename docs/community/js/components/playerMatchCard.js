@@ -1,22 +1,13 @@
 import { championIcon } from "../assets.js?v=20260905ab";
 import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260914seriesmatch1";
 import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260905ab";
-import { scoreboard } from "./scoreboard.js?v=20260911public1";
+import { aiRank, scoreboard } from "./scoreboard.js?v=20260915airank1";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
   return `<span class="roster-player ${String(row.userId) === String(focusUserId) ? "is-focus" : ""}" title="${escapeHtml(row.name)}">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="roster-icon-empty"></span>`}<button class="player-profile-link roster-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(row.userId)}" data-guild-id="${escapeHtml(guildId || "")}">${escapeHtml(row.name)}</button></span>`;
 }
 
-
-function aiRank(match, player) {
-  if (player?.aiScore == null) return null;
-  const score = Number(player?.aiScore);
-  const rows = (match?.players || []).filter((row) => Number.isFinite(Number(row?.aiScore)));
-  if (!Number.isFinite(score) || !rows.length) return null;
-  const rank = 1 + rows.filter((row) => Number(row.aiScore) > score).length;
-  return { rank, total: rows.length };
-}
 
 function achievementBadges(player) {
   const badges = [];
@@ -40,6 +31,8 @@ export function playerMatchCard(match, userId) {
   const rank = aiRank(match, player);
   const mmrDelta = Math.round(Number(player.mmrDelta || 0));
   const replay = match.replay?.id ? match.replay : null;
+  const hasBuild = Boolean(player.itemTimeline?.length || player.skillBuild?.length || player.items?.some((id)=>Number(id)>0));
+  const hasDetails = match.source === "RIOT_API" ? Array.isArray(match.players) && match.players.length > 0 : Boolean(match.matchId && match.guildId);
   const details = match.source === "RIOT_API"
     ? scoreboard(match)
     : `<div class="match-details"><div class="scoreboard-layout has-personal-analysis"><div class="scoreboard-teams" data-lazy-scoreboard></div><aside class="personal-analysis-panel" data-compact-analysis><div class="compact-analysis-empty"><strong>간단 분석</strong><span>상세를 펼치면 같은 라인 상대와 핵심 지표를 비교합니다.</span></div></aside></div></div>`;
@@ -58,6 +51,6 @@ export function playerMatchCard(match, userId) {
         <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
       </div>
       <div class="roster-mini"><div class="roster-team allies">${allies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div><div class="roster-team enemies">${enemies.map((row) => rosterPlayer(row, match.guildId, userId)).join("")}</div></div>
-      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="빌드 상세">⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기">⌄</button>${replay ? `<button class="replay-download" type="button" data-replay-download="${escapeHtml(replay.id)}" data-replay-filename="${escapeHtml(replay.filename || "lucid-replay.rofl")}" aria-label="ROFL 다운로드" title="ROFL 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 19h14"/></svg></button>` : ""}</div>
+      <div class="personal-actions"><button class="build-toggle" type="button" aria-label="경기 빌드 상세 보기" title="${hasBuild ? "빌드 상세" : "빌드 데이터 없음"}" ${hasBuild ? "" : "disabled"}>⌕</button><button class="personal-expand" type="button" aria-label="경기 상세 펼치기" title="${hasDetails ? "경기 상세 보기" : "상세 데이터 없음"}" ${hasDetails ? "" : "disabled"}>⌄</button>${replay ? `<button class="replay-download" type="button" data-replay-download="${escapeHtml(replay.id)}" data-replay-filename="${escapeHtml(replay.filename || "lucid-replay.rofl")}" aria-label="ROFL 다운로드" title="ROFL 다운로드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 19h14"/></svg></button>` : ""}</div>
     </div><div class="build-detail-panel">${renderBuildSummary(player)}</div>${details}</article>`;
 }

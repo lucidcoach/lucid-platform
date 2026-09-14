@@ -588,7 +588,7 @@ html[data-theme="light"] .search-memory-column {
   border-color: var(--border-default);
   box-shadow: var(--shadow-soft);
 }
-html[data-theme="light"] .search-memory-column.favorites { border-color: color-mix(in srgb,var(--primary) 34%,var(--border-soft)); }
+html[data-theme="light"] .search-memory-column.favorites { border-color: var(--border-default); }
 html[data-theme="light"] .search-memory-title { border-color: var(--border-soft); }
 html[data-theme="light"] .search-memory-title strong { color: var(--text-primary); }
 html[data-theme="light"] .search-memory-title span { color: var(--text-muted); }

@@ -3,8 +3,8 @@ import { RECENT_PAGE_SIZE } from "../config.js?v=20260904r";
 import { state } from "../state.js?v=20260904r";
 import { $, escapeHtml } from "../utils.js?v=20260904r";
 import { renderLoading, showStatus } from "../view.js?v=20260904r";
-import { matchCard } from "../components/matchCard.js?v=20260914perf1";
-import { bindExpanders, scoreboard } from "../components/scoreboard.js?v=20260904v";
+import { matchCard } from "../components/matchCard.js?v=20260915detailstate1";
+import { bindExpanders, scoreboard } from "../components/scoreboard.js?v=20260915airank1";
 
 function bindLazyScoreboards(root, matches) {
   const rows = new Map(matches.map(match => [`${match.guildId}:${match.matchId}`, match]));
@@ -15,7 +15,8 @@ function bindLazyScoreboards(root, matches) {
     button.addEventListener("click", () => {
       const placeholder = card.querySelector("[data-lazy-scoreboard]");
       const match = rows.get(`${card.dataset.guildId}:${card.dataset.matchId}`);
-      if (placeholder && match) placeholder.outerHTML = scoreboard(match);
+      if (!placeholder || !match) return;
+      placeholder.outerHTML = scoreboard(match);
     }, { once: true });
   });
 }
