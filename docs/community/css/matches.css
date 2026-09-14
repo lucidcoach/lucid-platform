@@ -702,7 +702,7 @@
 #recentView .match-card .match-meta{padding:10px 9px}
 #recentView .match-card .team-preview,
 #recentView .match-card.expanded .team-preview{padding:7px 9px!important}
-#recentView .match-card .preview-player{height:20px;gap:5px;margin:1px 0;line-height:1.2}
+#recentView .match-card .preview-player{height:25px;gap:5px;margin:1px 0;line-height:1.2}
 #recentView .match-card .expand-match,
 #recentView .match-card.expanded .expand-match{width:32px!important;min-width:32px!important;max-width:32px!important}
 
