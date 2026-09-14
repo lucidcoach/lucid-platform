@@ -3,6 +3,7 @@
 .ranking-filters,.ranking-role-filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
 .ranking-role-filters{margin-bottom:18px}
 .ranking-kind,.ranking-role{min-height:38px;padding:0 15px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);font-weight:850;cursor:pointer}
+.ranking-role{min-width:78px}
 .ranking-kind.active,.ranking-role.active{border-color:#7d5cff;background:var(--purple-soft);color:#fff}
 .ranking-role-filters[hidden]{display:none}
 .ranking-board{overflow:hidden;border:1px solid var(--line);border-radius:15px;background:var(--panel)}

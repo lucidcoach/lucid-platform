@@ -13,6 +13,8 @@ assert.match(tokens, /--layout-max-width:\s*1120px/);
 assert.match(tokens, /--surface-1:\s*#1a1a1c/);
 assert.match(tokens, /--accent-primary:\s*#7b68ff/);
 assert.match(layout, /\.community-main[^}]+var\(--content\)/);
+assert.match(layout, /\.community-home-button\{\s*height:48px/);
+assert.match(read("../docs/community/css/ranking.css"), /\.ranking-role\{min-width:78px\}/);
 assert.match(profile, /#recentSearches\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/);
 assert.match(profile, /profile-dashboard-grid\{grid-template-columns:minmax\(380px,1\.2fr\) minmax\(350px,1\.1fr\) minmax\(315px,\.95fr\)/);
 assert.match(profile, /profile-summary-panel>\.profile-rank-switcher\{margin:16px 0 0;padding:0;border:0;background:transparent\}/);
