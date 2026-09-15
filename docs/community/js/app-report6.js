@@ -195,21 +195,14 @@ async function applyRoute({ fromPop = false, routeState = null } = {}) {
     return;
   }
   if (view === "recent" || window.location.pathname.replace(/\/+$/, "").endsWith("/scrims")) {
-    if (window.location.pathname !== recentUrl() || window.location.search) history.replaceState({view:"recent"}, "", recentUrl());
-    switchView("recent");
-    selectScrimTab("recent");
-    if (!fromPop) await loadRecent();
+    window.location.replace(recentUrl());
     return;
   }
   switchView("home");
 }
 
 function goRecent({ push = true } = {}) {
-  if (push) history.pushState({ view: "recent" }, "", recentUrl());
-  $("playerSearchInput").value = "";
-  switchView("recent");
-  selectScrimTab("recent");
-  void loadRecent();
+  window.location[push ? "assign" : "replace"](recentUrl());
 }
 
 function goHome({ push = true } = {}) {
@@ -413,10 +406,8 @@ bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
 const initialParams = new URLSearchParams(window.location.search);
-const initialScrimsRoute = window.location.pathname.replace(/\/+$/, "").endsWith("/scrims");
 if (initialParams.has("player") || initialParams.has("q") || initialParams.get("view") === "my") switchView("search");
 else if (initialParams.get("view")) switchView(initialParams.get("view"));
-else if (initialScrimsRoute) switchView("recent");
 const assetsReady=loadGameAssets();
 await initCommunityAuth();
 await assetsReady;

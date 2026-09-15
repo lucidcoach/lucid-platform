@@ -27,8 +27,8 @@ function achievementLine(player) {
   const tags=[];
   if (Number(player?.pentaKills || 0)>0) tags.push(`<span class="score-tag penta">펜타킬</span>`);
   else if (Number(player?.quadraKills || 0)>0) tags.push(`<span class="score-tag quadra">쿼드라킬</span>`);
-  if (player?.award === "MVP") tags.push(`<span class="score-tag award mvp">MVP</span>`);
-  else if (player?.award === "ACE") tags.push(`<span class="score-tag award ace">ACE</span>`);
+  if (player?.award === "MVP") tags.push(`<span class="score-award mvp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 8.3 11 12 5l3.7 6L20 7.5l-1.3 9H5.3L4 7.5Z"/><path d="M6.2 18.5h11.6"/></svg>MVP</span>`);
+  else if (player?.award === "ACE") tags.push(`<span class="score-award ace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 15 8l5 .8-3.6 3.6.8 5.1-5.2-2.4-5.2 2.4.8-5.1L4 8.8 9 8l3-4.5Z"/></svg>ACE</span>`);
   return tags.join("");
 }
 
@@ -83,11 +83,10 @@ function playerRow(match, player, focusUserId = "") {
 
 function teamPanel(match, team, focusUserId = "") {
   const players = sortTeam((match?.players || []).filter((player) => String(player.team || "").toLowerCase() === team));
-  const label = team === "blue" ? "블루팀" : "레드팀";
+  const label = team === "blue" ? "BLUE TEAM" : "RED TEAM";
   const winner = String(match?.winner || "").toLowerCase();
   const isWinner = winner === team || (team === "blue" && winner.includes("블루")) || (team === "red" && winner.includes("레드"));
-  const resultLabel = winner ? (isWinner ? "승리팀" : "패배팀") : "";
-  return `<section class="score-team-panel ${team}${isWinner ? " winner-team" : " loser-team"}"><div class="score-team-head"><span>${label}</span>${resultLabel ? `<b>${resultLabel}</b>` : ""}</div><div class="score-team-players">${players.map((player)=>playerRow(match,player,focusUserId)).join("")}</div></section>`;
+  return `<section class="score-team-panel ${team}${isWinner ? " winner-team" : ""}"><div class="score-team-head"><span>${label}</span>${isWinner ? `<b>승리</b>` : ""}</div><div class="score-team-players">${players.map((player)=>playerRow(match,player,focusUserId)).join("")}</div></section>`;
 }
 
 export function renderScoreboardRows(match, focusUserId = "") {

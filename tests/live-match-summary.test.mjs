@@ -20,7 +20,7 @@ assert.match(source, /mainRoleGames/);
 assert.match(source, /roleWinRate/);
 assert.match(source, /주 포지션/);
 assert.match(source, /저장된 라인 기록 MOST/);
-assert.match(source, /home-live-teams/);
+assert.match(source, /home-live-most-list/);
 assert.match(source, /평균 티어/);
 assert.match(source, /전력 분석 보기/);
 assert.doesNotMatch(source, /라인업 확정"/);

@@ -4,7 +4,7 @@ import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260911public1";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
 import { playerMatchCard } from "../components/playerMatchCard.js?v=20260915airank1";
-import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260915airank1";
+import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260915reference1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260914header1";
 import { currentGameForPlayer, openCurrentGame } from "./liveMatch.js?v=20260915livefit1";
 

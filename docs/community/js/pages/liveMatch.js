@@ -14,11 +14,6 @@ function parsedDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function startText(value) {
-  const date = parsedDate(value);
-  return date ? date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "시작 시각 미확인";
-}
-
 function elapsedText(value) {
   const date = parsedDate(value);
   if (!date) return "진행 시간 미확인";
@@ -74,18 +69,18 @@ function compactCard(game) {
   const mine = isMyGame(game);
   const blueTier = game.blueAverageTier || "미배치";
   const redTier = game.redAverageTier || "미배치";
-  const previewTeam = (players, team) => `<section class="home-live-team ${team}"><header><strong>${team === "blue" ? "BLUE TEAM" : "RED TEAM"}</strong><span>평균 티어 ${esc(team === "blue" ? blueTier : redTier)}</span></header><div>${(players || []).map((player)=>{
+  const previewTeam = (players, team) => `<section class="home-live-team ${team}"><header><strong>${team === "blue" ? "BLUE TEAM" : "RED TEAM"}</strong><span>최근 30일 MOST</span></header><div class="home-live-most-list">${(players || []).map((player)=>{
     const form = Array.isArray(player.recentForm) ? player.recentForm.slice(0,5) : [];
     const most = player.mostChampions?.[0];
     const mostName = typeof most === "string" ? most : most?.champion;
     const mostIcon = championIcon(mostName);
-    return `<div class="home-live-player"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt="${esc(player.tier || "미배치")} 티어 휘장"><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button><span class="current-form" aria-label="최근 전적">${form.length ? form.map((value)=>`<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") : `<em>-</em>`}</span>${mostIcon ? `<img class="home-most-icon" src="${esc(mostIcon)}" alt="${esc(mostName)}" title="저장된 라인 기록 MOST: ${esc(mostName)}">` : `<span class="home-most-empty">MOST -</span>`}</div>`;
-  }).join("") || `<p class="current-no-data">라인업 정보가 없습니다.</p>`}</div></section>`;
+    return `<button class="home-live-member" type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}" aria-label="${esc(player.name)} 전적 보기">${mostIcon ? `<img src="${esc(mostIcon)}" alt="${esc(mostName)}" title="${esc(player.name)} · 최근 30일 MOST ${esc(mostName)}">` : `<span class="home-most-empty">-</span>`}<span class="current-form" aria-label="${esc(player.name)} 최근 전적">${form.length ? form.map((value)=>`<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") : `<em>-</em>`}</span></button>`;
+  }).join("") || `<p class="current-no-data">MOST 기록 없음</p>`}</div><small>평균 ${esc(team === "blue" ? blueTier : redTier)}</small></section>`;
+  const players = [...(game.blue || []), ...(game.red || [])];
+  const setText = Number(game?.series?.currentSet || 0) > 0 ? `${Number(game.series.currentSet)}세트` : "진행 중";
   return `<article class="current-game-card home-current-game${mine ? " is-my-game" : ""}">
-    <div class="current-game-title"><strong>${esc(queueName(game))}</strong>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
-    ${seriesSummary(game)}
-    <p class="current-time">${game.startTimeSource === "game" ? `<span>${startText(game.startedAt)} 시작</span><b>·</b>` : ""}<span>${elapsedText(game.startedAt)}</span></p>
-    <div class="home-live-teams">${previewTeam(game.blue,"blue")}<span class="home-live-vs" aria-hidden="true">VS</span>${previewTeam(game.red,"red")}</div>
+    <div class="home-live-meta"><div class="current-game-title"><span class="recruitment-status">LIVE</span>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div><strong>${esc(queueName(game))} · ${esc(setText)}</strong><p>${esc(elapsedText(game.startedAt))} · 참가자 ${players.length}명의 이전 전적 분석 가능</p></div>
+    ${previewTeam(game.blue,"blue")}<span class="home-live-vs" aria-hidden="true">VS</span>${previewTeam(game.red,"red")}
     <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">전력 분석 보기</button>
   </article>`;
 }
