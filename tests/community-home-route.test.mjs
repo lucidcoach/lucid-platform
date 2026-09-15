@@ -21,6 +21,8 @@ assert.match(homeCss, /recent-label-compact\{display:none\}/);
 assert.doesNotMatch(homeCss, /home-search-recent\{display:none/);
 assert.match(homeCss, /home-live-member \.current-form\{display:none/);
 assert.match(recruitment, /apiGet\("\/api\/community\/recruitments"\)/);
+assert.match(recruitment, /waitingCount/);
+assert.match(recruitment, /대기 \$\{waiting\}명/);
 assert.match(homeCss, /\.recruitment-preview-button\{[\s\S]*var\(--primary-subtle\)/);
 assert.match(entry, /loadRecruitments/);
 assert.match(entry, /new URL\("scrims\/", COMMUNITY_ROOT_URL\)/);
