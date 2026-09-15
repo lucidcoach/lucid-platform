@@ -1,11 +1,20 @@
 import { apiGet } from "../api.js?v=20260907current1";
 import { championIcon } from "../assets.js?v=20260907current1";
-import { getCurrentUser, getResolvedAnalysisPlayers } from "../auth.js?v=20260914header1";
+import { getCurrentUser, getResolvedAnalysisPlayers, isCommunityAdmin } from "../auth.js?v=20260914header1";
 import { $, escapeHtml, tierClass } from "../utils.js?v=20260905ai";
 
 const esc = (value) => escapeHtml(String(value ?? ""));
 let currentGames = [];
 let currentGamesSignature = "";
+let showingPreview = new URLSearchParams(location.search).get("livePreview") === "1";
+
+const previewPlayer = (name, champion) => ({ name, userId:"", guildId:"", mostChampions:[champion] });
+const LIVE_PREVIEW = {
+  gameId:"preview-only", preview:true, queueName:"22:00 내전", startedAt:new Date().toISOString(),
+  blueAverageTier:"D2", redAverageTier:"D1", series:{ currentSet:2 },
+  blue:[previewPlayer("고자드", "아리"), previewPlayer("냥냥펀치", "리 신"), previewPlayer("유성우", "징크스"), previewPlayer("AM 2:00", "쓰레쉬"), previewPlayer("케이", "가렌")],
+  red:[previewPlayer("잇유", "럭스"), previewPlayer("탐사냥꾼", "야스오"), previewPlayer("라임", "이즈리얼"), previewPlayer("모카", "카이사"), previewPlayer("노부", "아칼리")],
+};
 
 function parsedDate(value) {
   if (!value) return null;
@@ -66,6 +75,7 @@ function seriesSummary(game) {
 }
 
 function compactCard(game) {
+  const isPreview = Boolean(game.preview);
   const mine = isMyGame(game);
   const blueTier = game.blueAverageTier || "미배치";
   const redTier = game.redAverageTier || "미배치";
@@ -74,14 +84,14 @@ function compactCard(game) {
     const most = player.mostChampions?.[0];
     const mostName = typeof most === "string" ? most : most?.champion;
     const mostIcon = championIcon(mostName);
-    return `<button class="home-live-member" type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}" aria-label="${esc(player.name)} 전적 보기">${mostIcon ? `<img src="${esc(mostIcon)}" alt="${esc(mostName)}" title="${esc(player.name)} · 최근 30일 MOST ${esc(mostName)}">` : `<span class="home-most-empty">-</span>`}<span class="current-form" aria-label="${esc(player.name)} 최근 전적">${form.length ? form.map((value)=>`<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") : `<em>-</em>`}</span></button>`;
+    return `<button class="home-live-member" type="button"${player.userId ? ` data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}" aria-label="${esc(player.name)} 전적 보기"` : ` aria-label="${esc(player.name)} 미리보기" disabled`}>${mostIcon ? `<img src="${esc(mostIcon)}" alt="${esc(mostName)}" title="${esc(player.name)} · 최근 30일 MOST ${esc(mostName)}">` : `<span class="home-most-empty">-</span>`}<span class="current-form" aria-label="${esc(player.name)} 최근 전적">${form.length ? form.map((value)=>`<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") : `<em>-</em>`}</span></button>`;
   }).join("") || `<p class="current-no-data">MOST 기록 없음</p>`}</div><small>평균 ${esc(team === "blue" ? blueTier : redTier)}</small></section>`;
   const players = [...(game.blue || []), ...(game.red || [])];
   const setText = Number(game?.series?.currentSet || 0) > 0 ? `${Number(game.series.currentSet)}세트` : "진행 중";
   return `<article class="current-game-card home-current-game${mine ? " is-my-game" : ""}">
-    <div class="home-live-meta"><div class="current-game-title"><span class="recruitment-status">LIVE</span>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div><strong>${esc(queueName(game))} · ${esc(setText)}</strong><p>${esc(elapsedText(game.startedAt))} · 참가자 ${players.length}명의 이전 전적 분석 가능</p></div>
+    <div class="home-live-meta"><div class="current-game-title"><span class="recruitment-status">LIVE</span>${isPreview ? `<span class="current-my-game-badge">미리보기</span>` : mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div><strong>${esc(queueName(game))} · ${esc(setText)}</strong><p>${isPreview ? "게임 진행 중" : esc(elapsedText(game.startedAt))} · 참가자 ${players.length}명의 이전 전적 분석 가능</p></div>
     ${previewTeam(game.blue,"blue")}<span class="home-live-vs" aria-hidden="true">VS</span>${previewTeam(game.red,"red")}
-    <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">전력 분석 보기</button>
+    <button class="current-detail-button" type="button"${isPreview ? " disabled" : ` data-current-game="${esc(game.gameId)}"`}>전력 분석 보기</button>
   </article>`;
 }
 
@@ -122,10 +132,22 @@ function renderList() {
   const root = $("liveMatchRoot");
   if (!root) return;
   currentGames = sortedCurrentGames(currentGames);
-  root.innerHTML = currentGames.length
-    ? `<div class="current-game-list">${currentGames.map(compactCard).join("")}</div>`
+  const visibleGames = currentGames.length ? currentGames : (showingPreview ? [LIVE_PREVIEW] : []);
+  root.innerHTML = visibleGames.length
+    ? `<div class="current-game-list">${visibleGames.map(compactCard).join("")}</div>`
     : `<div class="current-empty"><strong>현재 진행 중인 내전이 없습니다.</strong><span>내전이 시작되면 이곳에서 참가자 전력 분석을 확인할 수 있습니다.</span></div>`;
   root.querySelectorAll("[data-current-game]").forEach((button) => button.addEventListener("click", () => openCurrentGame(button.dataset.currentGame)));
+}
+
+function syncPreviewAccess() {
+  const button = $("liveMatchPreviewBtn");
+  if (!button) return;
+  const allowed = isCommunityAdmin() || ["localhost", "127.0.0.1"].includes(location.hostname);
+  button.hidden = !allowed;
+  if (!allowed) showingPreview = false;
+  button.textContent = showingPreview ? "미리보기 닫기" : "진행 경기 미리보기";
+  button.setAttribute("aria-pressed", String(showingPreview));
+  renderList();
 }
 
 export function openCurrentGame(gameId) {
@@ -159,11 +181,17 @@ export function currentGameForPlayer(userId, guildId) {
       || (parsedDate(b.startedAt)?.getTime() || 0) - (parsedDate(a.startedAt)?.getTime() || 0))[0] || null;
 }
 
-window.addEventListener("lucid:auth-changed", () => { if (currentGames.length) renderList(); });
+window.addEventListener("lucid:auth-changed", syncPreviewAccess);
 
 export async function loadLiveMatch({ quiet = false } = {}) {
   const root = $("liveMatchRoot");
   if (!root) return;
+  const previewButton = $("liveMatchPreviewBtn");
+  if (previewButton && !previewButton.dataset.bound) {
+    previewButton.dataset.bound = "1";
+    previewButton.addEventListener("click", () => { showingPreview = !showingPreview; syncPreviewAccess(); });
+  }
+  syncPreviewAccess();
   if (!quiet) root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p>`;
   try {
     const data = await apiGet("/api/community/current-games");
@@ -177,7 +205,8 @@ export async function loadLiveMatch({ quiet = false } = {}) {
   } catch (_error) {
     currentGames = [];
     currentGamesSignature = "";
-    root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 불러오지 못했습니다.</p>`;
+    if (showingPreview) renderList();
+    else root.innerHTML = `<p class="current-empty">현재 진행 중인 내전을 불러오지 못했습니다.</p>`;
     window.dispatchEvent(new CustomEvent("lucid:current-games-updated"));
   }
 }

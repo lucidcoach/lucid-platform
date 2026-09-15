@@ -16,7 +16,7 @@
 @import url("css/current-games.css?v=20260915community2");
 @import url("css/analysis-server.css?v=20260915consistency1");
 @import url("css/light-theme.css?v=20260915memorycards1");
-@import url("css/community-home.css?v=20260915reference3");
+@import url("css/community-home.css?v=20260915reference4");
 
 /* Search history stays prominent only on match/search views. */
 body:not(:has(#recentView.active)):not(:has(#searchView.active)) .compact-community-search{display:none}
@@ -142,4 +142,118 @@ body{overflow-x:clip}
   font-weight:550!important;
   line-height:1.25!important;
   letter-spacing:normal!important;
+}
+
+/* 2026-09-15 reference pass: literal home/archive proportions. */
+.community-hero{padding:58px 0 12px!important}
+.community-hero h1{margin-bottom:9px!important;font-size:38px!important;line-height:1.2!important}
+.community-hero>p:last-of-type{font-size:13px!important}
+.home-player-search{box-sizing:border-box!important;grid-template-columns:88px 22px minmax(0,1fr) 112px 86px!important;width:min(780px,100%)!important;min-height:68px!important;margin-top:30px!important;padding:7px!important;border-color:var(--border-strong)!important;border-radius:14px!important}
+.home-search-region{text-align:center!important}
+.home-search-recent summary{justify-content:center!important;height:52px!important}
+.home-player-search>button{width:86px!important;min-height:52px!important}
+.community-home-view.active{gap:44px!important}
+.home-empty-state,.home-live-panel .current-empty{min-height:132px!important}
+
+.scrims-topbar{grid-template-columns:minmax(0,1fr) minmax(430px,540px)!important;gap:48px!important;margin:30px 0 20px!important;padding:0 0 28px!important;border:0!important;border-bottom:1px solid var(--border-soft)!important;border-radius:0!important;background:transparent!important}
+.scrims-topbar h1{font-size:30px!important}
+.scrims-primary-tabs{display:flex!important;gap:24px!important;margin:0 0 24px!important;border-bottom:1px solid var(--border-soft)!important}
+.scrims-primary-tabs .community-home-button{height:40px!important;min-height:40px!important;padding:0 1px!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important;color:var(--text-muted)!important;box-shadow:none!important}
+.scrims-primary-tabs .community-home-button.active{border-bottom-color:var(--accent-primary)!important;color:var(--text-primary)!important}
+.scrims-page .recent-heading{margin-bottom:20px!important;padding-bottom:14px!important}
+.scrims-page .match-category-tabs{height:36px!important}
+.scrims-page .match-category-tab,.scrims-page .ghost-button{min-height:36px!important;height:36px!important;border-radius:8px!important}
+
+.scrims-view .recent-live-layout{grid-template-columns:minmax(0,1fr) 270px!important;gap:28px!important}
+#recentView.scrims-view .match-card{contain-intrinsic-size:auto 228px!important;border-radius:13px!important}
+#recentView.scrims-view .match-card .match-summary,
+#recentView.scrims-view .match-card.expanded .match-summary{grid-template-columns:104px minmax(0,1fr) 36px!important;min-height:226px!important}
+#recentView.scrims-view .match-card .match-meta{padding:18px 13px!important;gap:6px!important}
+.scrims-view .match-meta .match-mode{font-size:12px!important}
+.scrims-view .match-meta .match-time,.scrims-view .match-meta .match-duration{font-size:11px!important;line-height:1.45!important}
+.scrims-view .match-average-tier{margin-top:auto!important;gap:7px!important}
+.scrims-view .match-average-tier .avg-tier-chip{display:grid!important;justify-items:center!important;gap:3px!important;font-size:13px!important}
+.scrims-view .avg-tier-emblem{width:48px!important;height:48px!important;object-fit:contain!important}
+#recentView.scrims-view .match-card .teams-preview,
+#recentView.scrims-view .match-card.expanded .teams-preview{grid-template-columns:1fr 1fr!important}
+#recentView.scrims-view .match-card .team-preview,
+#recentView.scrims-view .match-card.expanded .team-preview{padding:0 14px 12px!important;background:var(--surface-2)!important}
+.scrims-view .team-preview.blue{border-top:2px solid var(--team-blue)!important}
+.scrims-view .team-preview.red{border-top:2px solid var(--team-red)!important}
+.scrims-view .team-preview.result-win{background:color-mix(in srgb,var(--surface-2) 92%,var(--success))!important}
+.scrims-view .team-head{height:40px!important;margin:0 -14px 5px!important;padding:0 14px!important;border-bottom:1px solid var(--border-soft)!important}
+.scrims-view .team-head small{font-size:11px!important;letter-spacing:.025em!important}
+.scrims-view .preview-player{grid-template-columns:30px minmax(0,1fr)!important;height:32px!important;gap:8px!important;margin:1px 0!important;font-size:12px!important;line-height:1.25!important}
+.scrims-view .preview-champion-wrap,.scrims-view .preview-champion-wrap>img,.scrims-view .preview-icon-empty{width:29px!important;height:29px!important;object-fit:cover!important}
+.scrims-view .preview-name-wrap{display:grid!important;grid-template-columns:minmax(0,1fr) 54px!important;align-items:center!important;gap:6px!important;min-width:0!important}
+.scrims-view .preview-name-wrap .player-profile-link{min-width:0!important;overflow:hidden!important;font-size:12px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.scrims-view .preview-name-wrap .award-mark{justify-self:end!important;width:54px!important;justify-content:flex-end!important;font-size:9px!important}
+#recentView.scrims-view .match-card .expand-match,
+#recentView.scrims-view .match-card.expanded .expand-match{width:36px!important;min-width:36px!important;max-width:36px!important;border-left:1px solid var(--border-soft)!important}
+
+.weekly-ranking-panel{width:270px!important}
+.weekly-ranking-panel h2{font-size:20px!important}
+.weekly-ranking-row{grid-template-columns:22px 44px minmax(0,1fr) auto!important;gap:10px!important;min-height:72px!important}
+.weekly-ranking-row>img{width:44px!important;height:44px!important;object-fit:cover!important}
+.weekly-ranking-row button{font-size:12px!important;text-overflow:ellipsis!important}
+.weekly-ranking-row small{font-size:10px!important}
+.weekly-ranking-row>strong{font-size:11px!important;text-align:right!important}
+
+.scrims-view .scoreboard-layout .scoreboard-teams{padding:10px!important;background:var(--surface-1)!important}
+.scrims-view .score-team-panel{border-color:var(--border-default)!important;border-radius:10px!important;background:var(--surface-2)!important}
+.scrims-view .score-team-panel.blue{border-top:2px solid var(--team-blue)!important}
+.scrims-view .score-team-panel.red{border-top:2px solid var(--team-red)!important}
+.scrims-view .score-team-panel :is(.score-team-head,.score-player-row){background:transparent!important}
+.scrims-view .score-team-head{height:38px!important;padding:0 12px!important;border-bottom:1px solid var(--border-soft)!important}
+.scrims-view .score-team-panel.blue .score-team-head{color:var(--team-blue-text)!important}
+.scrims-view .score-team-panel.red .score-team-head{color:var(--team-red-text)!important}
+.scrims-view .score-team-head b{margin-left:auto!important;padding:2px 7px!important;border:1px solid color-mix(in srgb,var(--success) 45%,transparent)!important;border-radius:999px!important;background:var(--success-soft)!important;color:var(--success)!important;font-size:9px!important}
+.scrims-view .scoreboard-layout .score-player-row{grid-template-columns:82px minmax(128px,1fr) 54px 84px 104px 90px 96px!important;column-gap:8px!important;min-height:68px!important;padding:7px 9px!important;border-bottom-color:var(--border-soft)!important}
+.scrims-view .scoreboard-layout .score-identity{width:auto!important}
+.scrims-view .scoreboard-layout .scoreboard-profile-link{font-size:12px!important;font-weight:550!important}
+.scrims-view .scoreboard-layout .score-cs-cell{justify-self:stretch!important;text-align:center!important}
+.scrims-view .scoreboard-layout .score-damage-cell{justify-self:stretch!important;width:96px!important}
+.scrims-view .scoreboard-layout .score-damage-track{height:6px!important}
+
+@media(max-width:980px){
+  .scrims-view .recent-live-layout{grid-template-columns:1fr!important}
+  .weekly-ranking-panel{width:100%!important}
+}
+@media(max-width:720px){
+  .community-hero{padding-top:28px!important}
+  .home-player-search{grid-template-columns:58px minmax(0,1fr) 62px!important;min-height:58px!important;margin-top:22px!important}
+  .home-player-search>svg{display:none!important}
+  .home-search-recent{display:block!important}
+  .home-search-recent summary{height:44px!important;padding-inline:6px!important}
+  .home-player-search>button{grid-column:1/-1!important;width:100%!important;min-height:44px!important;margin-top:4px!important}
+  .community-home-view.active{gap:30px!important}
+  .home-empty-state,.home-live-panel .current-empty{min-height:104px!important;padding:20px!important}
+  .scrims-topbar{grid-template-columns:1fr!important;gap:16px!important;margin-top:18px!important;padding:0 0 20px!important;overflow:visible!important}
+  .scrims-topbar h1{font-size:26px!important}
+  .scrims-topbar .player-search,.scrims-topbar .search-control{box-sizing:border-box!important;width:100%!important;max-width:100%!important}
+  .scrims-topbar .search-control{display:grid!important;grid-template-columns:minmax(0,1fr) 64px!important}
+  .scrims-topbar .search-control input{width:100%!important;min-width:0!important}
+  .scrims-topbar .search-control button{width:64px!important;min-width:64px!important;padding-inline:0!important}
+}
+@media(max-width:620px){
+  #recentView.scrims-view .match-card .match-summary,
+  #recentView.scrims-view .match-card.expanded .match-summary{grid-template-columns:1fr!important;min-height:0!important}
+  #recentView.scrims-view .match-card .match-meta{display:grid!important;grid-template-columns:auto 1fr auto!important;align-items:center!important;gap:4px 10px!important;padding:12px 14px!important;border-right:0!important;border-bottom:1px solid var(--border-soft)!important}
+  .scrims-view .match-meta .match-duration{grid-column:2!important}
+  .scrims-view .match-average-tier{grid-column:3!important;grid-row:1/3!important;margin:0!important}
+  .scrims-view .avg-tier-emblem{width:38px!important;height:38px!important}
+  #recentView.scrims-view .match-card .teams-preview,
+  #recentView.scrims-view .match-card.expanded .teams-preview{grid-template-columns:1fr!important}
+  #recentView.scrims-view .match-card .team-preview,
+  #recentView.scrims-view .match-card.expanded .team-preview{padding-bottom:10px!important}
+  .scrims-view .team-preview+.team-preview{border-left:0!important;border-top:2px solid var(--team-red)!important}
+  .scrims-view .preview-player:nth-child(n+4){display:grid!important}
+  #recentView.scrims-view .match-card .expand-match,
+  #recentView.scrims-view .match-card.expanded .expand-match{width:100%!important;min-width:100%!important;max-width:100%!important;height:42px!important;border-top:1px solid var(--border-soft)!important;border-left:0!important}
+}
+@media(max-width:430px){
+  .community-hero h1{font-size:30px!important}
+  .home-player-search{grid-template-columns:54px minmax(0,1fr) 58px!important}
+  .home-search-region{padding-inline:6px!important}
+  .scrims-view .preview-name-wrap .player-profile-link{font-size:11px!important}
 }
