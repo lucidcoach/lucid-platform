@@ -74,13 +74,19 @@ function compactCard(game) {
   const mine = isMyGame(game);
   const blueTier = game.blueAverageTier || "미배치";
   const redTier = game.redAverageTier || "미배치";
-  return `<article class="current-game-card${mine ? " is-my-game" : ""}">
+  const previewTeam = (players, team) => `<section class="home-live-team ${team}"><header><strong>${team === "blue" ? "BLUE TEAM" : "RED TEAM"}</strong><span>평균 티어 ${esc(team === "blue" ? blueTier : redTier)}</span></header><div>${(players || []).map((player)=>{
+    const form = Array.isArray(player.recentForm) ? player.recentForm.slice(0,5) : [];
+    const most = player.mostChampions?.[0];
+    const mostName = typeof most === "string" ? most : most?.champion;
+    const mostIcon = championIcon(mostName);
+    return `<div class="home-live-player"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt="${esc(player.tier || "미배치")} 티어 휘장"><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button><span class="current-form" aria-label="최근 전적">${form.length ? form.map((value)=>`<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") : `<em>-</em>`}</span>${mostIcon ? `<img class="home-most-icon" src="${esc(mostIcon)}" alt="${esc(mostName)}" title="저장된 라인 기록 MOST: ${esc(mostName)}">` : `<span class="home-most-empty">MOST -</span>`}</div>`;
+  }).join("") || `<p class="current-no-data">라인업 정보가 없습니다.</p>`}</div></section>`;
+  return `<article class="current-game-card home-current-game${mine ? " is-my-game" : ""}">
     <div class="current-game-title"><div><small>LIVE MATCH</small><strong>${esc(queueName(game))}</strong></div>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
     ${seriesSummary(game)}
-    <div class="current-versus"><strong class="blue">BLUE ${esc(game.series?.blueTeam || "블루팀")}</strong><span>VS</span><strong class="red">RED ${esc(game.series?.redTeam || "레드팀")}</strong></div>
-    <p class="current-time"><span>${startText(game.startedAt)} ${game.startTimeSource === "game" ? "시작" : "라인업 확정"}</span><b>·</b><span>${elapsedText(game.startedAt)}</span></p>
-    <div class="current-average-tier">${blueTier === redTier ? `평균 티어 <strong>${esc(blueTier)}</strong>` : `BLUE <strong>${esc(blueTier)}</strong><b>·</b> RED <strong>${esc(redTier)}</strong>`}</div>
-    <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">자세히 보기</button>
+    <p class="current-time">${game.startTimeSource === "game" ? `<span>${startText(game.startedAt)} 시작</span><b>·</b>` : ""}<span>${elapsedText(game.startedAt)}</span></p>
+    <div class="home-live-teams">${previewTeam(game.blue,"blue")}<span class="home-live-vs" aria-hidden="true">VS</span>${previewTeam(game.red,"red")}</div>
+    <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">전력 분석 보기</button>
   </article>`;
 }
 
@@ -88,7 +94,7 @@ const TIER_ICONS = {C:"challenger.png",GM:"grandmaster.png",M:"master.png",D:"di
 
 function tierIcon(tier = "") {
   const key = String(tier).toUpperCase().match(/^(GM|[CMDEPGSBI])/)?.[1] || "I";
-  return `assets/tiers/${TIER_ICONS[key] || TIER_ICONS.I}`;
+  return new URL(`../../assets/tiers/${TIER_ICONS[key] || TIER_ICONS.I}`, import.meta.url).href;
 }
 
 function champions(rows = []) {
@@ -108,11 +114,11 @@ function playerRow(player) {
   const roleWinRate = Number(player.roleWinRate || 0);
   return `<article class="current-player-row">
     <div class="current-player-topline">
-      <div class="current-player-head"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt=""><div class="current-player-name"><span class="tier-badge ${tierClass(player.tier)}">${esc(player.tier || "미배치")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button></div></div>
+      <div class="current-player-head"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt="${esc(player.tier || "미배치")} 티어 휘장"><div class="current-player-name"><span class="tier-badge ${tierClass(player.tier)}">${esc(player.tier || "미배치")}</span><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button></div></div>
       <div class="current-player-recent"><span>최근 전적</span><span class="current-form">${form.length ? `<b>(</b>${form.map((value) => `<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("")}<b>)</b>` : `<em>기록 없음</em>`}</span></div>
     </div>
     <div class="current-player-context"><span>주 포지션 <strong>${esc(mainRole || "기록 없음")}</strong></span><span>${esc(role)} 승률 <strong>${Number(player.roleGames || 0) ? `${roleWinRate.toFixed(1)}%` : "기록 없음"}</strong></span></div>
-    <div class="current-champion-groups"><div><small>모스트</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(role)}</small><span>${champions(player.recentChampions)}</span></div></div>
+    <div class="current-champion-groups"><div><small>저장된 라인 기록 MOST</small><span>${champions(player.mostChampions)}</span></div><div><small>최근 ${esc(role)}</small><span>${champions(player.recentChampions)}</span></div></div>
   </article>`;
 }
 
@@ -182,5 +188,5 @@ export async function loadLiveMatch({ quiet = false } = {}) {
 }
 
 window.setInterval(() => {
-  if (!document.hidden && document.querySelector("#recentView.active, #searchView.active")) loadLiveMatch({ quiet: true });
+  if (!document.hidden && document.querySelector("#homeView.active, #searchView.active")) loadLiveMatch({ quiet: true });
 }, 30000);

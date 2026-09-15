@@ -21,17 +21,17 @@
   <meta name="twitter:description" content="롤 내전, 전적 검색, 게임 분석, 랭킹, 포인트 시스템을 제공하는 Lucid 커뮤니티">
   <meta name="twitter:image" content="https://lucidgame.kr/assets/lucid-logo-20260914.png">
   <script>document.documentElement.dataset.theme=localStorage.getItem("coach-theme")||((matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light")</script>
-  <link rel="stylesheet" href="styles.css?v=20260915layout2">
+  <link rel="stylesheet" href="styles.css?v=20260915communityhome1">
 </head>
 <body>
   <header class="community-header">
     <div class="header-inner">
-      <a class="lucid-brand" href="./" aria-label="Lucid 커뮤니티 홈"><strong class="lucid-wordmark">Lucid</strong></a>
+      <a id="communityBrand" class="lucid-brand" href="./" aria-label="Lucid 커뮤니티 홈"><strong class="lucid-wordmark">Lucid</strong></a>
       <nav class="community-nav" aria-label="커뮤니티 메뉴">
-        <a class="nav-tab service-nav-item current-service" href="./" aria-current="page">커뮤니티</a>
+        <a class="nav-tab service-nav-item current-service" href="./" data-community-home aria-current="page">커뮤니티</a>
         <a class="nav-tab service-nav-item" href="../">강의 <span aria-hidden="true">↗</span></a>
         <span class="nav-hierarchy-divider" aria-hidden="true"></span>
-        <button class="nav-tab active" type="button" data-view="recent">내전</button>
+        <button class="nav-tab" type="button" data-view="recent">내전</button>
         <button class="nav-tab" type="button" data-view="analysis">게임 분석 <span class="nav-beta">BETA</span></button>
         <button class="nav-tab" type="button" data-view="ranking">랭킹</button>
         <button id="mileageNav" class="nav-tab" type="button" data-view="mileage">포인트 상점</button>
@@ -64,6 +64,42 @@
   </header>
 
   <main class="community-main">
+    <section id="homeView" class="content-view active community-home-view">
+      <section class="community-hero" aria-labelledby="communityHomeTitle">
+        <p class="section-kicker">LUCID COMMUNITY</p>
+        <h1 id="communityHomeTitle">내전 기록을 한곳에서 확인하세요</h1>
+        <p>소환사 전적을 찾고, 진행 중인 내전과 최근 서버 기록을 빠르게 확인할 수 있습니다.</p>
+        <form id="homePlayerSearchForm" class="home-player-search" role="search">
+          <span class="home-search-region" aria-label="대한민국 서버">KR</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+          <input id="homePlayerSearchInput" type="search" autocomplete="off" placeholder="소환사 이름 또는 Riot ID 검색" aria-label="소환사 이름 또는 Riot ID 검색">
+          <details class="home-search-recent">
+            <summary>최근 검색</summary>
+            <div id="homeRecentSearches" class="home-recent-list"></div>
+          </details>
+          <button type="submit">검색</button>
+        </form>
+      </section>
+
+      <section class="home-dashboard-section" aria-labelledby="liveMatchTitle">
+        <div class="home-section-heading">
+          <div><p class="section-kicker">LIVE MATCH</p><h2 id="liveMatchTitle">현재 진행 중인 내전</h2></div>
+          <a class="section-link" href="scrims/" data-community-scrims>전체 내전 기록</a>
+        </div>
+        <div id="liveMatchSection" class="home-live-panel" aria-live="polite">
+          <div id="liveMatchRoot"><p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p></div>
+        </div>
+      </section>
+
+      <section class="home-dashboard-section" aria-labelledby="recruitmentTitle">
+        <div class="home-section-heading"><div><p class="section-kicker">RECRUITMENT</p><h2 id="recruitmentTitle">내전 모집</h2></div></div>
+        <div class="home-empty-state">
+          <strong>공개된 모집이 없습니다.</strong>
+          <p>웹에서 참여할 수 있는 모집이 공개되면 이곳에 표시됩니다.</p>
+        </div>
+      </section>
+    </section>
+
     <section class="search-strip compact-community-search" aria-label="내전 및 소환사 검색">
       <div class="community-subtabs" role="tablist" aria-label="내전 메뉴">
         <button class="community-home-button active" id="communityHomeBtn" type="button" data-scrim-view="recent">전체 내전</button>
@@ -78,12 +114,17 @@
     </section>
     <section id="statusBanner" class="status-banner" hidden></section>
 
-    <section id="recentView" class="content-view active">
+    <section id="recentView" class="content-view scrims-view">
+      <header class="scrims-page-head">
+        <p class="section-kicker">SERVER SCRIMS</p>
+        <h1>내전 기록</h1>
+        <p>파라다이스 서버의 내전 결과와 참가자 기록을 확인하세요.</p>
+      </header>
       <div class="recent-live-layout">
         <div class="recent-history-column">
           <div class="section-heading recent-heading">
             <div>
-              <h1>파라다이스 서버 내전 기록</h1>
+              <h2>파라다이스 서버 내전 기록</h2>
             </div>
             <div class="recent-heading-actions">
               <div class="match-category-tabs" role="tablist" aria-label="내전 유형 필터">
@@ -98,10 +139,6 @@
           <div id="recentMatches" class="match-feed" aria-live="polite"></div>
           <button class="load-more" id="loadMoreBtn" type="button" hidden>더 보기</button>
         </div>
-        <aside id="liveMatchSection" class="current-games-panel" aria-live="polite">
-          <div class="current-panel-title"><span class="current-status-dot"></span><div><p class="section-kicker">IN PROGRESS</p><h2>현재 진행 중인 내전</h2></div></div>
-          <div id="liveMatchRoot"><p class="current-empty">현재 진행 중인 내전을 확인하고 있습니다.</p></div>
-        </aside>
       </div>
     </section>
 
@@ -207,6 +244,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js?v=20260915detailstate1"></script>
+  <script type="module" src="js/app-report6.js?v=20260915communityhome1"></script>
 </body>
 </html>

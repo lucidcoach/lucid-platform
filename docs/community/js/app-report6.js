@@ -63,7 +63,7 @@ function searchMemoryRow(row, {favorite=false} = {}) {
 }
 
 function bindSearchMemory(target) {
-  target?.querySelectorAll("[data-memory-user].search-memory-open").forEach((button) => button.addEventListener("click", () => openPlayer(button.dataset.memoryUser, button.dataset.memoryGuild, { historyMode:"push" })));
+  target?.querySelectorAll("[data-memory-user].search-memory-open, [data-memory-user].home-recent-item").forEach((button) => button.addEventListener("click", () => openPlayer(button.dataset.memoryUser, button.dataset.memoryGuild, { historyMode:"push" })));
   target?.querySelectorAll("[data-memory-star]").forEach((button) => button.addEventListener("click", () => toggleFavorite({name:button.dataset.memoryName,userId:button.dataset.memoryUser,guildId:button.dataset.memoryGuild})));
 }
 
@@ -72,6 +72,11 @@ function renderSearchMemory() {
   const favoriteTarget = $("favoriteSearches");
   const recent = readRecentSearches();
   const favorites = readFavoriteSearches();
+  const homeTarget = $("homeRecentSearches");
+  if (homeTarget) {
+    homeTarget.innerHTML = recent.length ? recent.map((row)=>`<button type="button" class="home-recent-item" data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}"><span>${esc(row.name)}</span><small>전적 보기</small></button>`).join("") : `<div class="search-memory-empty">최근 검색 기록이 없습니다.</div>`;
+    bindSearchMemory(homeTarget);
+  }
   if (recentTarget) {
     recentTarget.innerHTML = recent.length ? recent.map((row)=>searchMemoryRow(row)).join("") : `<div class="search-memory-empty">검색 기록이 없습니다.</div>`;
     recentTarget.querySelectorAll("[data-recent-remove]").forEach((button)=>button.addEventListener("click",()=>{
@@ -108,12 +113,14 @@ function toggleFavorite(detail = {}) {
   renderSearchMemory();
 }
 
-function communityBaseUrl() {
-  return `${window.location.pathname}`;
-}
+const COMMUNITY_ROOT_URL = new URL("../", import.meta.url);
+const homeUrl = () => COMMUNITY_ROOT_URL.pathname;
+const recentUrl = () => new URL("scrims/", COMMUNITY_ROOT_URL).pathname;
 
-function recentUrl() {
-  return communityBaseUrl();
+function viewUrl(view) {
+  const url = new URL(COMMUNITY_ROOT_URL);
+  url.searchParams.set("view", view);
+  return `${url.pathname}${url.search}`;
 }
 
 function selectScrimTab(view) {
@@ -122,7 +129,7 @@ function selectScrimTab(view) {
 
 function openMyRecords({push=true}={}) {
   const user=getCurrentUser(), linked=Boolean(user?.discordConnected||user?.discord_connected||user?.discordDisplayName||user?.discord_display_name);
-  if(push){const url=new URL(window.location.href);url.search="";url.searchParams.set("view","my");history.pushState({view:"my"},"",`${url.pathname}${url.search}`);}
+  if(push) history.pushState({view:"my"},"",viewUrl("my"));
   selectScrimTab("my");
   const identity=getAnalysisIdentity();
   if(identity)return openPlayer(identity.userId,identity.guildId,{historyMode:"replace"});
@@ -186,9 +193,14 @@ async function applyRoute({ fromPop = false, routeState = null } = {}) {
     searchPlayers(query, { historyMode: "none" });
     return;
   }
-  switchView("recent");
-  selectScrimTab("recent");
-  if (!fromPop) await loadRecent();
+  if (view === "recent" || window.location.pathname.replace(/\/+$/, "").endsWith("/scrims")) {
+    if (window.location.pathname !== recentUrl() || window.location.search) history.replaceState({view:"recent"}, "", recentUrl());
+    switchView("recent");
+    selectScrimTab("recent");
+    if (!fromPop) await loadRecent();
+    return;
+  }
+  switchView("home");
 }
 
 function goRecent({ push = true } = {}) {
@@ -196,6 +208,13 @@ function goRecent({ push = true } = {}) {
   $("playerSearchInput").value = "";
   switchView("recent");
   selectScrimTab("recent");
+  void loadRecent();
+}
+
+function goHome({ push = true } = {}) {
+  if (push) history.pushState({view:"home"}, "", homeUrl());
+  switchView("home");
+  window.scrollTo(0,0);
 }
 
 function renderCommunityAccount() {
@@ -236,7 +255,7 @@ function renderCommunityAccount() {
 }
 
 function openCommunityAccount({push=true}={}) {
-  if(push){ const url=new URL(window.location.href); url.search=""; url.searchParams.set("view","account"); history.pushState({view:"account"},"",`${url.pathname}${url.search}`); }
+  if(push) history.pushState({view:"account"},"",viewUrl("account"));
   switchView("account");
   renderCommunityAccount();
 }
@@ -251,9 +270,17 @@ function bindEvents() {
     const query=$("playerSearchInput").value.trim();
     if(query) searchPlayers(query, { historyMode: "push" });
   });
+  $("homePlayerSearchForm")?.addEventListener("submit",(event)=>{
+    event.preventDefault();
+    const query=$("homePlayerSearchInput")?.value.trim();
+    if(query) searchPlayers(query, { historyMode: "push" });
+  });
+  $("communityBrand")?.addEventListener("click",event=>{event.preventDefault();goHome();});
+  document.querySelectorAll("[data-community-home]").forEach(link=>link.addEventListener("click",event=>{event.preventDefault();goHome();}));
+  document.querySelectorAll("[data-community-scrims]").forEach(link=>link.addEventListener("click",event=>{event.preventDefault();goRecent();}));
   $("communityHomeBtn").addEventListener("click",()=>goRecent());
   $("myRecordsBtn").addEventListener("click",()=>openMyRecords());
-  $("refreshMatchesBtn").addEventListener("click",()=>{loadRecent();loadLiveMatch();});
+  $("refreshMatchesBtn").addEventListener("click",()=>loadRecent());
   $("loadMoreBtn").addEventListener("click",()=>loadRecent({append:true}));
   document.querySelectorAll("[data-match-category]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -268,44 +295,27 @@ function bindEvents() {
       if (button.dataset.view === "recent") {
         goRecent();
       } else if (button.dataset.view === "analysis") {
-        const url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set("view", "analysis");
+        const url = new URL(viewUrl("analysis"), window.location.origin);
         history.pushState({ view: "analysis" }, "", `${url.pathname}${url.search}`);
         applyAnalysisRoute(url.searchParams);
       } else if (button.dataset.view === "ranking") {
-        const url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set("view", "ranking");
-        history.pushState({ view: "ranking" }, "", `${url.pathname}${url.search}`);
+        history.pushState({ view: "ranking" }, "", viewUrl("ranking"));
         switchView("ranking");
         loadRankings();
       } else if (button.dataset.view === "admin") {
         if (!hasCommunityAdminAccess()) return;
-        const url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set("view", "admin");
-        history.pushState({ view: "admin" }, "", `${url.pathname}${url.search}`);
+        history.pushState({ view: "admin" }, "", viewUrl("admin"));
         switchView("admin");
         renderCommunityAdmin({home:true});
       } else if (button.dataset.view === "mileage") {
-        const url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set("view", "mileage");
-        history.pushState({ view: "mileage" }, "", `${url.pathname}${url.search}`);
+        history.pushState({ view: "mileage" }, "", viewUrl("mileage"));
         switchView("mileage");
         renderMileage();
       } else if (button.dataset.view === "patchnotes") {
-        const url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set("view", "patchnotes");
-        history.pushState({ view: "patchnotes" }, "", `${url.pathname}${url.search}`);
+        history.pushState({ view: "patchnotes" }, "", viewUrl("patchnotes"));
         switchView("patchnotes");
       } else if (button.dataset.view === "support") {
-        const url = new URL(window.location.href);
-        url.search = "";
-        url.searchParams.set("view", "support");
-        history.pushState({ view: "support" }, "", `${url.pathname}${url.search}`);
+        history.pushState({ view: "support" }, "", viewUrl("support"));
         switchView("support");
         renderCommunitySupport();
       } else {
@@ -401,6 +411,9 @@ bindEvents();
 bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
+const initialParams = new URLSearchParams(window.location.search);
+if (initialParams.has("player") || initialParams.has("q") || initialParams.get("view") === "my") switchView("search");
+else if (initialParams.get("view")) switchView(initialParams.get("view"));
 const assetsReady=loadGameAssets();
 await initCommunityAuth();
 await assetsReady;

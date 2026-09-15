@@ -1,5 +1,5 @@
 import { championIcon } from "../assets.js?v=20260904r";
-import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime, teamLabel } from "../utils.js?v=20260914seriesmatch1";
+import { escapeHtml, formatDuration, isWinner, normalizeMode, relativeTime } from "../utils.js?v=20260914seriesmatch1";
 
 
 function averageTierLabel(players = []) {
@@ -19,17 +19,10 @@ function averageTierLabel(players = []) {
   return "I4";
 }
 
-function averageTierClass(label = "") {
-  const key = String(label || "").toUpperCase();
-  if (key.startsWith("GM") || key === "C") return "avg-tier-gm";
-  if (key.startsWith("M")) return "avg-tier-m";
-  if (key.startsWith("D")) return "avg-tier-d";
-  if (key.startsWith("E")) return "avg-tier-e";
-  if (key.startsWith("P")) return "avg-tier-p";
-  if (key.startsWith("G")) return "avg-tier-g";
-  if (key.startsWith("S")) return "avg-tier-s";
-  if (key.startsWith("B")) return "avg-tier-b";
-  return "avg-tier-i";
+const TIER_ICONS = {C:"challenger.png",GM:"grandmaster.png",M:"master.png",D:"diamond.png",E:"emerald.png",P:"platinum.png",G:"gold.png",S:"silver.png",B:"bronze.png",I:"iron.png"};
+function tierEmblem(label = "") {
+  const key = String(label).toUpperCase().match(/^(GM|[CMDEPGSBI])/)?.[1] || "I";
+  return new URL(`../../assets/tiers/${TIER_ICONS[key]}`, import.meta.url).href;
 }
 
 function awardMark(player) {
@@ -41,7 +34,7 @@ function awardMark(player) {
 function previewPlayer(player, guildId) {
   const icon = championIcon(player.champion);
   return `<div class="preview-player">
-    <span class="preview-champion-wrap">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : `<span class="preview-icon-empty"></span>`}${Number(player.level || 0) > 0 ? `<i class="preview-level">${Number(player.level)}</i>` : ""}</span>
+    <span class="preview-champion-wrap">${icon ? `<img src="${escapeHtml(icon)}" alt="${escapeHtml(player.champion || "챔피언")}" loading="lazy">` : `<span class="preview-icon-empty"></span>`}${Number(player.level || 0) > 0 ? `<i class="preview-level">${Number(player.level)}</i>` : ""}</span>
     <span class="preview-name-wrap"><button class="player-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>${awardMark(player)}</span>
   </div>`;
 }
@@ -49,12 +42,12 @@ function previewPlayer(player, guildId) {
 function renderTeamPreview(match, team) {
   const players = (match.players || []).filter((player) => player.team === team).slice(0,5);
   const won = isWinner(match,team);
-  return `<div class="team-preview ${team} ${won ? "result-win" : "result-loss"}"><div class="team-head"><span class="team-result-label">${won ? "승리" : "패배"}</span><small>${teamLabel(team)}</small></div>${players.map((player) => previewPlayer(player, match.guildId)).join("") || `<div class="preview-player"><span></span><span class="name">상세 기록 없음</span></div>`}</div>`;
+  return `<div class="team-preview ${team} ${won ? "result-win" : "result-loss"}"><div class="team-head">${won ? `<span class="team-result-label">승리</span>` : ""}<small>${team === "blue" ? "BLUE TEAM" : "RED TEAM"}</small></div>${players.map((player) => previewPlayer(player, match.guildId)).join("") || `<div class="preview-player"><span></span><span class="name">상세 기록 없음</span></div>`}</div>`;
 }
 
 export function matchCard(match) {
   const duration = formatDuration(match.durationSeconds);
   const averageTier = averageTierLabel(match.players || []);
   const hasDetails = Array.isArray(match.players) && match.players.length > 0;
-  return `<article class="match-card" data-match-id="${escapeHtml(match.matchId)}" data-guild-id="${escapeHtml(match.guildId)}"><div class="match-summary"><div class="match-meta"><span class="match-mode">${escapeHtml(normalizeMode(match))}</span><span class="match-time">${escapeHtml(relativeTime(match.time))}</span>${duration ? `<span class="match-duration">${duration}</span>` : ""}<div class="match-average-tier"><small>평균티어</small><span class="avg-tier-chip ${averageTierClass(averageTier)}">[${escapeHtml(averageTier)}]</span></div></div><div class="teams-preview">${renderTeamPreview(match,"blue")}${renderTeamPreview(match,"red")}</div><button class="expand-match" type="button" aria-label="경기 상세 펼치기" title="${hasDetails ? "경기 상세 보기" : "상세 데이터 없음"}" ${hasDetails ? "" : "disabled"}>⌄</button></div><div class="match-details" data-lazy-scoreboard></div></article>`;
+  return `<article class="match-card" data-match-id="${escapeHtml(match.matchId)}" data-guild-id="${escapeHtml(match.guildId)}"><div class="match-summary"><div class="match-meta"><span class="match-mode">${escapeHtml(normalizeMode(match))}</span><span class="match-time">${escapeHtml(relativeTime(match.time))}</span>${duration ? `<span class="match-duration">${duration}</span>` : ""}<div class="match-average-tier"><small>평균 티어</small><span class="avg-tier-chip"><img class="avg-tier-emblem" src="${escapeHtml(tierEmblem(averageTier))}" alt="${escapeHtml(averageTier)} 티어 휘장"><span>${escapeHtml(averageTier)}</span></span></div></div><div class="teams-preview">${renderTeamPreview(match,"blue")}${renderTeamPreview(match,"red")}</div><button class="expand-match" type="button" aria-label="경기 상세 펼치기" title="${hasDetails ? "경기 상세 보기" : "상세 데이터 없음"}" ${hasDetails ? "" : "disabled"}>⌄</button></div><div class="match-details" data-lazy-scoreboard></div></article>`;
 }

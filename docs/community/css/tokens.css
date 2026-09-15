@@ -58,8 +58,8 @@
   --nav-active: var(--surface-active);
   --radius: 14px;
   --radius-sm: 9px;
-  --shadow: 0 18px 40px rgba(0,0,0,.2);
-  --shadow-soft: 0 10px 24px rgba(0,0,0,.14);
+  --shadow: 0 8px 24px rgba(0,0,0,.16);
+  --shadow-soft: none;
   --layout-max-width: 1120px;
   --layout-padding-x: 24px;
   --header-height: 66px;
