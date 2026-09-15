@@ -8,12 +8,15 @@ let currentGames = [];
 let currentGamesSignature = "";
 let showingPreview = new URLSearchParams(location.search).get("livePreview") === "1";
 
-const previewPlayer = (name, champion) => ({ name, userId:"", guildId:"", mostChampions:[champion] });
+const previewPlayer = (name, champion, role, tier) => ({
+  name, userId:"", guildId:"", role, mainRole:role, mainRoleGames:24, roleGames:18, roleWinRate:55.6,
+  tier, recentForm:["W","L","W","W","L"], mostChampions:[{ champion, games:12 }], recentChampions:[{ champion, games:5 }],
+});
 const LIVE_PREVIEW = {
   gameId:"preview-only", preview:true, queueName:"22:00 내전", startedAt:new Date().toISOString(),
   blueAverageTier:"D2", redAverageTier:"D1", series:{ currentSet:2 },
-  blue:[previewPlayer("고자드", "아리"), previewPlayer("냥냥펀치", "리 신"), previewPlayer("유성우", "징크스"), previewPlayer("AM 2:00", "쓰레쉬"), previewPlayer("케이", "가렌")],
-  red:[previewPlayer("잇유", "럭스"), previewPlayer("탐사냥꾼", "야스오"), previewPlayer("라임", "이즈리얼"), previewPlayer("모카", "카이사"), previewPlayer("노부", "아칼리")],
+  blue:[previewPlayer("고자드", "아리", "미드", "D2"), previewPlayer("냥냥펀치", "리 신", "정글", "D3"), previewPlayer("유성우", "징크스", "원딜", "D1"), previewPlayer("AM 2:00", "쓰레쉬", "서폿", "E1"), previewPlayer("케이", "가렌", "탑", "D2")],
+  red:[previewPlayer("잇유", "럭스", "서폿", "D2"), previewPlayer("탐사냥꾼", "야스오", "미드", "D1"), previewPlayer("라임", "이즈리얼", "원딜", "D2"), previewPlayer("모카", "카이사", "탑", "E1"), previewPlayer("노부", "아칼리", "정글", "D1")],
 };
 
 function parsedDate(value) {
@@ -91,7 +94,7 @@ function compactCard(game) {
   return `<article class="current-game-card home-current-game${mine ? " is-my-game" : ""}">
     <div class="home-live-meta"><div class="current-game-title"><span class="recruitment-status">LIVE</span>${isPreview ? `<span class="current-my-game-badge">미리보기</span>` : mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div><strong>${esc(queueName(game))} · ${esc(setText)}</strong><p>${isPreview ? "게임 진행 중" : esc(elapsedText(game.startedAt))} · 참가자 ${players.length}명의 이전 전적 분석 가능</p></div>
     ${previewTeam(game.blue,"blue")}<span class="home-live-vs" aria-hidden="true">VS</span>${previewTeam(game.red,"red")}
-    <button class="current-detail-button" type="button"${isPreview ? " disabled" : ` data-current-game="${esc(game.gameId)}"`}>전력 분석 보기</button>
+    <button class="current-detail-button" type="button" data-current-game="${esc(game.gameId)}">전력 분석 보기</button>
   </article>`;
 }
 
@@ -151,7 +154,8 @@ function syncPreviewAccess() {
 }
 
 export function openCurrentGame(gameId) {
-  const game = currentGames.find((item) => String(item.gameId) === String(gameId));
+  const game = currentGames.find((item) => String(item.gameId) === String(gameId))
+    || (showingPreview && String(gameId) === LIVE_PREVIEW.gameId ? LIVE_PREVIEW : null);
   if (!game) return;
   $("currentMatchDialog")?.remove();
   document.body.insertAdjacentHTML("beforeend", `<dialog id="currentMatchDialog" class="current-match-dialog" aria-labelledby="currentMatchTitle">
