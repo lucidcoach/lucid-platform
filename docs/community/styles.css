@@ -65,6 +65,7 @@ body{overflow-x:clip}
 .personal-match .focus-kda>strong{font-size:17px!important;line-height:1.2!important;letter-spacing:.02em!important}
 .personal-match .focus-kda>span{font-size:10px!important;line-height:1.25!important;letter-spacing:normal!important}
 .personal-match .focus-cs>strong{font-size:12px!important;line-height:1.25!important;letter-spacing:normal!important;white-space:nowrap}
+.personal-match:is(.expanded,:not(.expanded)) .roster-player{grid-template-columns:17px minmax(0,1fr)!important}
 .personal-match :is(.roster-player,.roster-profile-link){min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 .personal-match .personal-actions{width:38px!important;min-width:38px!important;justify-self:end!important}
 .personal-match .personal-actions :is(.build-toggle,.personal-expand,.replay-download){box-sizing:border-box!important;width:30px!important;min-width:30px!important;max-width:30px!important;height:28px!important;min-height:28px!important;padding:0!important;border-width:1px!important;transform:none!important}
