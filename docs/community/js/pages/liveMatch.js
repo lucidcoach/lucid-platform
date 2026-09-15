@@ -7,6 +7,7 @@ const esc = (value) => escapeHtml(String(value ?? ""));
 let currentGames = [];
 let currentGamesSignature = "";
 let showingPreview = new URLSearchParams(location.search).get("livePreview") === "1";
+let previewDetailOpened = false;
 
 const previewPlayer = (name, champion, role, tier) => ({
   name, userId:"", guildId:"", role, mainRole:role, mainRoleGames:24, roleGames:18, roleWinRate:55.6,
@@ -140,6 +141,10 @@ function renderList() {
     ? `<div class="current-game-list">${visibleGames.map(compactCard).join("")}</div>`
     : `<div class="current-empty"><strong>현재 진행 중인 내전이 없습니다.</strong><span>내전이 시작되면 이곳에서 참가자 전력 분석을 확인할 수 있습니다.</span></div>`;
   root.querySelectorAll("[data-current-game]").forEach((button) => button.addEventListener("click", () => openCurrentGame(button.dataset.currentGame)));
+  if (showingPreview && !previewDetailOpened && new URLSearchParams(location.search).get("previewDetail") === "1") {
+    previewDetailOpened = true;
+    openCurrentGame(LIVE_PREVIEW.gameId);
+  }
 }
 
 function syncPreviewAccess() {

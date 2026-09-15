@@ -10,7 +10,7 @@ import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "
 import { renderMileage } from "./pages/mileage.js?v=20260914header1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260914header1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
-import { loadLiveMatch } from "./pages/liveMatch.js?v=20260915reference5";
+import { loadLiveMatch } from "./pages/liveMatch.js?v=20260915reference6";
 import { loadRecruitments } from "./pages/recruitment.js?v=20260915reference4";
 
 
