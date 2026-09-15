@@ -31,7 +31,8 @@ function updatePageMeta(view) {
 }
 
 const initialParams = new URLSearchParams(window.location.search);
-updatePageMeta(initialParams.has("player") || initialParams.has("q") ? "search" : initialParams.get("view") || "home");
+const initialPathView = window.location.pathname.replace(/\/+$/, "").endsWith("/scrims") ? "recent" : "home";
+updatePageMeta(initialParams.has("player") || initialParams.has("q") ? "search" : initialParams.get("view") || initialPathView);
 
 export function switchView(view) {
   $("homeView")?.classList.toggle("active", view === "home");

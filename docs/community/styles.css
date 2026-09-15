@@ -1,8 +1,8 @@
 @import url("css/tokens.css?v=20260914warm1");
 @import url("css/base.css?v=20260915loadingtheme1");
-@import url("css/layout.css?v=20260914control1");
+@import url("css/layout.css?v=20260915community2");
 @import url("css/matches.css?v=20260915uicons1");
-@import url("css/profile.css?v=20260915consistency1");
+@import url("css/profile.css?v=20260915community2");
 @import url("css/states.css?v=20260915loadingtheme1");
 @import url("css/responsive.css?v=20260914header1");
 
@@ -13,10 +13,10 @@
 
 @import url("css/admin.css?v=20260915consistency1");
 @import url("css/mileage.css?v=20260915loadingtheme1");
-@import url("css/current-games.css?v=20260915livefit1");
+@import url("css/current-games.css?v=20260915community2");
 @import url("css/analysis-server.css?v=20260915consistency1");
 @import url("css/light-theme.css?v=20260915memorycards1");
-@import url("css/community-home.css?v=20260915communityhome1");
+@import url("css/community-home.css?v=20260915community2");
 
 /* Search history stays prominent only on match/search views. */
 body:not(:has(#recentView.active)):not(:has(#searchView.active)) .compact-community-search{display:none}

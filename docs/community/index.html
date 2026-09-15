@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <base id="communityBase" href="./">
-  <script>document.getElementById("communityBase").href=new URL("./",location.href).href</script>
+  <script>document.getElementById("communityBase").href=new URL(location.pathname.replace(/\/+$/,"").endsWith("/scrims")?"../":"./",location.href).href</script>
   <meta name="theme-color" content="#121212">
   <title>Lucid | 롤 내전 · 전적 · 게임 분석 커뮤니티</title>
   <meta name="description" content="롤 내전, 전적 검색, 게임 분석, 랭킹, 포인트 시스템을 제공하는 Lucid 커뮤니티">
@@ -23,7 +23,7 @@
   <meta name="twitter:description" content="롤 내전, 전적 검색, 게임 분석, 랭킹, 포인트 시스템을 제공하는 Lucid 커뮤니티">
   <meta name="twitter:image" content="https://lucidgame.kr/assets/lucid-logo-20260914.png">
   <script>document.documentElement.dataset.theme=localStorage.getItem("coach-theme")||((matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light")</script>
-  <link rel="stylesheet" href="styles.css?v=20260915nickname1">
+  <link rel="stylesheet" href="styles.css?v=20260915community2">
 </head>
 <body>
   <header class="community-header">
@@ -66,15 +66,14 @@
   <main class="community-main">
     <section id="homeView" class="content-view active community-home-view">
       <section class="community-hero" aria-labelledby="communityHomeTitle">
-        <p class="section-kicker">LUCID COMMUNITY</p>
-        <h1 id="communityHomeTitle">내전 기록을 한곳에서 확인하세요</h1>
-        <p>소환사 전적을 찾고, 진행 중인 내전과 최근 서버 기록을 빠르게 확인할 수 있습니다.</p>
+        <h1 id="communityHomeTitle">내 전적과 진행 중인 내전을 <span>한눈에</span> 확인하세요</h1>
+        <p>소환사 전적을 검색하고, 진행 중인 내전과 전력 분석을 바로 확인할 수 있습니다.</p>
         <form id="homePlayerSearchForm" class="home-player-search" role="search">
           <span class="home-search-region" aria-label="대한민국 서버">KR</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
           <input id="homePlayerSearchInput" type="search" autocomplete="off" placeholder="소환사 이름 또는 Riot ID 검색" aria-label="소환사 이름 또는 Riot ID 검색">
           <details class="home-search-recent">
-            <summary>최근 검색</summary>
+            <summary aria-label="최근 검색"><span class="recent-label-full">최근 검색</span><span class="recent-label-compact" aria-hidden="true">최근</span></summary>
             <div id="homeRecentSearches" class="home-recent-list"></div>
           </details>
           <button type="submit">검색</button>
@@ -83,7 +82,7 @@
 
       <section class="home-dashboard-section" aria-labelledby="liveMatchTitle">
         <div class="home-section-heading">
-          <div><p class="section-kicker">LIVE MATCH</p><h2 id="liveMatchTitle">현재 진행 중인 내전</h2></div>
+          <h2 id="liveMatchTitle">현재 진행 중인 내전</h2>
           <a class="section-link" href="scrims/" data-community-scrims>전체 내전 기록</a>
         </div>
         <div id="liveMatchSection" class="home-live-panel" aria-live="polite">
@@ -92,18 +91,20 @@
       </section>
 
       <section class="home-dashboard-section" aria-labelledby="recruitmentTitle">
-        <div class="home-section-heading"><div><p class="section-kicker">RECRUITMENT</p><h2 id="recruitmentTitle">내전 모집</h2></div></div>
-        <div class="home-empty-state">
-          <strong>공개된 모집이 없습니다.</strong>
-          <p>웹에서 참여할 수 있는 모집이 공개되면 이곳에 표시됩니다.</p>
+        <div class="home-section-heading"><h2 id="recruitmentTitle">내전 모집</h2></div>
+        <div id="recruitmentRoot" aria-live="polite">
+          <div class="home-empty-state">
+            <strong>현재 모집 중인 내전이 없습니다.</strong>
+            <p>새로운 내전이 열리면 이곳에서 바로 확인할 수 있습니다.</p>
+          </div>
         </div>
       </section>
     </section>
 
     <section class="search-strip compact-community-search" aria-label="내전 및 소환사 검색">
       <div class="community-subtabs" role="tablist" aria-label="내전 메뉴">
-        <button class="community-home-button active" id="communityHomeBtn" type="button" data-scrim-view="recent">전체 내전</button>
-        <button class="community-home-button" id="myRecordsBtn" type="button" data-scrim-view="my">내 전적</button>
+        <button class="community-home-button active" id="communityHomeBtn" type="button" data-scrim-view="recent">전체 기록</button>
+        <button class="community-home-button" id="myRecordsBtn" type="button" data-scrim-view="my">내 기록</button>
       </div>
       <form id="playerSearchForm" class="player-search compact-player-search">
         <div class="search-control">
@@ -116,7 +117,6 @@
 
     <section id="recentView" class="content-view scrims-view">
       <header class="scrims-page-head">
-        <p class="section-kicker">SERVER SCRIMS</p>
         <h1>내전 기록</h1>
         <p>파라다이스 서버의 내전 결과와 참가자 기록을 확인하세요.</p>
       </header>
@@ -244,6 +244,6 @@
     <div class="loading-card"><span></span><span></span><span></span></div>
   </template>
 
-  <script type="module" src="js/app-report6.js?v=20260915communityhome1"></script>
+  <script type="module" src="js/app-report6.js?v=20260915community2"></script>
 </body>
 </html>

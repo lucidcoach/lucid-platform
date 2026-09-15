@@ -82,7 +82,7 @@ function compactCard(game) {
     return `<div class="home-live-player"><span class="current-role">${esc(player.role || "미정")}</span><img class="current-tier-icon" src="${esc(tierIcon(player.tier))}" alt="${esc(player.tier || "미배치")} 티어 휘장"><button type="button" data-player-profile data-user-id="${esc(player.userId)}" data-guild-id="${esc(player.guildId)}">${esc(player.name)}</button><span class="current-form" aria-label="최근 전적">${form.length ? form.map((value)=>`<i class="${value === "W" ? "win" : "loss"}">${value}</i>`).join("") : `<em>-</em>`}</span>${mostIcon ? `<img class="home-most-icon" src="${esc(mostIcon)}" alt="${esc(mostName)}" title="저장된 라인 기록 MOST: ${esc(mostName)}">` : `<span class="home-most-empty">MOST -</span>`}</div>`;
   }).join("") || `<p class="current-no-data">라인업 정보가 없습니다.</p>`}</div></section>`;
   return `<article class="current-game-card home-current-game${mine ? " is-my-game" : ""}">
-    <div class="current-game-title"><div><small>LIVE MATCH</small><strong>${esc(queueName(game))}</strong></div>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
+    <div class="current-game-title"><strong>${esc(queueName(game))}</strong>${mine ? `<span class="current-my-game-badge">내 경기</span>` : ""}</div>
     ${seriesSummary(game)}
     <p class="current-time">${game.startTimeSource === "game" ? `<span>${startText(game.startedAt)} 시작</span><b>·</b>` : ""}<span>${elapsedText(game.startedAt)}</span></p>
     <div class="home-live-teams">${previewTeam(game.blue,"blue")}<span class="home-live-vs" aria-hidden="true">VS</span>${previewTeam(game.red,"red")}</div>
@@ -129,7 +129,7 @@ function renderList() {
   currentGames = sortedCurrentGames(currentGames);
   root.innerHTML = currentGames.length
     ? `<div class="current-game-list">${currentGames.map(compactCard).join("")}</div>`
-    : `<p class="current-empty">현재 진행 중인 내전이 없습니다</p>`;
+    : `<div class="current-empty"><strong>현재 진행 중인 내전이 없습니다.</strong><span>내전이 시작되면 이곳에서 참가자 전력 분석을 확인할 수 있습니다.</span></div>`;
   root.querySelectorAll("[data-current-game]").forEach((button) => button.addEventListener("click", () => openCurrentGame(button.dataset.currentGame)));
 }
 
@@ -140,7 +140,7 @@ export function openCurrentGame(gameId) {
   document.body.insertAdjacentHTML("beforeend", `<dialog id="currentMatchDialog" class="current-match-dialog" aria-labelledby="currentMatchTitle">
     <div class="current-match-modal">
       <button class="current-match-close" type="button" data-current-close aria-label="닫기">×</button>
-      <header class="current-match-modal-head"><p>LIVE MATCH</p><h2 id="currentMatchTitle">${esc(queueName(game))}</h2>${seriesSummary(game)}</header>
+      <header class="current-match-modal-head"><h2 id="currentMatchTitle">${esc(queueName(game))}</h2>${seriesSummary(game)}</header>
       <div class="current-match-teams">
         <section class="current-team-block blue-team"><h3>블루팀 <span>평균 티어 ${esc(game.blueAverageTier || "미배치")}</span></h3>${(game.blue || []).map(playerRow).join("")}</section>
         <div class="current-match-vs" aria-hidden="true">VS</div>

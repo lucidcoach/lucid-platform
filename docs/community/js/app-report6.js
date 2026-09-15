@@ -11,6 +11,7 @@ import { renderMileage } from "./pages/mileage.js?v=20260914header1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260914header1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260915livefit1";
+import { loadRecruitments } from "./pages/recruitment.js?v=20260915community2";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";
@@ -74,11 +75,11 @@ function renderSearchMemory() {
   const favorites = readFavoriteSearches();
   const homeTarget = $("homeRecentSearches");
   if (homeTarget) {
-    homeTarget.innerHTML = recent.length ? recent.map((row)=>`<button type="button" class="home-recent-item" data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}"><span>${esc(row.name)}</span><small>전적 보기</small></button>`).join("") : `<div class="search-memory-empty">최근 검색 기록이 없습니다.</div>`;
+    homeTarget.innerHTML = recent.length ? recent.map((row)=>`<button type="button" class="home-recent-item" data-memory-user="${esc(row.userId)}" data-memory-guild="${esc(row.guildId)}"><span>${esc(row.name)}</span><small>전적 보기</small></button>`).join("") : `<div class="search-memory-empty"><strong>최근 검색 기록이 없습니다.</strong><small>소환사를 검색하면 여기에 표시됩니다.</small></div>`;
     bindSearchMemory(homeTarget);
   }
   if (recentTarget) {
-    recentTarget.innerHTML = recent.length ? recent.map((row)=>searchMemoryRow(row)).join("") : `<div class="search-memory-empty">검색 기록이 없습니다.</div>`;
+    recentTarget.innerHTML = recent.length ? recent.map((row)=>searchMemoryRow(row)).join("") : `<div class="search-memory-empty"><strong>최근 검색 기록이 없습니다.</strong><small>소환사를 검색하면 여기에 표시됩니다.</small></div>`;
     recentTarget.querySelectorAll("[data-recent-remove]").forEach((button)=>button.addEventListener("click",()=>{
       localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(readRecentSearches().filter((row)=>!samePlayer(row,button.dataset.memoryUser,button.dataset.memoryGuild))));
       renderSearchMemory();
@@ -86,7 +87,7 @@ function renderSearchMemory() {
     bindSearchMemory(recentTarget);
   }
   if (favoriteTarget) {
-    favoriteTarget.innerHTML = favorites.length ? favorites.map((row)=>searchMemoryRow(row,{favorite:true})).join("") : `<div class="search-memory-empty">즐겨찾기 없음</div>`;
+    favoriteTarget.innerHTML = favorites.length ? favorites.map((row)=>searchMemoryRow(row,{favorite:true})).join("") : `<div class="search-memory-empty"><strong>즐겨찾기가 없습니다.</strong><small>별을 누른 소환사가 여기에 표시됩니다.</small></div>`;
     favoriteTarget.querySelectorAll("[data-favorite-remove]").forEach((button)=>button.addEventListener("click",()=>{
       localStorage.setItem(FAVORITE_SEARCH_KEY, JSON.stringify(readFavoriteSearches().filter((row)=>!samePlayer(row,button.dataset.memoryUser,button.dataset.memoryGuild))));
       renderSearchMemory();
@@ -412,10 +413,13 @@ bindAnalysisPage();
 bindRankingPage();
 renderSearchMemory();
 const initialParams = new URLSearchParams(window.location.search);
+const initialScrimsRoute = window.location.pathname.replace(/\/+$/, "").endsWith("/scrims");
 if (initialParams.has("player") || initialParams.has("q") || initialParams.get("view") === "my") switchView("search");
 else if (initialParams.get("view")) switchView(initialParams.get("view"));
+else if (initialScrimsRoute) switchView("recent");
 const assetsReady=loadGameAssets();
 await initCommunityAuth();
 await assetsReady;
 await applyRoute();
 void loadLiveMatch();
+void loadRecruitments();
