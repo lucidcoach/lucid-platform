@@ -320,7 +320,9 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
   const input = target.querySelector("[data-personal-champion-filter]");
   const feed = target.querySelector("[data-personal-match-feed]");
   if (!input || !feed) return;
+  const pageSize = 10;
   let category = "internal";
+  let page = 1;
 
   const render = () => {
     const query = String(input.value || "").trim().toLowerCase();
@@ -328,17 +330,28 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
       (!query || personalMatchChampion(match, userId).toLowerCase().includes(query))
       && (category === "all" || String(match.category || "internal") === category)
     );
-    feed.innerHTML = visible.map((match) => playerMatchCard(match, userId)).join("")
-      || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`;
-    bindLazyScoreboards(feed, visible, userId);
+    const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
+    page = Math.min(page, pageCount);
+    const pageMatches = visible.slice((page - 1) * pageSize, page * pageSize);
+    const pager = pageCount > 1 ? `<nav class="personal-history-pagination" aria-label="전적 페이지"><button type="button" data-personal-page="${page - 1}" ${page === 1 ? "disabled" : ""}>이전</button><span>${page} / ${pageCount}</span><button type="button" data-personal-page="${page + 1}" ${page === pageCount ? "disabled" : ""}>다음</button></nav>` : "";
+    feed.innerHTML = (pageMatches.map((match) => playerMatchCard(match, userId)).join("")
+      || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`) + pager;
+    bindLazyScoreboards(feed, pageMatches, userId);
     bindExpanders(feed);
     bindReplayDownloads(feed);
+    feed.querySelectorAll("[data-personal-page]").forEach((button) => button.addEventListener("click", () => {
+      page = Number(button.dataset.personalPage || 1);
+      render();
+      target.querySelector(".personal-history-toolbar")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    }));
   };
 
-  input.addEventListener("input", render);
-  input.addEventListener("change", render);
+  const resetAndRender = () => { page = 1; render(); };
+  input.addEventListener("input", resetAndRender);
+  input.addEventListener("change", resetAndRender);
   target.querySelectorAll("[data-personal-queue]").forEach((button) => button.addEventListener("click", () => {
     category = button.dataset.personalQueue || "all";
+    page = 1;
     target.querySelectorAll("[data-personal-queue]").forEach((item) => item.classList.toggle("active", item === button));
     history.replaceState({...history.state,playerView:{...(history.state?.playerView || {}),personalQueue:category}},"",window.location.href);
     render();

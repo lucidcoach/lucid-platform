@@ -41,7 +41,7 @@ assert.doesNotMatch(mileageCss, /accent-color:#[0-9a-f]+/i);
 assert.match(adminCss, /\.admin-member-actions input\{accent-color:var\(--primary\)\}/);
 assert.match(page, /<script>document\.documentElement\.dataset\.theme=[\s\S]*?<\/script>\s*<link rel="stylesheet"/);
 assert.match(scoreboard, /players\.length < 2 \|\| rows\.length !== players\.length/);
-assert.match(playerSearch, /bindLazyScoreboards\(feed, visible, userId\);\s*bindExpanders\(feed\)/);
+assert.match(playerSearch, /bindLazyScoreboards\(feed, pageMatches, userId\);\s*bindExpanders\(feed\)/);
 assert.match(playerSearch, /placeholder\.dataset\.state = "loading"/);
 assert.match(playerSearch, /placeholder\.dataset\.state = "error"/);
 assert.doesNotMatch(playerSearch, /bindLazyScoreboards\(target, internalMatches, userId\)/);
