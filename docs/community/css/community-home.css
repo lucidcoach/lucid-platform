@@ -74,6 +74,8 @@
 .weekly-ranking-position{color:var(--text-muted);font-size:11px;text-align:center}
 .weekly-ranking-row:first-child .weekly-ranking-position{color:var(--accent-hover)}
 .weekly-ranking-empty{padding:18px 0;color:var(--text-muted);font-size:11px}
+.scrims-view .award-mark{display:inline-flex;align-items:center;gap:2px;width:auto;height:auto;padding:0;border:0!important;background:transparent!important;font-size:8px;line-height:1}
+.scrims-view .award-mark svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.7}
 .scrims-topbar{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) minmax(420px,.9fr);align-items:center;gap:36px;max-width:100%;margin:30px 0 22px;padding:26px 32px;border:1px solid var(--border-default);border-radius:14px;background:var(--surface-1)}
 .scrims-topbar h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.035em}
 .scrims-topbar p,.scrims-view .recent-heading p{margin:7px 0 0;color:var(--text-muted);font-size:11px}

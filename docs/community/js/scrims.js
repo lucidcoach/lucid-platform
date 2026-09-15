@@ -3,7 +3,7 @@ import { loadGameAssets, championIcon } from "./assets.js?v=20260904r";
 import { initCommunityAuth } from "./auth.js?v=20260914header1";
 import { state } from "./state.js?v=20260904r";
 import { escapeHtml } from "./utils.js?v=20260904r";
-import { loadRecent } from "./pages/recentMatches.js?v=20260915reference1";
+import { loadRecent } from "./pages/recentMatches.js?v=20260915reference2";
 
 const home = new URL("../", location.href);
 const profileUrl = (userId, guildId) => {

@@ -30,10 +30,10 @@ assert.match(entry, /new URL\("scrims\/", COMMUNITY_ROOT_URL\)/);
 assert.match(entry, /switchView\("home"\)/);
 assert.match(entry, /window\.location\.replace\(recentUrl\(\)\)/);
 assert.doesNotMatch(scrims, /fetch\("\.\.\/index\.html"\)|document\.write/);
-assert.match(scrims, /js\/scrims\.js\?v=20260915reference1/);
+assert.match(scrims, /js\/scrims\.js\?v=20260915reference2/);
 assert.match(scrims, /id="weeklyRanking"/);
 assert.match(matchCard, /assets\/tiers/);
-assert.match(matchCard, /won \? `<span class="team-result-label">승리<\/span>` : ""/);
+assert.match(matchCard, /<small>\$\{team === "blue" \? "BLUE TEAM" : "RED TEAM"\}<\/small>\$\{won \? `<span class="team-result-label">승리<\/span>` : ""\}/);
 assert.doesNotMatch(matchCard, /team-result-label">\$\{won \? "승리" : "패배"/);
 
 console.log("community home and scrim route checks passed");

@@ -3,8 +3,8 @@ import { RECENT_PAGE_SIZE } from "../config.js?v=20260904r";
 import { state } from "../state.js?v=20260904r";
 import { $, escapeHtml } from "../utils.js?v=20260904r";
 import { renderLoading, showStatus } from "../view.js?v=20260904r";
-import { matchCard } from "../components/matchCard.js?v=20260915detailstate1";
-import { bindExpanders, scoreboard } from "../components/scoreboard.js?v=20260915reference1";
+import { matchCard } from "../components/matchCard.js?v=20260915reference2";
+import { bindExpanders, scoreboard } from "../components/scoreboard.js?v=20260915reference2";
 
 function bindLazyScoreboards(root, matches) {
   const rows = new Map(matches.map(match => [`${match.guildId}:${match.matchId}`, match]));
