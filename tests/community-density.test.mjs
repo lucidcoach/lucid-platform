@@ -58,6 +58,7 @@ assert.match(styles, /personal-match:is\(\.expanded,:not\(\.expanded\)\) \.perso
 assert.match(styles, /scoreboard-layout \.score-player-row\{[\s\S]+grid-template-columns:82px 158px 54px 84px 104px 90px 96px!important/);
 assert.match(styles, /scoreboard-layout \.score-identity\{width:158px!important;min-width:0!important;padding-left:0!important;gap:8px!important\}/);
 assert.match(styles, /html\{scrollbar-gutter:stable\}/);
+assert.match(styles, /personal-match:not\(\.expanded\)[\s\S]+personal-match\.expanded[\s\S]+font-family:inherit!important;[\s\S]+font-size:11px!important;[\s\S]+font-weight:550!important/);
 assert.match(playerMatchCard, /<div class="personal-summary">[\s\S]+<\/div><div class="build-detail-panel">[\s\S]+\$\{details\}<\/article>/);
 assert.match(playerSearch, /dataset\.state === "loading" \|\| placeholder\.dataset\.state === "loaded"/);
 assert.match(playerSearch, /dataset\.state = "error"/);

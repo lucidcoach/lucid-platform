@@ -132,3 +132,13 @@ body{overflow-x:clip}
   .scoreboard-layout .score-cs-cell{grid-column:3;grid-row:2;width:auto!important;min-width:0!important}
   .scoreboard-layout .score-damage-cell{grid-column:4;grid-row:2;width:68px!important;min-width:68px!important;max-width:68px!important}
 }
+
+/* Nicknames keep the same typography when a personal match opens. */
+.personal-match:not(.expanded) :is(.roster-profile-link,.scoreboard-profile-link),
+.personal-match.expanded :is(.roster-profile-link,.scoreboard-profile-link){
+  font-family:inherit!important;
+  font-size:11px!important;
+  font-weight:550!important;
+  line-height:1.25!important;
+  letter-spacing:normal!important;
+}
