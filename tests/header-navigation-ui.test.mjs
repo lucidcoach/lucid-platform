@@ -18,6 +18,7 @@ assert.ok(searchView < memory && memory < searchResults, "recent searches must b
 assert.equal(page.match(/class="search-memory-panel"/g)?.length, 1);
 assert.match(entry, /RECENT_SEARCH_LIMIT = 5/);
 assert.match(page, /communityProfileMenu/);
+assert.equal(page.match(/data-community-account/g)?.length, 1);
 assert.match(page, /nav-hierarchy-divider/);
 assert.doesNotMatch(page, /class="lucid-brand"[^>]*>\s*<img/);
 assert.doesNotMatch(coachPage, /class="lucid-brand"[^>]*>\s*<img/);
