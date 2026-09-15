@@ -8,6 +8,8 @@ const matchCard = read("../docs/community/js/components/matchCard.js");
 const scrims = read("../docs/community/scrims/index.html");
 
 assert.match(page, /id="homeView" class="content-view active/);
+assert.match(page, /<base id="communityBase" href="\.\/">/);
+assert.match(page, /communityBase[\s\S]*new URL\("\.\/",location\.href\)\.href/);
 assert.match(page, /id="homePlayerSearchForm"[\s\S]*대한민국 서버[\s\S]*id="homeRecentSearches"/);
 assert.match(page, /현재 진행 중인 내전[\s\S]*공개된 모집이 없습니다/);
 assert.match(entry, /new URL\("scrims\/", COMMUNITY_ROOT_URL\)/);
