@@ -88,6 +88,9 @@
 .scrims-view .score-award svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.7}
 .scrims-view .score-award.mvp,.scrims-view .score-tag.award.mvp{border:0;background:transparent;color:var(--accent-hover)}
 .scrims-view .score-award.ace,.scrims-view .score-tag.award.ace{border:0;background:transparent;color:var(--text-secondary)}
+html[data-theme="light"] .scrims-view .score-player-row{color:var(--text-primary)!important}
+html[data-theme="light"] .scrims-view :is(.scoreboard-profile-link,.score-kda-cell>strong,.score-cs-cell>strong,.score-damage-cell>strong){color:var(--text-primary)!important}
+html[data-theme="light"] .scrims-view :is(.score-kda-cell>span,.score-cs-cell em,.score-ai-cell>small){color:var(--text-muted)!important}
 
 @media(max-width:980px){
   .home-current-game{grid-template-columns:minmax(180px,.7fr) 1fr 24px 1fr;gap:12px}
