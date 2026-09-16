@@ -35,7 +35,7 @@ export function playerMatchCard(match, userId) {
   const hasDetails = match.source === "RIOT_API" ? Array.isArray(match.players) && match.players.length > 0 : Boolean(match.matchId && match.guildId);
   const details = match.source === "RIOT_API"
     ? scoreboard(match)
-    : `<div class="match-details"><div class="scoreboard-layout has-personal-analysis"><div class="scoreboard-teams" data-lazy-scoreboard></div><aside class="personal-analysis-panel" data-compact-analysis><div class="compact-analysis-empty"><strong>간단 분석</strong><span>상세를 펼치면 같은 라인 상대와 핵심 지표를 비교합니다.</span></div></aside></div></div>`;
+    : `<div class="match-details"><span class="mobile-score-scroll-hint">상세 지표는 좌우로 스크롤해 확인하세요.</span><div class="scoreboard-layout has-personal-analysis"><div class="scoreboard-teams" data-lazy-scoreboard></div><aside class="personal-analysis-panel" data-compact-analysis><div class="compact-analysis-empty"><strong>간단 분석</strong><span>상세를 펼치면 같은 라인 상대와 핵심 지표를 비교합니다.</span></div></aside></div></div>`;
   const resultText = `${won ? "승리" : "패배"}${mmrDelta ? ` (${mmrDelta > 0 ? "+" : ""}${mmrDelta})` : ""}`;
   return `<article class="personal-match ${won ? "win" : "loss"}${special ? " special-match" : ""}" data-analysis-user-id="${escapeHtml(userId)}" data-analysis-guild-id="${escapeHtml(match.guildId || "")}" data-analysis-match-id="${escapeHtml(match.matchId || "")}" data-analysis-champion="${escapeHtml(player.champion || "")}" data-analysis-role="${escapeHtml(player.role || "")}">
     <div class="personal-summary">
@@ -46,7 +46,7 @@ export function playerMatchCard(match, userId) {
       </div>
       <div class="personal-combat-group">
         <div class="focus-kda"><strong>${focusKda(player)}</strong><span class="personal-kda-value ${player.deaths === 0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span>${achievements ? `<div class="match-achievements kda-achievements">${achievements}</div>` : ""}</div>
-        <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
+        <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}${Number(player.aiScore) >= 100 ? " over-100" : ""}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
         <div class="personal-inventory">${renderInventoryGrid(player)}</div>
         <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
       </div>

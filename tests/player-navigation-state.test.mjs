@@ -18,9 +18,9 @@ assert.match(player, /button\.dataset\.rankSwitch=showRiot\?"internal":"riot"/);
 assert.match(player, /\[\["internal","내전"\],\["solo","솔랭"\],\["flex","자랭"\],\["normal","일반"\],\["aram","칼바람"\],\["all","전체"\]\]/);
 assert.match(player, /let category = "internal"/);
 assert.match(player, /const pageSize = 10/);
-assert.match(player, /visible\.slice\(\(page - 1\) \* pageSize, page \* pageSize\)/);
-assert.match(player, /class="personal-history-pagination"/);
-assert.match(player, /scrollIntoView\(\{ behavior:"smooth", block:"start" \}\)/);
+assert.match(player, /visible\.slice\(0, shown\)/);
+assert.match(player, /data-personal-more/);
+assert.match(player, /IntersectionObserver/);
 assert.match(profile, /\.personal-feed\{align-content:start;gap:10px;min-height:930px\}/);
 assert.match(profile, /input::\-webkit-search-decoration\{display:none\}/);
 

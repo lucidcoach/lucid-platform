@@ -31,8 +31,9 @@ assert.match(profile, /role-tier-main\{grid-template-columns:minmax\(104px,1\.15
 assert.match(profile, /summoner-profile-stack \.summoner-profile-icon\{width:60px!important;height:60px!important\}/);
 assert.match(profile, /profile-name-with-icon\{display:grid!important;grid-template-columns:62px minmax\(0,1fr\) auto!important/);
 assert.match(profile, /profile-rank-switcher>\.profile-section-title\{margin-bottom:10px\}/);
-assert.match(playerSearch, /profile-title-action-row">\$\{equippedTitleBadge\(p\.equippedTitle\)}<\/div><div class="profile-name-main/);
-assert.match(playerSearch, /<\/div><div class="profile-refresh-wrap profile-refresh-above-name">/);
+assert.match(playerSearch, /profile-name-main"><h1[^>]*>\$\{escapeHtml\(displayName\)\}/);
+assert.match(playerSearch, /profile-title-action-row">\$\{equippedTitleBadge\(p\.equippedTitle\)\}/);
+assert.match(playerSearch, /profile-refresh-wrap profile-refresh-above-name/);
 assert.match(playerSearch, /role-tier-result/);
 assert.doesNotMatch(playerSearch, /roleBadges\(/);
 assert.doesNotMatch(playerSearch, /profile-overview profile-overview-compact/);

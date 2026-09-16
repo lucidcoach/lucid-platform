@@ -3,8 +3,8 @@ import { API_BASE_URL, PLAYER_MATCH_LIMIT } from "../config.js?v=20260904r";
 import { championIcon } from "../assets.js?v=20260904r";
 import { $, escapeHtml, kdaClass, normalizeRoleKey, tierClass, tierLeaguePoints, winRateClass } from "../utils.js?v=20260911public1";
 import { renderLoading, switchView } from "../view.js?v=20260904r";
-import { playerMatchCard } from "../components/playerMatchCard.js?v=20260915airank1";
-import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260915reference2";
+import { playerMatchCard } from "../components/playerMatchCard.js?v=20260916player1";
+import { bindExpanders, renderScoreboardRows } from "../components/scoreboard.js?v=20260916player1";
 import { canAnalyzePlayer, canAnalyzeAllPlayers, getCurrentUser, isCommunityAdmin, isCommunityCoach, isCommunityServerAdmin } from "../auth.js?v=20260914header1";
 import { currentGameForPlayer, openCurrentGame } from "./liveMatch.js?v=20260915livefit1";
 
@@ -107,28 +107,23 @@ function roleTierBoard(rows = [], embedded = false) {
     ? rows
     : Object.entries(rows || {}).map(([role, value]) => ({ role, ...(value && typeof value === "object" ? value : { tier:value }) }));
   const byRole = new Map(list.map((row) => [normalizeRoleKey(row?.role || row?.position || row?.lane), row]));
-  return `<${embedded?"div":"section"} class="role-tier-board role-tier-compact" aria-label="라인별 내전 티어">
-    ${embedded?"":`<div class="profile-section-title"><strong>라인별 내전 티어</strong></div>`}
+  return `<${embedded?"div":"section"} class="role-tier-board role-tier-compact" aria-label="포지션별 티어">
+    ${embedded?"":`<div class="profile-section-title"><strong>포지션별 티어</strong><small>각 포지션의 티어를 선택해 기록을 확인합니다.</small></div>`}
     <div class="role-tier-list">${roles.map((role) => {
       const row = byRole.get(role) || { role, tier: "미배치", wins: 0, losses: 0 };
       const tier = String(row?.tier || row?.tierName || row?.rank || "").trim();
       const compactTier = tier.toUpperCase().replace(/[\s_-]+/g, "");
       const hasTier = Boolean(tier) && !["-","미배치","언랭","UNRANKED","UNPLACED","NONE","NULL"].includes(compactTier);
-      if (!hasTier) {
-        return `<div class="role-tier-line unplaced">
-          <span class="role-tier-role">${escapeHtml(role)}</span>
-          <span class="role-tier-unplaced">미배치</span>
-        </div>`;
-      }
       const lp = tierLeaguePoints(tier, row.mmr || row.score || 0);
-      return `<div class="role-tier-line ${tierClass(tier)}">
+      const games = Number(row.games ?? (Number(row.wins || 0) + Number(row.losses || 0)));
+      return `<button type="button" class="role-tier-line ${hasTier ? tierClass(tier) : "unplaced"}" data-profile-role="${role}" aria-pressed="false">
         <span class="role-tier-role">${escapeHtml(role)}</span>
         <span class="role-tier-main">
-          <span class="role-tier-rank"><img src="${escapeHtml(tierIcon(tier))}" alt="" loading="lazy"><strong class="tier-text ${tierClass(tier)}">${escapeHtml(tier)}</strong><span class="role-tier-mmr">${lp.toLocaleString()}점</span></span>
-          <span class="role-tier-record"><span class="role-tier-result"><em>${Number(row.wins || row.win || 0)}승</em><b>${Number(row.losses || row.loss || 0)}패</b></span><i>${Number(row.winRate || 0).toFixed(1)}%</i></span>
-          ${roleDelta(row)}
+          <span class="role-tier-rank">${hasTier ? `<img src="${escapeHtml(tierIcon(tier))}" alt="" loading="lazy">` : ""}<strong class="tier-text ${tierClass(tier)}">${escapeHtml(hasTier ? tier : "미배치")}</strong>${hasTier ? `<span class="role-tier-mmr">${lp.toLocaleString()}점</span>` : ""}</span>
+          <span class="role-tier-record"><span>${games}전</span><span class="role-tier-result"><em>${Number(row.wins || row.win || 0)}승</em> <b>${Number(row.losses || row.loss || 0)}패</b></span><i>${Number(row.winRate || 0).toFixed(1)}%</i></span>
+          <span class="role-tier-kda" data-role-kda="${role}">평균 KDA -</span>
         </span>
-      </div>`;
+      </button>`;
     }).join("")}</div>
   </${embedded?"div":"section"}>`;
 }
@@ -137,18 +132,19 @@ function championRow(row) {
   const icon = championIcon(row.champion);
   return `<div class="champion-stat-row">
     <div class="champion-stat-name">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : ""}<strong>${escapeHtml(row.champion)}</strong></div>
-    <span>${Number(row.games || 0)}게임</span>
+    <span>${Number(row.games || 0)}전 · ${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패</span>
     <span class="${winRateClass(row.winRate)}">${Number(row.winRate || 0).toFixed(1)}%</span>
     <span class="${kdaClass(row.kda)}">${Number(row.kda || 0).toFixed(2)}</span>
+    <span>${escapeHtml(row.role || "")}</span>
   </div>`;
 }
 
-function championStatsPanel(groups = {}, { detail = false } = {}) {
+function championStatsPanel(groups = {}, { detail = false, selectedRole = "미드" } = {}) {
   const tabs = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
   return `<section class="champion-stats-panel">
-    <div class="profile-section-title"><strong>챔피언 통계</strong></div>
+    <div class="profile-section-title"><strong>챔피언별 기록</strong></div>
     <div class="champion-role-tabs" role="tablist">${tabs.map((role, i) => `<button type="button" class="champion-role-tab${i === 0 ? " active" : ""}" data-champion-role="${escapeHtml(role)}">${escapeHtml(role)}</button>`).join("")}</div>
-    <div class="champion-stat-head"><span>챔피언</span><span>게임</span><span>승률</span><span>KDA</span></div>
+    <div class="champion-stat-head"><span>챔피언</span><span>전적</span><span>승률</span><span>KDA</span><span>포지션</span></div>
     <div class="champion-stat-list" data-champion-list></div>
     ${detail ? "" : `<button class="champion-more-button" type="button" data-champion-more hidden>더보기</button>`}
   </section>`;
@@ -160,7 +156,7 @@ function associateRow(row) {
 
 function associatesPanel(data = {}) {
   return `<section class="associate-stats-panel">
-    <div class="profile-section-title"><strong>최근 같이 게임한 소환사</strong></div>
+    <div class="profile-section-title"><strong>함께한 소환사</strong></div>
     <div class="associate-tabs" role="tablist"><button class="associate-tab active" type="button" data-associate-kind="allies">같은 팀</button><button class="associate-tab" type="button" data-associate-kind="opponents">상대 팀</button></div>
     <div class="associate-list" data-associate-list></div>
   </section>`;
@@ -171,7 +167,7 @@ function bindAssociates(target, data = {}) {
   const tabs = [...target.querySelectorAll("[data-associate-kind]")];
   if (!list) return;
   const render = (kind) => {
-    const rows = Array.isArray(data?.[kind]) ? data[kind].slice(0, 5) : [];
+    const rows = Array.isArray(data?.[kind]) ? data[kind] : [];
     list.innerHTML = rows.length ? rows.map(associateRow).join("") : `<div class="associate-empty">최근 20게임에서 2판 이상 만난 소환사가 없습니다.</div>`;
   };
   tabs.forEach((button) => button.addEventListener("click", () => {
@@ -226,13 +222,12 @@ function lpTrendContent(matches = [], userId, role = "전체") {
     <svg class="lp-trend-chart" viewBox="0 0 320 96" preserveAspectRatio="none" role="img" aria-label="최근 30일 LP 추이">
       <path class="lp-trend-grid" d="M8 16H312M8 50H312M8 84H312"/>
       ${points.length === 1 ? `<circle cx="160" cy="50" r="4"/>` : `<polyline points="${chartPoints}"/>`}
-    </svg>`;
+    </svg><div class="trend-dates"><span>${new Date(cutoff).toLocaleDateString("ko-KR")}</span><span>오늘</span></div>`;
 }
 
 function lpTrendPanel(matches = [], userId) {
   return `<section class="lp-trend-panel">
-    <div class="lp-trend-tabs" role="tablist" aria-label="포지션별 LP 추이">${LP_TREND_ROLES.map((role, index) => `<button type="button" class="lp-trend-tab${index === 0 ? " active" : ""}" data-lp-trend-role="${role}" role="tab" aria-selected="${index === 0}">${role}</button>`).join("")}</div>
-    <div data-lp-trend-content>${lpTrendContent(matches, userId)}</div>
+    <strong data-trend-title>미드 점수 변화</strong><div data-lp-trend-content>${lpTrendContent(matches, userId, "미드")}</div>
   </section>`;
 }
 
@@ -255,22 +250,24 @@ function bindChampionStats(target, groups = {}, options = {}) {
   const more = target.querySelector("[data-champion-more]");
   const tabs = [...target.querySelectorAll("[data-champion-role]")];
   if (!list) return;
-  let role = "전체";
+  let role = options.selectedRole || "미드";
 
   const render = () => {
     const rows = Array.isArray(groups?.[role]) ? groups[role] : [];
     const visible = options.detail ? rows : rows.slice(0, 6);
     list.innerHTML = visible.length
-      ? visible.map(championRow).join("")
+      ? visible.map((row) => championRow({ ...row, role })).join("")
       : `<div class="champion-stat-empty">해당 라인의 저장된 상세 기록이 없습니다.</div>`;
     if (more) more.hidden = rows.length <= 6;
   };
 
-  tabs.forEach((button) => button.addEventListener("click", () => {
-    tabs.forEach((item) => item.classList.toggle("active", item === button));
-    role = button.dataset.championRole || "전체";
+  const selectRole = (next) => {
+    tabs.forEach((item) => item.classList.toggle("active", item.dataset.championRole === next));
+    role = next;
     render();
-  }));
+  };
+  tabs.forEach((button) => button.addEventListener("click", () => selectRole(button.dataset.championRole || "전체")));
+  target.addEventListener("lucid:profile-role", (event) => selectRole(event.detail.role));
   more?.addEventListener("click", () => showChampionStatsPage(target, groups, options));
   render();
 }
@@ -322,7 +319,8 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
   if (!input || !feed) return;
   const pageSize = 10;
   let category = "internal";
-  let page = 1;
+  let shown = pageSize;
+  let observer;
 
   const render = () => {
     const query = String(input.value || "").trim().toLowerCase();
@@ -330,33 +328,66 @@ function bindPersonalHistoryFilters(target, matches = [], userId) {
       (!query || personalMatchChampion(match, userId).toLowerCase().includes(query))
       && (category === "all" || String(match.category || "internal") === category)
     );
-    const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
-    page = Math.min(page, pageCount);
-    const pageMatches = visible.slice((page - 1) * pageSize, page * pageSize);
-    const pager = pageCount > 1 ? `<nav class="personal-history-pagination" aria-label="전적 페이지"><button type="button" data-personal-page="${page - 1}" ${page === 1 ? "disabled" : ""}>이전</button><span>${page} / ${pageCount}</span><button type="button" data-personal-page="${page + 1}" ${page === pageCount ? "disabled" : ""}>다음</button></nav>` : "";
+    const pageMatches = visible.slice(0, shown);
+    const pager = shown < visible.length ? `<button class="champion-more-button" type="button" data-personal-more>전적 더 보기</button>` : "";
+    observer?.disconnect();
     feed.innerHTML = (pageMatches.map((match) => playerMatchCard(match, userId)).join("")
       || `<div class="empty-state"><strong>${query ? "검색한 챔피언의 저장된 경기 기록이 없습니다." : "상세 스탯이 있는 경기 기록이 없습니다."}</strong></div>`) + pager;
     bindLazyScoreboards(feed, pageMatches, userId);
     bindExpanders(feed);
     bindReplayDownloads(feed);
-    feed.querySelectorAll("[data-personal-page]").forEach((button) => button.addEventListener("click", () => {
-      page = Number(button.dataset.personalPage || 1);
-      render();
-      target.querySelector(".personal-history-toolbar")?.scrollIntoView({ behavior:"smooth", block:"start" });
-    }));
+    const more = feed.querySelector("[data-personal-more]");
+    if (more) {
+      more.addEventListener("click", () => {
+        observer?.disconnect();
+        const chunk = visible.slice(shown, shown + pageSize);
+        shown += chunk.length;
+        more.insertAdjacentHTML("beforebegin", chunk.map((match) => playerMatchCard(match, userId)).join(""));
+        const cards = [...feed.querySelectorAll(".personal-match")].slice(-chunk.length);
+        const added = { querySelectorAll:(selector) => selector === ".personal-match" ? cards : cards.flatMap((card) => [...card.querySelectorAll(selector)]) };
+        bindLazyScoreboards(added, chunk, userId);
+        bindExpanders(added);
+        bindReplayDownloads(added);
+        if (shown >= visible.length) more.remove();
+        else observer?.observe(more);
+      });
+      if (typeof IntersectionObserver !== "undefined") {
+        observer = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) { observer.disconnect(); more.click(); }
+        }, { rootMargin:"200px" });
+        observer.observe(more);
+      }
+    }
   };
 
-  const resetAndRender = () => { page = 1; render(); };
+  const resetAndRender = () => { shown = pageSize; render(); };
   input.addEventListener("input", resetAndRender);
   input.addEventListener("change", resetAndRender);
   target.querySelectorAll("[data-personal-queue]").forEach((button) => button.addEventListener("click", () => {
     category = button.dataset.personalQueue || "all";
-    page = 1;
+    shown = pageSize;
     target.querySelectorAll("[data-personal-queue]").forEach((item) => item.classList.toggle("active", item === button));
     history.replaceState({...history.state,playerView:{...(history.state?.playerView || {}),personalQueue:category}},"",window.location.href);
     render();
   }));
   render();
+}
+
+function roleDetails(matches, userId, role, tier) {
+  const rows = matches.map((match) => ({ match, player:(match.players || []).find((item) => String(item.userId) === String(userId)) }))
+    .filter(({ player }) => player && normalizeRoleKey(player.role || player.position || player.lane) === role);
+  const recent = rows.slice(0, 10), wins = recent.filter(({ player }) => player.result === "win").length;
+  const average = (key, digits = 1) => rows.length ? (rows.reduce((sum, { player }) => sum + Number(player[key] || 0), 0) / rows.length).toFixed(digits) : "-";
+  const streak = recent.length ? recent.findIndex(({ player }) => player.result !== recent[0].player.result) : 0;
+  const flow = recent.length ? `${streak < 0 ? recent.length : streak}연${recent[0].player.result === "win" ? "승" : "패"}` : "-";
+  const delta = Number(tier?.recent10Delta || 0), best = Math.max(0, ...rows.map(({ player }) => Number(player.afterMmr || player.mmr || 0)));
+  const maxRise = Math.max(0, ...rows.map(({ player }) => Number(player.mmrDelta || 0)));
+  return `<div class="role-detail-metrics">
+    <div><strong>${role} 최근 전적</strong><span>최근 ${recent.length}경기 ${wins}승 ${recent.length - wins}패</span><span>승률 <b>${recent.length ? `${(wins / recent.length * 100).toFixed(1)}%` : "-"}</b></span><span>최근 흐름 ${flow}</span></div>
+    <div><strong>${role} 플레이 지표</strong><span>평균 KDA <b>${average("kda", 2)}</b></span><span>평균 CS ${average("cs", 0)}</span><span>평균 AI 점수 ${average("aiScore")}</span></div>
+    <div><strong>${role} 점수 기록</strong><span>현재 점수 ${tier?.placed ? tierLeaguePoints(tier.tier, tier.mmr).toLocaleString() : "-"}점</span><span>최근 ${Number(tier?.recent10Games || 0)}경기 ${delta > 0 ? "+" : ""}${delta}점</span><span>최고 기록 ${best ? tierLeaguePoints(tier?.tier, best).toLocaleString() : "-"}점</span></div>
+    <div><strong>${role} 수상 기록</strong><span>MVP ${rows.filter(({ player }) => player.award === "MVP").length}회</span><span>ACE ${rows.filter(({ player }) => player.award === "ACE").length}회</span><span>최고 상승 +${maxRise}점</span></div>
+  </div>`;
 }
 
 function officialRanksPanel(rows = [], embedded = false) {
@@ -369,7 +400,7 @@ function officialRanksPanel(rows = [], embedded = false) {
 function profileRanksPanel(roleRows = [], officialRows = []) {
   const official = officialRanksPanel(officialRows, true);
   if (!official) return roleTierBoard(roleRows);
-  return `<section class="profile-rank-switcher"><div class="profile-section-title"><strong data-rank-switch-title>라인별 내전 티어</strong><button class="profile-favorite-button" style="margin-left:auto" type="button" data-rank-switch="riot" aria-label="Riot 공식 랭크 보기" title="Riot 공식 랭크 보기">⇄</button></div><div class="profile-rank-switcher-body"><div data-rank-panel="internal">${roleTierBoard(roleRows,true)}</div><div data-rank-panel="riot" hidden>${official}</div></div></section>`;
+  return `<section class="profile-rank-switcher"><div class="profile-section-title"><strong data-rank-switch-title>포지션별 티어</strong><button class="profile-favorite-button" style="margin-left:auto" type="button" data-rank-switch="riot" aria-label="Riot 공식 랭크 보기" title="Riot 공식 랭크 보기">⇄</button></div><div class="profile-rank-switcher-body"><div data-rank-panel="internal">${roleTierBoard(roleRows,true)}</div><div data-rank-panel="riot" hidden>${official}</div></div></section>`;
 }
 
 function bindRankSwitch(target) {
@@ -379,7 +410,7 @@ function bindRankSwitch(target) {
   button.addEventListener("click", () => {
     const showRiot = button.dataset.rankSwitch === "riot";
     target.querySelectorAll("[data-rank-panel]").forEach(panel=>{panel.hidden=panel.dataset.rankPanel!==(showRiot?"riot":"internal");});
-    title.textContent=showRiot?"Riot 공식 랭크":"라인별 내전 티어";
+    title.textContent=showRiot?"Riot 공식 랭크":"포지션별 티어";
     button.dataset.rankSwitch=showRiot?"internal":"riot";
     button.title=showRiot?"라인별 내전 티어 보기":"Riot 공식 랭크 보기";
     button.setAttribute("aria-label",button.title);
@@ -462,9 +493,16 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     const internalMatches = (data.matches || []).map((match) => ({ ...match, source:match.source || "LUCID_INTERNAL", category:"internal" }));
     const matches = [...internalMatches, ...(data.publicMatches || [])].sort((a,b) => new Date(b.time || 0) - new Date(a.time || 0));
     const p=data.player;
+    const identity = String(p.name || "");
+    const tagAt = identity.lastIndexOf("#");
+    const displayName = tagAt > 0 ? identity.slice(0, tagAt) : identity;
+    const displayTag = tagAt > 0 ? identity.slice(tagAt) : "";
     const scrimIconUrl = p.scrimIconPath ? `${API_BASE_URL.replace(/\/$/, "")}${p.scrimIconPath}` : "";
-    const scrimIcon = scrimIconUrl
-      ? `<img class="summoner-profile-icon" src="${escapeHtml(scrimIconUrl)}" alt="내전 레벨 아이콘">`
+    const titleIcon = p.equippedTitle?.iconSource === "custom" && p.equippedTitle.customIconUrl
+      ? `${API_BASE_URL.replace(/\/$/, "")}${p.equippedTitle.customIconUrl}`
+      : p.equippedTitle?.iconSource === "champion" ? championIcon(p.equippedTitle.championNames?.[0] || p.equippedTitle.championName) : "";
+    const scrimIcon = titleIcon || scrimIconUrl
+      ? `<img class="summoner-profile-icon" src="${escapeHtml(titleIcon || scrimIconUrl)}" alt="${escapeHtml(titleIcon ? "칭호 프로필" : "내전 레벨 아이콘")}">`
       : `<span class="summoner-profile-icon fallback" aria-label="내전 레벨 아이콘">${escapeHtml(p.scrimIconEmoji || "🎮")}</span>`;
     const profileIcon = scrimIcon;
     if ($("playerSearchInput")) $("playerSearchInput").value = p.name || "";
@@ -473,14 +511,17 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
     target.dataset.profileGuildId = String(guildId);
 
     window.dispatchEvent(new CustomEvent("lucid:player-opened", { detail: { name:p.name || "", userId:String(userId), guildId:String(guildId) } }));
-    target.innerHTML=`<section class="profile-dashboard-grid">
+    target.innerHTML=`<section class="profile-dashboard-grid profile-renewal">
       <div class="profile-left-column"><div class="profile-summary-panel">
-        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="${p.equippedTitle?.displayTitle?`장착 칭호 · ${escapeHtml(p.equippedTitle.displayTitle)}`:`내전 ${Number(p.scrimGames || 0)}경기 · 다음 레벨 ${Number(p.scrimNextLevelAt || 5)}경기`}"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}</div><div class="profile-name-main"><span class="tier-badge ${tierClass(p.tier)}">${escapeHtml(p.tier || "-")}</span><h1 title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h1></div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-live-button" type="button" data-profile-live hidden>● LIVE</button><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button><button class="profile-refresh-button" type="button" data-profile-refresh>전적 갱신</button></div></div></div>
-        ${profileRanksPanel(p.roleTiers || [],data.publicRanks || [])}
-      </div>${lpTrendPanel(internalMatches, userId)}</div>
-      ${championStatsPanel(p.championStats || {})}
+        <div class="profile-title-row"><div class="profile-name profile-name-with-icon"><span class="summoner-profile-stack" title="내전 ${Number(p.scrimGames || 0)}경기"><span class="summoner-level-text">Lv ${Number(p.scrimLevel || 1)}</span>${profileIcon}</span><div class="profile-identity-copy"><div class="profile-name-main"><h1 title="${escapeHtml(p.name)}">${escapeHtml(displayName)}${displayTag ? `<small>${escapeHtml(displayTag)}</small>` : ""}</h1><button class="profile-favorite-button${isFavoriteLocal(userId,guildId) ? " active" : ""}" type="button" data-profile-favorite aria-label="즐겨찾기" title="즐겨찾기">${isFavoriteLocal(userId,guildId) ? "★" : "☆"}</button></div><div class="profile-title-action-row">${equippedTitleBadge(p.equippedTitle)}</div><small>내전 ${Number(p.scrimGames || 0)}경기 · 서버 ${escapeHtml(String(guildId))}</small></div></div><div class="profile-refresh-wrap profile-refresh-above-name"><button class="profile-live-button" type="button" data-profile-live hidden>● LIVE</button><span class="profile-refresh-time">최근 경기 ${escapeHtml(matches[0]?.time ? new Date(matches[0].time).toLocaleString("ko-KR") : "기록 없음")}</span><button class="profile-refresh-button" type="button" data-profile-refresh>↻ 전적 갱신</button></div></div>
+      </div></div>
+      ${profileRanksPanel(p.roleTiers || [], data.publicRanks || [])}
+      <section class="role-detail-strip">${lpTrendPanel(internalMatches, userId)}<div data-role-details></div></section>
+      <div class="profile-record-grid">${championStatsPanel(p.championStats || {})}
       ${associatesPanel(p.recentAssociates || {})}
+      </div>
     </section>
+    <h2 class="personal-history-title">최근 전적</h2>
     ${personalHistoryFilters(matches, userId, guildId, p.name || "")}
     <div class="match-feed personal-feed" data-personal-match-feed></div>`;
 
@@ -488,10 +529,29 @@ export async function openPlayer(userId,guildId,{historyMode="push"}={}) {
       showChampionStatsPage(target, p.championStats || {}, { userId, guildId, name:p.name || "" }, false);
       return;
     }
-    bindChampionStats(target, p.championStats || {}, { userId, guildId, name:p.name || "" });
+    bindChampionStats(target, p.championStats || {}, { userId, guildId, name:p.name || "", selectedRole:"미드" });
     bindRankSwitch(target);
     bindAssociates(target, p.recentAssociates || {});
-    bindLpTrend(target, internalMatches, userId);
+    const roleButtons = [...target.querySelectorAll("[data-profile-role]")];
+    const selectProfileRole = (role) => {
+      roleButtons.forEach((button) => {
+        const selected = button.dataset.profileRole === role;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+      target.querySelector("[data-trend-title]").textContent = `${role} 점수 변화`;
+      target.querySelector("[data-lp-trend-content]").innerHTML = lpTrendContent(internalMatches, userId, role);
+      const tier = (p.roleTiers || []).find((row) => normalizeRoleKey(row.role) === role);
+      target.querySelector("[data-role-details]").innerHTML = roleDetails(internalMatches, userId, role, tier);
+      target.dispatchEvent(new CustomEvent("lucid:profile-role", { detail:{ role } }));
+    };
+    roleButtons.forEach((button) => button.addEventListener("click", () => selectProfileRole(button.dataset.profileRole)));
+    for (const button of roleButtons) {
+      const role = button.dataset.profileRole;
+      const rows = internalMatches.flatMap((match) => (match.players || []).filter((row) => String(row.userId) === String(userId) && normalizeRoleKey(row.role || row.position || row.lane) === role));
+      button.querySelector("[data-role-kda]").textContent = `평균 KDA ${rows.length ? (rows.reduce((sum, row) => sum + Number(row.kda || 0), 0) / rows.length).toFixed(2) : "-"}`;
+    }
+    selectProfileRole("미드");
     bindPersonalHistoryFilters(target, matches, userId);
     syncProfileLiveButton(target, userId, guildId);
     target.querySelector("[data-profile-live]")?.addEventListener("click", (event) => openCurrentGame(event.currentTarget.dataset.gameId));

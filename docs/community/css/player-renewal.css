@@ -1,0 +1,84 @@
+/* Player search and profile use the existing community data and theme tokens. */
+html:not([data-theme="light"]) #searchView{--page-bg:#101116;--surface-1:#15161b;--surface-2:#191a20;--surface-input:#191a20;--border-default:#292b32;--border-soft:#292b32;--text-primary:#e8e9ed;--text-secondary:#a2a6b0;--text-muted:#717680}
+.compact-community-search:has(~ #searchView.active){display:flex!important;align-items:center;justify-content:space-between;padding:24px 0;margin-bottom:16px;border-bottom:1px solid var(--border-soft)}
+.profile-search-heading{display:none}.compact-community-search:has(~ #searchView.active) .profile-search-heading{display:block}.profile-search-heading h1{margin:0;font-size:23px}.profile-search-heading p{margin:5px 0 0;color:var(--text-muted);font-size:12px}
+.compact-community-search:has(~ #searchView.active) .community-subtabs{display:none}
+.compact-community-search:has(~ #searchView.active) .player-search{position:relative;flex:0 1 490px;width:min(490px,54%);margin:0}
+.compact-community-search:has(~ #searchView.active) .search-control{display:flex;align-items:center;gap:0;height:42px;border:1px solid var(--border-default);border-radius:9px;background:var(--surface-input)}
+.compact-community-search:has(~ #searchView.active) .search-control:focus-within{border-color:var(--accent-primary);outline:1px solid var(--accent-primary)}
+.compact-community-search:has(~ #searchView.active) .search-control input{flex:1;min-width:0;height:100%;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;font-size:13px;padding:0 12px}
+.compact-community-search:has(~ #searchView.active) .search-control button{height:32px;border:0;background:transparent;color:var(--text-secondary);padding:0 12px;font-size:12px;font-weight:500}
+.compact-community-search:has(~ #searchView.active) .search-control button[type=submit]{margin-right:4px;border-radius:6px;background:var(--surface-hover);color:var(--text-primary)}
+.search-memory-toggle{display:none}.compact-community-search:has(~ #searchView.active) .search-memory-toggle{display:block}
+.compact-community-search .search-memory-panel[hidden]{display:none!important}
+.compact-community-search .search-memory-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:20;display:grid!important;grid-template-columns:1fr 1fr!important;width:min(490px,calc(100vw - 32px));max-height:280px;overflow:auto;margin:0!important;padding:12px;border:1px solid var(--border-default);border-radius:10px;background:var(--surface-1);box-shadow:0 12px 24px #0008}
+.compact-community-search .search-memory-column{min-width:0!important;grid-column:auto!important;background:transparent!important;border:0!important}
+.compact-community-search .search-memory-list{max-height:220px;overflow-y:auto!important;min-width:0}
+.compact-community-search .search-memory-open span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.compact-community-search .search-memory-row{min-width:0}
+#searchView .profile-renewal{display:block!important;min-width:0}
+#searchView .profile-renewal .profile-left-column{display:block!important}
+#searchView .profile-renewal .profile-summary-panel{padding:10px 0 18px!important;border:0!important;border-bottom:1px solid var(--border-default)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+#searchView .profile-renewal .profile-title-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px}
+#searchView .profile-renewal .profile-name-with-icon{display:flex!important;align-items:center!important;width:auto!important;flex:1;gap:12px!important}
+#searchView .profile-renewal .profile-name-main{display:flex!important;gap:10px!important;width:auto!important}
+#searchView .profile-renewal .profile-identity-copy{display:flex!important}
+#searchView .profile-renewal .profile-name-main h1{flex:0 1 auto!important;width:auto!important;font-size:22px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#searchView .profile-renewal .profile-identity-copy{display:flex;flex-direction:column;gap:4px}
+#searchView .profile-renewal .profile-identity-copy small{color:var(--text-muted);font-size:11px}
+#searchView .profile-renewal .profile-equipped-title{border:0;background:transparent;padding:0;font-size:12px;color:var(--text-secondary)}
+#searchView .profile-renewal .profile-refresh-wrap{display:flex!important;width:auto!important;align-items:center;flex:0 0 auto;gap:12px!important}
+#searchView .profile-renewal .profile-refresh-time{order:0!important;color:var(--text-muted)!important;font-size:11px!important}
+#searchView .profile-renewal .profile-favorite-button{width:28px!important;height:28px!important;flex:0 0 auto!important;margin:0!important}
+#searchView .profile-renewal .profile-refresh-button{height:34px!important;background:var(--surface-2)!important;color:var(--text-primary)!important;border:1px solid var(--border-default)!important}
+#searchView .profile-renewal .profile-rank-switcher{margin:24px 0 10px;padding:0;border:0;background:none;box-shadow:none}
+#searchView .profile-renewal .profile-rank-switcher-body{min-height:0!important}
+#searchView .profile-renewal .profile-section-title{margin:0 0 12px}.profile-renewal .profile-section-title strong{font-size:18px;font-weight:650}.profile-renewal .profile-section-title small{display:block;color:var(--text-muted);font-size:11px;margin-top:4px}
+#searchView .profile-renewal .role-tier-board{padding:0;border:0;background:transparent}
+#searchView .profile-renewal .role-tier-list{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px!important}
+#searchView .profile-renewal .role-tier-line{position:relative;display:block!important;min-width:0;min-height:130px!important;padding:14px!important;border:1px solid var(--border-default)!important;border-radius:11px;background:var(--surface-1)!important;color:var(--text-primary);text-align:left;cursor:pointer;box-shadow:none!important}
+#searchView .profile-renewal .role-tier-line.selected{border-color:#56476f!important}
+#searchView .profile-renewal .role-tier-line.selected:after{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent-primary)}
+#searchView .profile-renewal .role-tier-role{display:block!important;width:auto!important;height:auto!important;flex:none!important;font-size:11px!important;font-weight:600;margin-bottom:10px!important;color:var(--text-secondary)}
+#searchView .profile-renewal .role-tier-main{display:flex!important;flex-direction:column;align-items:stretch!important;gap:8px!important;width:100%;min-width:0}
+#searchView .profile-renewal .role-tier-rank{display:flex!important;align-items:center;gap:6px!important;min-width:0;white-space:nowrap}
+#searchView .profile-renewal .role-tier-rank img{flex:0 0 30px;width:30px!important;height:30px!important;object-fit:contain;margin:0!important}
+#searchView .profile-renewal .role-tier-rank .tier-text{width:auto!important;font-size:16px!important;overflow:hidden;text-overflow:ellipsis}
+#searchView .profile-renewal .role-tier-mmr{display:inline!important;width:auto!important;white-space:nowrap;font-size:11px!important;color:var(--text-secondary)!important;font-weight:500!important}
+#searchView .profile-renewal .role-tier-record{display:flex!important;justify-content:space-between!important;gap:4px!important;width:100%!important;min-width:0!important;padding-top:8px;border-top:1px solid var(--border-default);font-size:11px!important;color:var(--text-secondary)}
+#searchView .profile-renewal .role-tier-record :is(em,b,i){display:inline!important;width:auto!important;font-size:11px!important;font-weight:500!important;color:inherit!important}
+#searchView .profile-renewal .role-tier-kda{font-size:11px;color:var(--text-muted)}
+#searchView .profile-renewal .role-detail-strip{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,3.4fr);gap:0;min-height:122px;margin:10px 0 26px;padding:14px;border:1px solid var(--border-default);border-radius:11px;background:var(--surface-1)}
+#searchView .profile-renewal .lp-trend-panel{display:block;padding:0 12px 0 0;border:0;border-radius:0;background:none;box-shadow:none;min-width:0}
+#searchView .profile-renewal .lp-trend-panel>strong,.role-detail-metrics strong{display:block;margin-bottom:9px;font-size:12px;font-weight:600;color:var(--text-primary)}
+#searchView .profile-renewal .lp-trend-panel>[data-lp-trend-content]{display:block!important}
+#searchView .profile-renewal .lp-trend-chart{display:block;width:100%;height:44px!important;overflow:visible}
+#searchView .profile-renewal .lp-trend-chart polyline{fill:none;stroke:var(--accent-primary);stroke-width:2}
+#searchView .profile-renewal .lp-trend-grid{opacity:.2}.trend-dates{display:flex;justify-content:space-between;color:var(--text-muted);font-size:10px}
+#searchView .profile-renewal .role-detail-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:100%}
+#searchView .profile-renewal .role-detail-metrics>div{min-width:0;padding:0 12px;border-left:1px solid var(--border-default)}
+#searchView .profile-renewal .role-detail-metrics span{display:block;margin:5px 0;color:var(--text-secondary);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#searchView .profile-renewal .profile-record-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,3fr);gap:12px;margin-bottom:22px}
+#searchView .profile-renewal .profile-record-grid>section{min-width:0;margin:0;padding:16px;border:1px solid var(--border-default);border-radius:11px;background:var(--surface-1);box-shadow:none}
+#searchView .profile-renewal .champion-role-tabs{display:none}
+#searchView .profile-renewal .champion-stat-head,#searchView .profile-renewal .champion-stat-row{display:grid!important;grid-template-columns:minmax(110px,2fr) minmax(95px,1.2fr) 65px 55px 50px!important;gap:8px!important;min-width:0;padding:6px!important}
+#searchView .profile-renewal .champion-stat-row{min-height:42px}
+#searchView .profile-renewal .champion-stat-name{min-width:0}.profile-renewal .champion-stat-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#searchView .profile-renewal .associate-list{max-height:290px;overflow:auto}.profile-renewal .associate-row button{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#searchView .personal-history-title{font-size:18px;font-weight:650;margin:20px 0 10px}
+#searchView .personal-match{border-radius:10px;background:var(--surface-1);border-color:var(--border-default);box-shadow:none}
+#searchView .personal-match.win{border-left:2px solid #5c9eaf}#searchView .personal-match.loss{border-left:2px solid #c46c79}
+#searchView .personal-match:is(.win,.loss) .personal-summary{background-image:none!important;background-color:transparent!important}
+#searchView .personal-match .personal-summary{grid-template-columns:85px 100px minmax(280px,400px) minmax(0,1fr) 38px!important;min-height:76px!important}
+#searchView .personal-match .roster-player{min-width:0}#searchView .personal-match .roster-player img{width:15px;height:15px;object-fit:cover;border-radius:2px}#searchView .personal-match .roster-profile-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#searchView .personal-match .ai-score{display:inline-flex;align-items:center;justify-content:center;min-width:30px;min-height:26px;padding:3px 5px;border-radius:5px;overflow:hidden;box-shadow:none!important}
+#searchView .personal-match.special-match{box-shadow:none;border-color:var(--border-default)}
+#searchView .personal-match.special-match:after{content:none;animation:none}
+#searchView .personal-match .ai-score.over-100{background:#315e56;color:#e7fff7;box-shadow:inset 0 0 0 1px #70bba2!important}
+.mobile-score-scroll-hint{display:none}
+.score-name-line{display:flex;align-items:center;gap:3px;min-width:0;overflow:hidden}
+.score-name-line .scoreboard-profile-link{flex:0 1 auto;width:auto!important;min-width:0!important;max-width:100%!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-name-line :is(.score-award,.score-tag){flex:0 0 auto;margin:0;font-size:9px}
+@media(max-width:1100px){#searchView .profile-renewal .role-tier-list{gap:7px!important}#searchView .profile-renewal .role-tier-line{padding:10px!important}#searchView .profile-renewal .role-tier-record{flex-wrap:wrap}}
+@media(max-width:800px){#searchView .profile-renewal .role-tier-list{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}#searchView .profile-renewal .role-tier-line{flex:0 0 175px;scroll-snap-align:start}#searchView .profile-renewal .role-detail-strip{grid-template-columns:1fr 1fr}#searchView .profile-renewal .role-detail-metrics{grid-template-columns:1fr 1fr;row-gap:12px}#searchView .profile-renewal .profile-record-grid{grid-template-columns:1fr}#searchView .personal-match .personal-summary{grid-template-columns:80px 90px minmax(0,1fr) 36px!important}#searchView .personal-match .roster-mini{grid-column:1/-1}}
+@media(max-width:620px){.compact-community-search:has(~ #searchView.active){display:block!important;padding:16px 0}.compact-community-search:has(~ #searchView.active) .player-search{width:100%;margin-top:14px}#searchView .profile-renewal .profile-title-row{align-items:flex-start!important;flex-direction:column}#searchView .profile-renewal .profile-refresh-wrap{flex-wrap:wrap}#searchView .profile-renewal .role-detail-strip{display:block}#searchView .profile-renewal .role-detail-metrics{margin-top:14px;grid-template-columns:1fr 1fr}#searchView .profile-renewal .role-detail-metrics>div{padding:8px;border-top:1px solid var(--border-default);border-left:0}#searchView .profile-renewal .champion-stat-head,#searchView .profile-renewal .champion-stat-row{grid-template-columns:minmax(85px,1.5fr) minmax(75px,1.1fr) 50px 40px 35px!important;gap:3px!important;font-size:10px}#searchView .personal-match .personal-summary{grid-template-columns:76px 70px minmax(0,1fr) 36px!important;gap:4px!important}#searchView .personal-match .personal-combat-group{width:auto!important;min-width:0!important;max-width:none!important;grid-template-columns:1fr 45px!important;grid-column:3}#searchView .personal-match .personal-inventory,#searchView .personal-match .focus-cs{grid-column:1/-1}#searchView .personal-match .roster-mini{grid-column:1/-1}}

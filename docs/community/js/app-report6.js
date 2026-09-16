@@ -3,7 +3,7 @@ import { $ } from "./utils.js?v=20260904r";
 import { switchView } from "./view.js?v=20260914brand2";
 import { loadRecent } from "./pages/recentMatches.js?v=20260915reference2";
 import { state } from "./state.js?v=20260904r";
-import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260915historypage1";
+import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260916player1";
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260914header1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260915rankingpage1";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260914header1";
@@ -256,6 +256,18 @@ function openCommunityAccount({push=true}={}) {
 
 function bindEvents() {
   applyTheme(document.documentElement.dataset.theme);
+  const memoryToggle = $("searchMemoryToggle"), memoryPanel = $("searchMemoryPanel");
+  const closeMemory = () => { memoryPanel.hidden = true; memoryToggle.setAttribute("aria-expanded", "false"); };
+  memoryToggle.addEventListener("click", () => {
+    memoryPanel.hidden = !memoryPanel.hidden;
+    memoryToggle.setAttribute("aria-expanded", String(!memoryPanel.hidden));
+  });
+  document.addEventListener("click", (event) => {
+    if (!memoryPanel.hidden && !$("playerSearchForm").contains(event.target)) closeMemory();
+  });
+  $("playerSearchForm").addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { closeMemory(); memoryToggle.focus(); }
+  });
   $("communityThemeBtn")?.addEventListener("click",()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark"));
   const moreMenu=document.querySelector(".nav-more");
   const closeMoreMenu=()=>{if(moreMenu)moreMenu.open=false;};
