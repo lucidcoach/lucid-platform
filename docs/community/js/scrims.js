@@ -50,12 +50,11 @@ async function loadWeeklyRanking() {
     target.innerHTML = rows.length ? rows.map((row, index) =>
       `<div class="weekly-ranking-row"><span class="weekly-ranking-position">${index + 1}</span><span class="weekly-ranking-avatar" aria-label="칭호 없음">◇</span><button type="button" data-player-profile data-user-id="${escapeHtml(row.userId)}" data-guild-id="${escapeHtml(row.guildId)}">${escapeHtml(row.name)}<small>${escapeHtml(row.tier)}</small></button><strong>${row.score > 0 ? "+" : ""}${Math.round(row.score)}점</strong></div>`
     ).join("") : `<div class="weekly-ranking-empty">최근 7일 랭킹 데이터가 없습니다.</div>`;
-    await Promise.all(rows.map(async (row, index) => {
-      let title;
-      try {
-        const data = await apiGet(`/api/community/players/${encodeURIComponent(row.userId)}?guildId=${encodeURIComponent(row.guildId)}&limit=1`);
-        title = data.player?.equippedTitle;
-      } catch (_) { return; }
+    if (!rows.length) return;
+    const playersQuery = rows.map((row) => `${row.guildId}:${row.userId}`).join(",");
+    const titleData = await apiGet(`/api/community/ranking-titles?players=${encodeURIComponent(playersQuery)}`).catch(() => ({ titles:[] }));
+    rows.forEach((row, index) => {
+      const title = titleData.titles?.[index];
       const titleIcon = title?.iconSource === "custom" && title.customIconUrl
         ? `<img class="weekly-title-icon" src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="${escapeHtml(title.displayTitle || "칭호")}">`
         : title?.iconSource === "champion" && championIcon(title.championNames?.[0] || title.championName)
@@ -66,7 +65,7 @@ async function loadWeeklyRanking() {
         avatar.innerHTML = titleIcon;
         avatar.setAttribute("aria-label", title.displayTitle || "칭호");
       }
-    }));
+    });
   } catch (_) {
     target.innerHTML = `<div class="weekly-ranking-empty">주간 랭킹을 불러오지 못했습니다.</div>`;
   }
