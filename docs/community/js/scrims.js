@@ -16,6 +16,11 @@ const profileUrl = (userId, guildId) => {
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("coach-theme", theme);
+  const button = document.getElementById("communityThemeBtn");
+  button.textContent = theme === "dark" ? "☀" : "🌙";
+  button.setAttribute("aria-pressed", String(theme === "dark"));
+  button.title = theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환";
+  document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#121212" : "#f6f7f9";
 }
 
 function matchTime(value) {
@@ -50,6 +55,7 @@ async function loadWeeklyRanking() {
   }
 }
 
+setTheme(document.documentElement.dataset.theme);
 document.getElementById("communityThemeBtn")?.addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
 document.getElementById("scrimsSearchForm")?.addEventListener("submit", (event) => {
   event.preventDefault();
