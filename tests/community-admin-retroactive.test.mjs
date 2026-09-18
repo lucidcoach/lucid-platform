@@ -12,5 +12,10 @@ assert.match(source, /retroactive-rofl\/apply/);
 assert.match(source, /confirmNewMatch:completeMissing/);
 assert.match(source, /기존 승패\/MMR은 유지/);
 assert.match(source, /participantMapped/);
+assert.match(source, /data-retro-reinspect/);
+assert.match(source, /retroactive-rofl\/reinspect/);
+assert.match(source, /data-retro-mode="new"/);
+assert.match(source, /data-retro-mode="replace"/);
+assert.match(fs.readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8"), /communityAdmin\.js\?v=20260918aramrecovery2/);
 
 console.log("community admin retroactive ROFL checks passed");
