@@ -3,6 +3,13 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 
 const source = readFileSync(new URL("../docs/community/js/pages/playerSearch.js", import.meta.url), "utf8");
+const chooseRole = source.slice(source.indexOf("function mostPlayedRole("), source.indexOf("function bindLpTrend("));
+const mostPlayedRole = runInNewContext(`${chooseRole}; mostPlayedRole`, { normalizeRoleKey: (role) => role || "" });
+const roles = [{ role:"탑", games:12 }, { role:"미드", games:4 }, { role:"정글", games:8 }];
+assert.equal(mostPlayedRole(roles), "탑");
+assert.equal(mostPlayedRole([{ role:"탑", games:0 }, { role:"미드", games:0 }], [{ players:[{ userId:"1", role:"탑" }] }], "1"), "탑");
+assert.equal(mostPlayedRole([]), "미드");
+assert.match(source, /selectProfileRole\(defaultRole\)/);
 const details = source.slice(source.indexOf("function roleDetails("), source.indexOf("function officialRanksPanel("));
 const roleDetails = runInNewContext(`${details}; roleDetails`, {
   normalizeRoleKey: (role) => role,

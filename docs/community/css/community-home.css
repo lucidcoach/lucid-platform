@@ -67,7 +67,9 @@
 .weekly-ranking-panel>p{margin:5px 0 16px;color:var(--text-muted);font-size:11px}
 .weekly-ranking-list{border-top:1px solid var(--border-soft)}
 .weekly-ranking-row{display:grid;grid-template-columns:20px 34px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:58px;border-bottom:1px solid var(--border-soft)}
-.weekly-ranking-row>img{width:34px;height:34px;border-radius:4px;object-fit:cover}
+.weekly-ranking-avatar{position:relative;width:34px;height:34px}
+.weekly-ranking-avatar>img:first-child{width:34px;height:34px;border-radius:4px;object-fit:cover}
+.weekly-ranking-avatar>.weekly-title-icon{position:absolute;right:-5px;bottom:-5px;box-sizing:border-box;display:grid;place-items:center;width:17px;height:17px;border:2px solid var(--page-bg);border-radius:50%;background:var(--page-bg);object-fit:cover;font-size:11px}
 .weekly-ranking-row button{min-width:0;overflow:hidden;padding:0;border:0;background:transparent;color:var(--text-primary);font:inherit;text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 .weekly-ranking-row small{display:block;margin-top:2px;color:var(--text-muted);font-size:9px}
 .weekly-ranking-row>strong{font-size:11px;font-weight:600;white-space:nowrap}

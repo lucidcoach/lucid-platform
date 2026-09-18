@@ -1,4 +1,5 @@
 import { apiGet } from "./api.js?v=20260904r";
+import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadGameAssets, championIcon } from "./assets.js?v=20260904r";
 import { initCommunityAuth } from "./auth.js?v=20260914header1";
 import { state } from "./state.js?v=20260904r";
@@ -48,8 +49,21 @@ async function loadWeeklyRanking() {
     const rows = [...players.values()].sort((a, b) => b.score - a.score).slice(0, 5);
     target.innerHTML = rows.length ? rows.map((row, index) => {
       const icon = championIcon(row.champion);
-      return `<div class="weekly-ranking-row"><span class="weekly-ranking-position">${index + 1}</span>${icon ? `<img src="${escapeHtml(icon)}" alt="${escapeHtml(row.champion)}">` : `<span></span>`}<button type="button" data-player-profile data-user-id="${escapeHtml(row.userId)}" data-guild-id="${escapeHtml(row.guildId)}">${escapeHtml(row.name)}<small>${escapeHtml(row.tier)}</small></button><strong>${row.score > 0 ? "+" : ""}${Math.round(row.score)}점</strong></div>`;
+      return `<div class="weekly-ranking-row"><span class="weekly-ranking-position">${index + 1}</span><span class="weekly-ranking-avatar">${icon ? `<img src="${escapeHtml(icon)}" alt="${escapeHtml(row.champion)}">` : ""}</span><button type="button" data-player-profile data-user-id="${escapeHtml(row.userId)}" data-guild-id="${escapeHtml(row.guildId)}">${escapeHtml(row.name)}<small>${escapeHtml(row.tier)}</small></button><strong>${row.score > 0 ? "+" : ""}${Math.round(row.score)}점</strong></div>`;
     }).join("") : `<div class="weekly-ranking-empty">최근 7일 랭킹 데이터가 없습니다.</div>`;
+    await Promise.all(rows.map(async (row, index) => {
+      let title;
+      try {
+        const data = await apiGet(`/api/community/players/${encodeURIComponent(row.userId)}?guildId=${encodeURIComponent(row.guildId)}&limit=1`);
+        title = data.player?.equippedTitle;
+      } catch (_) { return; }
+      const titleIcon = title?.iconSource === "custom" && title.customIconUrl
+        ? `<img class="weekly-title-icon" src="${escapeHtml(`${API_BASE_URL.replace(/\/$/, "")}${title.customIconUrl}`)}" alt="${escapeHtml(title.displayTitle || "칭호")}">`
+        : title?.iconSource === "champion" && championIcon(title.championNames?.[0] || title.championName)
+          ? `<img class="weekly-title-icon" src="${escapeHtml(championIcon(title.championNames?.[0] || title.championName))}" alt="${escapeHtml(title.displayTitle || "칭호")}">`
+          : title?.iconSource === "emoji" && title.iconEmoji ? `<span class="weekly-title-icon" title="${escapeHtml(title.displayTitle || "칭호")}">${escapeHtml(title.iconEmoji)}</span>` : "";
+      if (titleIcon && target.isConnected) target.querySelectorAll(".weekly-ranking-avatar")[index]?.insertAdjacentHTML("beforeend", titleIcon);
+    }));
   } catch (_) {
     target.innerHTML = `<div class="weekly-ranking-empty">주간 랭킹을 불러오지 못했습니다.</div>`;
   }
