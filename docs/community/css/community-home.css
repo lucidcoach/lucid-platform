@@ -56,6 +56,7 @@
 .recruitment-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .recruitment-card{min-height:168px;padding:20px;background:var(--surface-1)}
 .recruitment-card.is-preview{background:var(--surface-1)}
+.recruitment-card .recruitment-status.is-full{border-color:var(--border-default);background:var(--surface-2);color:var(--text-secondary)}
 .recruitment-card-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto}
 .recruitment-join{width:max-content;color:var(--accent-hover);font-size:12px;text-decoration:none}
 .recruitment-join:hover{text-decoration:underline}

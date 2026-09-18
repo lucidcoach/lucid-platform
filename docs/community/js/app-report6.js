@@ -7,11 +7,11 @@ import { openPlayer, searchPlayers } from "./pages/playerSearch.js?v=20260918mai
 import { applyAnalysisRoute, bindAnalysisPage, openAnalysisFromMatch, renderCompactMatchAnalysis } from "./pages/gameAnalysisReport6.js?v=20260914header1";
 import { bindRankingPage, loadRankings } from "./pages/ranking.js?v=20260915rankingpage1";
 import { hasCommunityAdminAccess, renderCommunityAdmin, syncAdminAccess } from "./pages/communityAdmin.js?v=20260914header1";
-import { renderMileage } from "./pages/mileage.js?v=20260914header1";
+import { renderMileage } from "./pages/mileage.js?v=20260918roflreward1";
 import { initCommunityAuth, canAnalyzePlayer, getCurrentUser, getAnalysisIdentity, getRiotAccounts, isCommunityAdmin, isCommunityCoach, canAnalyzeAllPlayers } from "./auth.js?v=20260914header1";
 import { API_BASE_URL } from "./config.js?v=20260904d";
 import { loadLiveMatch } from "./pages/liveMatch.js?v=20260915reference6";
-import { loadRecruitments } from "./pages/recruitment.js?v=20260915waiting1";
+import { loadRecruitments } from "./pages/recruitment.js?v=20260918full1";
 
 
 const RECENT_SEARCH_KEY = "lucid-community-recent-searches-v2";

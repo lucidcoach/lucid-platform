@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
+
+const source = readFileSync(new URL("../docs/community/js/pages/recruitment.js", import.meta.url), "utf8")
+  .replace(/^import .*;\r?\n/gm, "")
+  .replace("export async function loadRecruitments()", "async function loadRecruitments()");
+const card = vm.runInNewContext(`${source}\nqueueCard`, { escapeHtml: String });
+const full = card({ title: "칼바람", queueKey: "aram", participantCount: 10, capacity: 10, joinUrl: "https://discord.com" });
+assert.match(full, /마감/);
+assert.doesNotMatch(full, /모집 중|참가하기/);
+assert.match(card({ participantCount: 9, capacity: 10, joinUrl: "https://discord.com" }), /모집 중|참가하기/);

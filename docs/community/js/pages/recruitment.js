@@ -23,15 +23,16 @@ function queueCard(queue) {
   const count = Number(queue.participantCount || 0);
   const waiting = Number(queue.waitingCount || 0);
   const capacity = Number(queue.capacity || 0);
+  const full = capacity > 0 && count >= capacity;
   const type = queue.panelType === "event" ? "이벤트" : queue.queueType === "tournament" ? "토너먼트" : "일반 내전";
   const positions = Array.isArray(queue.requiredPositions) ? queue.requiredPositions.filter(Boolean) : [];
   return `<article class="recruitment-card">
-    <div class="recruitment-card-badges"><span class="recruitment-status">모집 중</span></div>
+    <div class="recruitment-card-badges"><span class="recruitment-status${full ? " is-full" : ""}">${full ? "마감" : "모집 중"}</span></div>
     <time>${esc(scheduleText(queue))}</time>
     <h3>${esc(queue.title || "내전 모집")}</h3>
     <p>${esc(type)} · ${esc(formatText(queue))}</p>
     <div class="recruitment-card-foot"><strong>참가 인원 ${count}${capacity ? ` / ${capacity}` : ""}명${waiting ? ` · 대기 ${waiting}명` : ""}</strong>${positions.length ? `<span>${positions.map((position)=>`${esc(position)} 필요`).join(" · ")}</span>` : ""}</div>
-    ${queue.joinUrl ? `<a class="recruitment-join" href="${esc(queue.joinUrl)}" target="_blank" rel="noopener noreferrer">참가하기 →</a>` : ""}
+    ${!full && queue.joinUrl ? `<a class="recruitment-join" href="${esc(queue.joinUrl)}" target="_blank" rel="noopener noreferrer">참가하기 →</a>` : ""}
   </article>`;
 }
 
