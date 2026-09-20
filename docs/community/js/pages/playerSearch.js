@@ -132,19 +132,18 @@ function championRow(row) {
   const icon = championIcon(row.champion);
   return `<div class="champion-stat-row">
     <div class="champion-stat-name">${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : ""}<strong>${escapeHtml(row.champion)}</strong></div>
-    <span>${Number(row.games || 0)}전 · ${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패</span>
-    <span class="${winRateClass(row.winRate)}">${Number(row.winRate || 0).toFixed(1)}%</span>
+    <span>${Number(row.games || 0)}전</span>
+    <span class="${winRateClass(row.winRate)}"><b>${Number(row.wins || 0)}승 ${Number(row.losses || 0)}패</b><small>${Number(row.winRate || 0).toFixed(1)}%</small></span>
     <span class="${kdaClass(row.kda)}">${Number(row.kda || 0).toFixed(2)}</span>
-    <span>${escapeHtml(row.role || "")}</span>
   </div>`;
 }
 
-function championStatsPanel(groups = {}, { detail = false, selectedRole = "미드" } = {}) {
+function championStatsPanel(groups = {}, { detail = false, selectedRole = "전체" } = {}) {
   const tabs = ["전체", "탑", "정글", "미드", "원딜", "서폿"];
   return `<section class="champion-stats-panel">
     <div class="profile-section-title"><strong>챔피언별 기록</strong></div>
-    <div class="champion-role-tabs" role="tablist">${tabs.map((role, i) => `<button type="button" class="champion-role-tab${i === 0 ? " active" : ""}" data-champion-role="${escapeHtml(role)}">${escapeHtml(role)}</button>`).join("")}</div>
-    <div class="champion-stat-head"><span>챔피언</span><span>전적</span><span>승률</span><span>KDA</span><span>포지션</span></div>
+    <div class="champion-role-tabs" role="tablist">${tabs.map((role) => `<button type="button" class="champion-role-tab${role === selectedRole ? " active" : ""}" data-champion-role="${escapeHtml(role)}">${escapeHtml(role)}</button>`).join("")}</div>
+    <div class="champion-stat-head"><span>챔피언</span><span>플레이</span><span>승률</span><span>KDA</span></div>
     <div class="champion-stat-list" data-champion-list></div>
     ${detail ? "" : `<button class="champion-more-button" type="button" data-champion-more hidden>더보기</button>`}
   </section>`;
@@ -167,7 +166,7 @@ function bindAssociates(target, data = {}) {
   const tabs = [...target.querySelectorAll("[data-associate-kind]")];
   if (!list) return;
   const render = (kind) => {
-    const rows = Array.isArray(data?.[kind]) ? data[kind] : [];
+    const rows = Array.isArray(data?.[kind]) ? data[kind].slice(0, 6) : [];
     list.innerHTML = rows.length ? rows.map(associateRow).join("") : `<div class="associate-empty">최근 20게임에서 2판 이상 만난 소환사가 없습니다.</div>`;
   };
   tabs.forEach((button) => button.addEventListener("click", () => {
@@ -186,7 +185,7 @@ function showChampionStatsPage(target, groups, { userId, guildId, name }, push =
     url.searchParams.set("champions", "1");
     history.pushState({}, "", `${url.pathname}${url.search}`);
   }
-  target.innerHTML = `<section class="champion-stats-page"><div class="champion-stats-page-head"><button class="ghost-button" type="button" data-champion-back>← 프로필</button><div><p class="section-kicker">CHAMPION STATISTICS</p><h1>${escapeHtml(name || "내")} 챔피언 통계</h1></div></div>${championStatsPanel(groups, { detail:true })}</section>`;
+  target.innerHTML = `<section class="champion-stats-page"><div class="champion-stats-page-head"><button class="ghost-button" type="button" data-champion-back>← 프로필</button><h1>${escapeHtml(name || "내")} 챔피언 통계</h1></div>${championStatsPanel(groups, { detail:true })}</section>`;
   bindChampionStats(target, groups, { detail:true });
   target.querySelector("[data-champion-back]")?.addEventListener("click", () => history.back());
 }
@@ -263,7 +262,7 @@ function bindChampionStats(target, groups = {}, options = {}) {
   const more = target.querySelector("[data-champion-more]");
   const tabs = [...target.querySelectorAll("[data-champion-role]")];
   if (!list) return;
-  let role = options.selectedRole || "미드";
+  let role = options.selectedRole || "전체";
 
   const render = () => {
     const rows = Array.isArray(groups?.[role]) ? groups[role] : [];

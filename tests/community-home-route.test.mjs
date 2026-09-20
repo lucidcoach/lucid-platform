@@ -29,7 +29,7 @@ assert.match(entry, /new URL\("scrims\/", COMMUNITY_ROOT_URL\)/);
 assert.match(entry, /switchView\("home"\)/);
 assert.match(entry, /window\.location\.replace\(recentUrl\(\)\)/);
 assert.doesNotMatch(scrims, /fetch\("\.\.\/index\.html"\)|document\.write/);
-assert.match(scrims, /js\/scrims\.js\?v=20260915reference4/);
+assert.match(scrims, /js\/scrims\.js\?v=20260918titlebulk1/);
 assert.match(scrims, /id="weeklyRanking"/);
 assert.match(matchCard, /assets\/tiers/);
 assert.match(matchCard, /<small>\$\{team === "blue" \? "BLUE TEAM" : "RED TEAM"\}<\/small>\$\{won \? `<span class="team-result-label">승리<\/span>` : ""\}/);

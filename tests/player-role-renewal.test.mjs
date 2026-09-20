@@ -10,6 +10,11 @@ assert.equal(mostPlayedRole(roles), "탑");
 assert.equal(mostPlayedRole([{ role:"탑", games:0 }, { role:"미드", games:0 }], [{ players:[{ userId:"1", role:"탑" }] }], "1"), "탑");
 assert.equal(mostPlayedRole([]), "미드");
 assert.match(source, /selectProfileRole\(defaultRole\)/);
+assert.match(source, /selectedRole = "전체"/);
+assert.match(source, /<span>플레이<\/span><span>승률<\/span><span>KDA<\/span>/);
+assert.doesNotMatch(source, /<span>포지션<\/span>/);
+assert.match(source, /data\[kind\]\.slice\(0, 6\)/);
+assert.doesNotMatch(source, /CHAMPION STATISTICS/);
 const details = source.slice(source.indexOf("function roleDetails("), source.indexOf("function officialRanksPanel("));
 const roleDetails = runInNewContext(`${details}; roleDetails`, {
   normalizeRoleKey: (role) => role,

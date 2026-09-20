@@ -42,7 +42,7 @@ assert.match(auth, /preferredDisplayName \|\| riotAccounts\[0\]/);
 for (const token of ["--surface-hover", "--surface-active", "--primary-hover", "--primary-active", "--nav-hover", "--focus-ring"]) assert.match(tokens, new RegExp(token));
 assert.match(profile, /searchParams\.set\("champions", "1"\)/);
 assert.match(profile, /rows\.slice\(0, 6\)/);
-assert.match(profile, /Array\.isArray\(data\?\.\[kind\]\) \? data\[kind\] : \[\]/);
+assert.match(profile, /Array\.isArray\(data\?\.\[kind\]\) \? data\[kind\]\.slice\(0, 6\) : \[\]/);
 assert.match(profile, /function lpTrendPanel/);
 assert.match(profile, /player\?\.afterMmr \|\| player\?\.mmr/);
 assert.match(profile, /LP_TREND_ROLES = \["전체", "탑", "정글", "미드", "원딜", "서폿"\]/);

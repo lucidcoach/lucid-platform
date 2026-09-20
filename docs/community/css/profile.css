@@ -1976,3 +1976,34 @@
 .personal-actions :is(.build-toggle,.personal-expand,.replay-download):disabled{border-color:var(--border-soft);background:var(--surface);color:var(--text-muted);cursor:not-allowed}
 .personal-match :is(.roster-profile-link,.scoreboard-profile-link){font-size:11px!important;font-weight:550!important;line-height:1.25!important;transform:none!important}
 [data-lazy-scoreboard][data-state="loading"],[data-lazy-scoreboard][data-state="error"]{min-height:86px;display:grid;place-items:center;color:var(--text-muted);font-size:12px}
+
+/* Champion records: the active role already supplies position context. */
+.profile-dashboard-grid .champion-stat-head,
+.profile-dashboard-grid .champion-stat-row,
+.profile-champion-panel .champion-stat-head,
+.profile-champion-panel .champion-stat-row{
+  grid-template-columns:minmax(135px,1fr) 52px minmax(92px,auto) 52px!important;
+}
+.champion-stats-page .champion-stat-head,
+.champion-stats-page .champion-stat-row{
+  grid-template-columns:minmax(220px,1fr) 90px minmax(150px,auto) 90px!important;
+}
+.champion-stat-row>span:nth-child(3){display:flex;align-items:baseline;justify-content:flex-start;gap:7px;white-space:nowrap}
+.champion-stat-row>span:nth-child(3) b{color:var(--text-primary);font-size:inherit}
+.champion-stat-row>span:nth-child(3) small{color:inherit;font-size:inherit;font-weight:850}
+.associate-list{overflow:visible!important;max-height:none!important}
+.associate-row button{color:var(--text-primary)!important}
+
+/* Carry the match result across the card instead of relying on the left label. */
+.personal-match.win{border-color:color-mix(in srgb,var(--team-blue) 44%,var(--border-default));box-shadow:inset -4px 0 0 var(--team-blue)}
+.personal-match.loss{border-color:color-mix(in srgb,var(--team-red) 44%,var(--border-default));box-shadow:inset -4px 0 0 var(--team-red)}
+.personal-match.win .personal-summary{background:linear-gradient(90deg,var(--team-blue-soft),var(--surface-1) 48%,color-mix(in srgb,var(--team-blue-soft) 72%,var(--surface-1)) 100%)!important}
+.personal-match.loss .personal-summary{background:linear-gradient(90deg,var(--team-red-soft),var(--surface-1) 48%,color-mix(in srgb,var(--team-red-soft) 72%,var(--surface-1)) 100%)!important}
+
+@media(max-width:620px){
+  .profile-dashboard-grid .champion-stat-head,.profile-dashboard-grid .champion-stat-row,
+  .champion-stats-page .champion-stat-head,.champion-stats-page .champion-stat-row{
+    grid-template-columns:minmax(108px,1fr) 42px minmax(88px,auto) 44px!important;
+  }
+  .champion-stat-row>span:nth-child(3){display:grid;gap:1px}
+}

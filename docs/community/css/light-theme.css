@@ -757,3 +757,10 @@ html[data-theme="light"] .status-banner {
   border-color: #efc3ca;
   color: #9f3848;
 }
+
+/* Final profile contrast pass: legacy selectors must not leak dark literals. */
+html[data-theme="light"] :where(.profile-dashboard-grid,.champion-stats-page,.personal-history-toolbar,.personal-match,.match-details,.build-detail-panel){color:var(--text-primary)}
+html[data-theme="light"] :where(.profile-name-main h1,.profile-title-row,.profile-section-title strong,.role-tier-role,.role-tier-kda,.champion-stat-name strong,.associate-row button,.personal-history-title,.focus-kda strong,.focus-cs strong,.roster-profile-link){color:var(--text-primary)!important}
+html[data-theme="light"] :where(.profile-identity-copy>small,.profile-refresh-time,.champion-stat-head,.associate-empty,.result-meta span,.result-meta div,.focus-kda span,.focus-cs em,.roster-player){color:var(--text-muted)!important}
+html[data-theme="light"] :where(.profile-summary-panel,.profile-rank-switcher,.role-detail-strip,.lp-trend-panel,.champion-stats-panel,.associate-stats-panel,.personal-history-toolbar,.personal-match,.match-details,.build-detail-panel){background:var(--surface-1)!important;border-color:var(--border-default)!important}
+html[data-theme="light"] .associate-row{border-color:var(--border-soft)}

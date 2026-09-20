@@ -763,6 +763,44 @@ td { border-top: 1px solid var(--line); }
   line-height: 1.8 !important;
   font-size: 14px;
 }
+
+/* 2026-09-20: coaching uses the same flat, high-contrast visual system as Community. */
+:root{
+  --success-soft:#eaf8f2;
+  --danger-soft:#fff0f2;
+  --warning:#9a6b14;
+  --warning-soft:#fff7df;
+}
+body[data-theme="dark"]{
+  --success-soft:#14372c;
+  --danger-soft:#3a1d24;
+  --warning:#f4c85d;
+  --warning-soft:#382e14;
+}
+.topbar:has(#heroEyebrow:empty):has(#heroTitle:empty),body:has(#marketView.active) .topbar{display:none}
+.market-compact-head{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:12px;padding:22px 24px;
+  border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(135deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--brand) 12%));
+}
+.market-compact-head .market-kicker{margin:0 0 6px}.market-compact-head h2{margin:0;color:var(--text);font-size:28px;letter-spacing:-.04em}
+.catalog-shell{border-radius:16px;box-shadow:none}.catalog-heading h2,.market-head h2{color:var(--text)}
+.filter-block,.coach-card,.featured-card,.detail-panel,.detail-empty{background:var(--panel-2);border-color:var(--line);box-shadow:none}
+.coach-card.active{background:color-mix(in srgb,var(--brand-soft) 54%,var(--panel-2));border-color:var(--brand)}
+.featured-card{overflow:hidden}.featured-card::after{content:"";display:block;height:3px;background:linear-gradient(90deg,var(--brand),transparent)}
+.coach-main>p,.featured-summary,.detail-copy,.detail-body p{color:var(--muted)}
+.detail-summary div,.lesson-card,.student-panel,.student-history-panel,.student-review-panel,.coach-self-preview,.coach-self-editor,.table-wrap,.admin-form,.account-role-dashboard,.account-schedule-editor{
+  background:var(--panel)!important;border-color:var(--line)!important;color:var(--text)!important;box-shadow:none!important;
+}
+:where(input,select,textarea){background:var(--surface-input);border-color:var(--line);color:var(--text)}
+:where(input,textarea)::placeholder{color:var(--text-muted);opacity:1}
+.coaching-maintenance-banner{border-color:color-mix(in srgb,var(--warning) 48%,var(--line));background:var(--warning-soft)}
+.coaching-maintenance-icon{background:var(--warning);color:var(--bg)}
+body[data-theme="dark"] :where(.auth-dialog,.reservation-dialog,.lesson-detail-dialog,.guest-dialog,.crop-dialog){background:var(--panel);color:var(--text);border-color:var(--line)}
+body[data-theme="dark"] :where(.auth-dialog,.reservation-dialog,.lesson-detail-dialog,.guest-dialog) :where(input,select,textarea){background:var(--surface-input);border-color:var(--line);color:var(--text)}
+body:not([data-theme="dark"]) :where(.nav-item,.service-nav-item,.lucid-brand,.profile-menu>summary,.catalog-heading h2,.market-head h2,.coach-main h3,.detail-body h2,.detail-body h3){color:var(--text)}
+body:not([data-theme="dark"]) :where(.coach-main>p,.featured-summary,.detail-copy,.detail-body p,.market-head span,.catalog-heading p){color:var(--muted)}
+@media(max-width:620px){.market-compact-head{align-items:flex-start;flex-direction:column;padding:18px}.market-compact-head .secondary{width:100%}}
 .coach-self-bio-field textarea,
 #coachSelfBio {
   min-height: 320px;
