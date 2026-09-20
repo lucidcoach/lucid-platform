@@ -1,7 +1,7 @@
 import { championIcon } from "../assets.js?v=20260905ab";
 import { escapeHtml, focusKda, kdaClass, normalizeMode, relativeTime, scoreClass, tierClass } from "../utils.js?v=20260914seriesmatch1";
 import { renderInventoryGrid, renderProfileRuneSpells, renderBuildSummary } from "./loadout.js?v=20260905ab";
-import { aiRank, scoreboard } from "./scoreboard.js?v=20260915reference2";
+import { aiRank, aiStanding, scoreboard } from "./scoreboard.js?v=20260920matchreadability1";
 
 function rosterPlayer(row, guildId, focusUserId) {
   const icon = championIcon(row.champion);
@@ -13,8 +13,6 @@ function achievementBadges(player) {
   const badges = [];
   if (Number(player?.pentaKills || 0) > 0) badges.push(`<span class="match-achievement multikill penta">펜타킬</span>`);
   else if (Number(player?.quadraKills || 0) > 0) badges.push(`<span class="match-achievement multikill quadra">쿼드라킬</span>`);
-  if (player?.award === "MVP") badges.push(`<span class="match-achievement award mvp">MVP</span>`);
-  else if (player?.award === "ACE") badges.push(`<span class="match-achievement award ace">ACE</span>`);
   return badges.join("");
 }
 
@@ -46,7 +44,7 @@ export function playerMatchCard(match, userId) {
       </div>
       <div class="personal-combat-group">
         <div class="focus-kda"><strong>${focusKda(player)}</strong><span class="personal-kda-value ${player.deaths === 0 ? "kda-red" : kdaClass(player.kda)}">${player.deaths === 0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span>${achievements ? `<div class="match-achievements kda-achievements">${achievements}</div>` : ""}</div>
-        <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}${Number(player.aiScore) >= 100 ? " over-100" : ""}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
+        <div class="focus-score">${player.aiScore == null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}${Number(player.aiScore) >= 100 ? " over-100" : ""}">${Math.round(player.aiScore)}</span>`}${aiStanding(player, rank)}</div>
         <div class="personal-inventory">${renderInventoryGrid(player)}</div>
         <div class="focus-cs"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>
       </div>

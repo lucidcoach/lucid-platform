@@ -27,8 +27,6 @@ function achievementLine(player) {
   const tags=[];
   if (Number(player?.pentaKills || 0)>0) tags.push(`<span class="score-tag penta">펜타킬</span>`);
   else if (Number(player?.quadraKills || 0)>0) tags.push(`<span class="score-tag quadra">쿼드라킬</span>`);
-  if (player?.award === "MVP") tags.push(`<span class="score-award mvp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 8.3 11 12 5l3.7 6L20 7.5l-1.3 9H5.3L4 7.5Z"/><path d="M6.2 18.5h11.6"/></svg>MVP</span>`);
-  else if (player?.award === "ACE") tags.push(`<span class="score-award ace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 15 8l5 .8-3.6 3.6.8 5.1-5.2-2.4-5.2 2.4.8-5.1L4 8.8 9 8l3-4.5Z"/></svg>ACE</span>`);
   return tags.join("");
 }
 
@@ -55,6 +53,12 @@ export function aiRank(match, player) {
   return { rank, total: rows.length };
 }
 
+export function aiStanding(player, rank) {
+  if (player?.award === "MVP") return `<small class="ai-standing mvp">👑 MVP</small>`;
+  if (player?.award === "ACE") return `<small class="ai-standing ace">♛ ACE</small>`;
+  return rank && rank.rank >= 1 && rank.rank <= 10 ? `<small class="ai-standing">${rank.rank}위</small>` : "";
+}
+
 function playerRow(match, player, focusUserId = "") {
   const champion = championIcon(player.champion);
   const focus = String(player.userId) === String(focusUserId) ? " focus-row" : "";
@@ -73,7 +77,7 @@ function playerRow(match, player, focusUserId = "") {
       <span class="score-tier-text ${tierClass(player.tier)}" title="${escapeHtml(player.tier || "미배치")}">${escapeHtml(tierShortLabel(player.tier))}</span>
       <div class="score-name-line">${player.userId?`<button class="player-profile-link scoreboard-profile-link" type="button" data-player-profile data-user-id="${escapeHtml(player.userId)}" data-guild-id="${escapeHtml(match.guildId || "")}" title="${escapeHtml(player.name)} 전적 보기">${escapeHtml(player.name)}</button>`:`<span>${escapeHtml(player.name)}</span>`}${achievements}</div>
     </div>
-    <div class="score-ai-cell">${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${rank ? `<small>${rank.rank}위</small>` : ""}</div>
+    <div class="score-ai-cell">${player.aiScore==null ? `<span class="numeric">-</span>` : `<span class="ai-score ${scoreClass(player.aiScore)}">${Math.round(player.aiScore)}</span>`}${aiStanding(player, rank)}</div>
     <div class="score-kda-cell"><strong>${focusKda(player)}</strong><span>${player.deaths===0 ? "Perfect" : `${Number(player.kda || 0).toFixed(2)} KDA`}</span></div>
     <div class="score-inventory">${renderInventoryGrid(player)}</div>
     <div class="score-cs-cell"><strong>CS ${Number(player.cs || 0).toLocaleString()} <em>(${Number(player.csm || 0).toFixed(1)})</em></strong></div>

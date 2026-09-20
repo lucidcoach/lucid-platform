@@ -286,3 +286,50 @@ body{overflow-x:clip}
   #searchView .personal-match.expanded .score-player-row{grid-template-columns:66px 165px 44px 82px 102px 74px 124px!important;gap:6px!important;min-height:56px!important}
   #searchView .personal-match.expanded .score-player-row :is(.score-ai-cell,.score-cs-cell,.score-damage-cell,.score-inventory){display:grid!important}
 }
+
+/* Recent records: result tint spans the card while content remains dominant. */
+#searchView .personal-match.win{
+  border-color:color-mix(in srgb,var(--team-blue) 48%,var(--border-default))!important;
+  border-left:3px solid var(--team-blue)!important;
+  background:color-mix(in srgb,var(--surface-1) 82%,#17375d)!important;
+}
+#searchView .personal-match.loss{
+  border-color:color-mix(in srgb,var(--team-red) 48%,var(--border-default))!important;
+  border-left:3px solid var(--team-red)!important;
+  background:color-mix(in srgb,var(--surface-1) 82%,#5a202b)!important;
+}
+#searchView .personal-match:is(.win,.loss) .personal-summary{background:transparent!important}
+html[data-theme="light"] #searchView .personal-match.win{background:#f0f5fc!important;border-color:#bfd2e8!important;border-left-color:#7199c5!important}
+html[data-theme="light"] #searchView .personal-match.loss{background:#fcf1f3!important;border-color:#e6c5ca!important;border-left-color:#c77d87!important}
+
+/* AI score owns its rank/award line; MVP and ACE replace the numeric rank. */
+.personal-match .focus-score::before{content:"AI Score";color:var(--text-muted);font-size:8px;font-weight:800;line-height:1;white-space:nowrap}
+.ai-standing{display:block;color:var(--text-muted)!important;font-size:9px!important;font-weight:800!important;line-height:1.15;letter-spacing:0!important;white-space:nowrap}
+.ai-standing.mvp{color:#e5bb55!important}.ai-standing.ace{color:#91aef0!important}
+.score-ai-cell .ai-standing{font-size:9px!important}
+
+/* Champion records use four explicit columns; no legacy position column remains. */
+#searchView .profile-renewal .profile-dashboard-grid .champion-stat-head,
+#searchView .profile-renewal .profile-dashboard-grid .champion-stat-row,
+#searchView .profile-renewal .profile-champion-panel .champion-stat-head,
+#searchView .profile-renewal .profile-champion-panel .champion-stat-row{
+  grid-template-columns:minmax(130px,1fr) 52px minmax(112px,auto) 58px!important;
+  column-gap:10px!important;
+}
+#searchView .profile-renewal .champion-stats-page .champion-stat-head,
+#searchView .profile-renewal .champion-stats-page .champion-stat-row{
+  grid-template-columns:minmax(220px,1fr) 90px 150px 100px!important;
+  column-gap:18px!important;
+}
+.champion-stat-head>span,.champion-stat-row>span{min-width:0;text-align:left}
+.champion-stat-head>span:last-child,.champion-stat-row>span:last-child{text-align:right}
+.champion-stat-name strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:620px){
+  #searchView .profile-renewal :is(.profile-dashboard-grid,.profile-champion-panel,.champion-stats-page) .champion-stat-head,
+  #searchView .profile-renewal :is(.profile-dashboard-grid,.profile-champion-panel,.champion-stats-page) .champion-stat-row{
+    grid-template-columns:minmax(96px,1fr) 42px 82px 42px!important;
+    column-gap:4px!important;
+    font-size:10px!important;
+  }
+  .champion-stat-row>span:nth-child(3){display:grid!important;gap:1px!important;white-space:nowrap}
+}
