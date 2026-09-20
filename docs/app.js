@@ -50,7 +50,7 @@ import {
   saveCoachLesson,
   saveCoachProfile,
   saveCoachSchedule as saveCoachScheduleApi,
-} from "./js/coachService.js?v=20260920legacyimport1";
+} from "./js/coachService.js?v=20260920legacyimport2";
 import {
   buildReservationPayload,
   cancelPayment,
@@ -97,7 +97,7 @@ import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911c
 import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260914header1";
 import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260907accountfix1";
 import { createCoachSelfPage } from "./js/pages/coachSelf.js";
-import { createLegacyImportPage } from "./js/pages/legacyImport.js?v=20260920legacyimport1";
+import { createLegacyImportPage } from "./js/pages/legacyImport.js?v=20260920legacyimport2";
 import { createImageCropController } from "./js/components/imageCrop.js";
 
 
