@@ -86,9 +86,13 @@ export const updateLegacyCandidate = (id, payload) => requestJson(`/api/admin/le
   method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
 });
 
+export const bulkUpdateLegacyCandidates = (batchId, payload) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/candidates/bulk`, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+});
+
 export const approveSafeLegacyCandidates = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/approve-safe`, { method: "POST" });
 
-export const previewLegacyImport = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/preview`);
+export const previewLegacyImport = (batchId, scope = "") => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/preview?${new URLSearchParams({ scope }).toString()}`);
 
 export const applyLegacyImport = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/apply`, {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmBatchId: batchId }),
