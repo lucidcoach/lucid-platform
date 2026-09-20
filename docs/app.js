@@ -72,6 +72,7 @@ import {
   paymentStatusLabel,
   refundAdminStatusLabel,
   refundRequestLabel,
+  runCoachReservationAction,
   renderStatusOptions,
   submitGuestConsultation,
   submitReservation,
@@ -665,6 +666,7 @@ coachSelfPage = createCoachSelfPage({
   updateWideImagePreview: (...args) => updateWideImagePreview(...args),
   handleCoachSelfProfileImageFile: (...args) => handleCoachSelfProfileImageFile(...args),
   openCropModal: (...args) => openCropModal(...args),
+  runCoachReservationAction: (...args) => runCoachReservationAction(...args),
 });
 authAccountPage = createAuthAccountPage({
   render: (...args) => render(...args),

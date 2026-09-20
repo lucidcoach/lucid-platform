@@ -2,14 +2,18 @@ import { API_BASE_URL } from "../config.js";
 import { adminLineOptions, adminFieldOptions, filterSets, priceUnits, state } from "../catalog.js";
 import { saveCoachToApi } from "../admin.js";
 import {
+  createCoachCalendarEvent,
   createCoachLesson,
+  deleteCoachCalendarEvent,
   deleteCoachLesson,
+  fetchCoachCalendar,
   fetchCoachLessons,
   fetchCoachProfile,
   fetchCoachSchedule,
   saveCoachLesson,
   saveCoachProfile,
   saveCoachSchedule as saveCoachScheduleApi,
+  updateCoachCalendarEvent,
 } from "../coachService.js";
 import { getCoachPurposes, getImageStyle } from "../components/coachCard.js";
 import { addLocalDays, byId as $, escapeHtml, getIsoWeekday, isoDateOnly, localDateOnly } from "../utils.js";
@@ -33,6 +37,7 @@ export function createCoachSelfPage({
   updateWideImagePreview,
   handleCoachSelfProfileImageFile,
   openCropModal,
+  runCoachReservationAction,
 }) {
 function applyCoachProfileToCatalog(profile) {
   if (!profile) return;
@@ -190,8 +195,11 @@ function renderCoachSelf() {
   $("coachSelfName").textContent = current ? current.name : "코치 선택";
   $("coachSelfHint").textContent = current ? `${current.tier} · ${current.lessons}개 강의` : "강의를 선택하면 오른쪽에서 수정할 수 있습니다.";
   renderCoachSelfProfile(current);
+  renderCoachCalendarPanel();
   renderCoachAvailabilityPanel();
   if (isCoachUser() && state.coachScheduleLoadState === "idle") loadCoachSchedule();
+  const calendarKey = `${isAdminUser() ? state.coachCalendarCoachKey : currentCoachKey}:${isoDateOnly(getCoachScheduleWeekStart())}`;
+  if (state.coachCalendarLoadState === "idle" || state.coachCalendarLoadKey !== calendarKey) loadCoachCalendar();
 
   const lessons = getCoachSelfLessons();
   if (state.coachSelfLessonId && !lessons.some((lesson) => lesson.id === state.coachSelfLessonId)) {
@@ -200,7 +208,9 @@ function renderCoachSelf() {
   document.querySelectorAll("[data-self-coach-key]").forEach((button) => {
     button.addEventListener("click", () => {
       state.coachSelfKey = button.dataset.selfCoachKey;
+      state.coachCalendarCoachKey = button.dataset.selfCoachKey;
       state.coachSelfLessonId = null;
+      state.coachCalendarLoadState = "idle";
       renderCoachSelf();
     });
   });
@@ -579,6 +589,182 @@ function renderScheduleSummaryMarkup() {
   return `<section class="student-panel schedule-summary"><div class="student-panel-head"><span>주간 일정</span><strong>예약 가능 시간</strong></div><div class="schedule-summary-list">${chunks}</div></section>`;
 }
 
+const calendarTypeLabels = { site: "사이트 강의", lesson: "외부 강의", personal: "개인 일정", unavailable: "휴무" };
+
+function calendarKstParts(value) {
+  const shifted = new Date(new Date(value).getTime() + 9 * 60 * 60 * 1000);
+  const iso = shifted.toISOString();
+  return { date: iso.slice(0, 10), time: iso.slice(11, 16), minute: shifted.getUTCHours() * 60 + shifted.getUTCMinutes() };
+}
+
+function calendarIso(date, time) {
+  return new Date(`${date}T${time}:00+09:00`).toISOString();
+}
+
+async function loadCoachCalendar() {
+  if (!isCoachUser() && !isAdminUser()) return;
+  const weekStart = getCoachScheduleWeekStart();
+  const coachId = isAdminUser() ? state.coachCalendarCoachKey : getFallbackCoachKey();
+  const from = isoDateOnly(weekStart);
+  const to = isoDateOnly(addLocalDays(weekStart, 6));
+  const key = `${coachId}:${from}`;
+  if (state.coachCalendarLoadState === "loading" && state.coachCalendarLoadKey === key) return;
+  state.coachCalendarLoadState = "loading";
+  state.coachCalendarLoadKey = key;
+  state.coachCalendarError = "";
+  renderCoachCalendarPanel();
+  try {
+    state.coachCalendarEvents = await fetchCoachCalendar({ coachId, from, to });
+    state.coachCalendarLoadState = "loaded";
+  } catch (error) {
+    state.coachCalendarEvents = [];
+    state.coachCalendarLoadState = "error";
+    state.coachCalendarError = error.message || "일정을 불러오지 못했습니다.";
+  }
+  renderCoachCalendarPanel();
+}
+
+function openCalendarEventDialog({ date, minute = 600, event = null } = {}) {
+  const dialog = $("calendarEventDialog");
+  const form = $("calendarEventForm");
+  if (!dialog || !form) return;
+  form.reset();
+  const source = event?.source || "external";
+  const start = event ? calendarKstParts(event.startsAt) : { date, time: `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}` };
+  const end = event ? calendarKstParts(event.endsAt) : { time: `${String(Math.floor((minute + 60) / 60) % 24).padStart(2, "0")}:${String((minute + 60) % 60).padStart(2, "0")}` };
+  form.elements.id.value = event?.id || "";
+  form.elements.coachId.value = event?.coachKey || state.coachSelfKey || getFallbackCoachKey();
+  form.elements.eventType.value = event?.eventType || "lesson";
+  form.elements.studentName.value = event?.studentName || "";
+  form.elements.discordUserId.value = event?.discordUserId || "";
+  form.elements.lessonType.value = event?.lessonType || "";
+  form.elements.price.value = event?.price || 0;
+  form.elements.paymentStatus.value = event?.paymentStatus === "none" ? "unpaid" : (event?.paymentStatus || "unpaid");
+  form.elements.referralSource.value = event?.referralSource || "기타";
+  form.elements.date.value = start.date;
+  form.elements.startTime.value = start.time;
+  form.elements.endTime.value = end.time;
+  form.elements.memo.value = event?.memo || "";
+  form.dataset.source = source;
+  form.dataset.reservationId = event?.reservationId || "";
+  $("calendarEventTitle").textContent = event ? calendarTypeLabels[source === "site" ? "site" : event.eventType] : "일정 등록";
+  form.querySelectorAll("input:not([type=hidden]),select,textarea").forEach((field) => { field.disabled = source === "site"; });
+  form.querySelector("[type=submit]").hidden = source === "site";
+  form.querySelectorAll("[data-calendar-status]").forEach((button) => { button.hidden = !event || (source === "site" && (!isCoachUser() || !event.reservationId)); });
+  $("calendarEventDeleteBtn").hidden = source === "site" || !event;
+  form.querySelector('[data-calendar-status="completed"]').textContent = source === "site" ? "완료 요청" : "완료";
+  form.querySelector('[data-calendar-status="cancelled"]').textContent = source === "site" ? "예약 취소" : "취소";
+  form.querySelector(".calendar-site-note").hidden = source !== "site";
+  toggleCalendarStudentFields();
+  dialog.showModal();
+}
+
+function toggleCalendarStudentFields() {
+  const form = $("calendarEventForm");
+  if (!form) return;
+  form.querySelector(".calendar-student-fields").hidden = form.elements.eventType.value !== "lesson";
+}
+
+async function saveCalendarEvent(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = $("calendarEventStatus");
+  const date = form.elements.date.value;
+  const endDate = form.elements.endTime.value <= form.elements.startTime.value ? isoDateOnly(addLocalDays(localDateOnly(date), 1)) : date;
+  const payload = {
+    coachId: form.elements.coachId.value,
+    eventType: form.elements.eventType.value,
+    studentName: form.elements.studentName.value.trim(),
+    discordUserId: form.elements.discordUserId.value.trim(),
+    lessonType: form.elements.lessonType.value.trim(),
+    price: Number(form.elements.price.value || 0),
+    paymentStatus: form.elements.eventType.value === "lesson" ? form.elements.paymentStatus.value : "none",
+    referralSource: form.elements.referralSource.value,
+    startsAt: calendarIso(date, form.elements.startTime.value),
+    endsAt: calendarIso(endDate, form.elements.endTime.value),
+    memo: form.elements.memo.value.trim(),
+  };
+  status.textContent = "저장 중...";
+  try {
+    if (form.elements.id.value) await updateCoachCalendarEvent(form.elements.id.value, payload);
+    else await createCoachCalendarEvent(payload);
+    $("calendarEventDialog").close();
+    state.coachCalendarLoadState = "idle";
+    await loadCoachCalendar();
+    if (isCoachUser()) await loadCoachSchedule();
+  } catch (error) {
+    status.textContent = `저장 실패: ${error.message}`;
+    status.className = "save-status error";
+  }
+}
+
+async function setCalendarEventStatus(status) {
+  const form = $("calendarEventForm");
+  if (!form?.elements.id.value) return;
+  if (form.dataset.source === "site") await runCoachReservationAction(form.dataset.reservationId, status === "completed" ? "complete" : "reject");
+  else await updateCoachCalendarEvent(form.elements.id.value, { status });
+  $("calendarEventDialog").close();
+  state.coachCalendarLoadState = "idle";
+  await loadCoachCalendar();
+  if (isCoachUser()) await loadCoachSchedule();
+}
+
+async function removeCalendarEvent() {
+  const id = $("calendarEventForm")?.elements.id.value;
+  if (!id || !window.confirm("이 일정을 삭제할까요?")) return;
+  await deleteCoachCalendarEvent(id);
+  $("calendarEventDialog").close();
+  state.coachCalendarLoadState = "idle";
+  await loadCoachCalendar();
+  if (isCoachUser()) await loadCoachSchedule();
+}
+
+function renderCoachCalendarPanel() {
+  const target = $("coachCalendarPanel");
+  if (!target || (!isCoachUser() && !isAdminUser())) { if (target) target.innerHTML = ""; return; }
+  const weekStart = getCoachScheduleWeekStart();
+  const labels = ["월", "화", "수", "목", "금", "토", "일"];
+  const coachFilters = isAdminUser() ? getCoachIdentities("league", true) : [];
+  const cells = [];
+  for (let row = 0; row < 48; row += 1) {
+    const minute = row * 30;
+    cells.push(`<div class="calendar-time" style="grid-row:${row + 2}">${row % 2 ? "" : `${String(row / 2).padStart(2, "0")}:00`}</div>`);
+    for (let day = 0; day < 7; day += 1) cells.push(`<button type="button" class="calendar-cell" style="grid-column:${day + 2};grid-row:${row + 2}" data-calendar-date="${isoDateOnly(addLocalDays(weekStart, day))}" data-calendar-minute="${minute}" aria-label="${labels[day]} ${Math.floor(minute / 60)}시 ${minute % 60}분"></button>`);
+  }
+  const blocks = (state.coachCalendarEvents || []).map((item) => {
+    const start = calendarKstParts(item.startsAt);
+    const end = calendarKstParts(item.endsAt);
+    const day = Math.round((localDateOnly(start.date) - localDateOnly(isoDateOnly(weekStart))) / 86400000);
+    if (day < 0 || day > 6) return "";
+    const span = Math.max(1, Math.ceil(((new Date(item.endsAt) - new Date(item.startsAt)) / 60000) / 30));
+    const row = Math.floor(start.minute / 30) + 2;
+    const type = item.source === "site" ? "site" : item.eventType;
+    const title = item.studentName || item.lessonType || calendarTypeLabels[type];
+    return `<button type="button" class="calendar-event type-${type} status-${item.status}" style="grid-column:${day + 2};grid-row:${row}/span ${Math.min(span, 50 - row)}" data-calendar-event="${escapeHtml(item.id)}"><strong>${escapeHtml(title)}</strong><span>${start.time}–${end.time} · ${calendarTypeLabels[type]}</span></button>`;
+  }).join("");
+  const filters = isAdminUser() ? `<div class="calendar-coach-filters"><button type="button" class="secondary mini ${!state.coachCalendarCoachKey ? "active" : ""}" data-calendar-coach="">전체</button>${coachFilters.map((coach) => `<button type="button" class="secondary mini ${state.coachCalendarCoachKey === coach.key ? "active" : ""}" data-calendar-coach="${escapeHtml(coach.key)}">${escapeHtml(coach.name)}</button>`).join("")}</div>` : "";
+  target.innerHTML = `<section class="calendar-panel"><div class="availability-head"><div><span>일정 DB</span><strong>주간 캘린더</strong></div><div class="schedule-actions"><button type="button" class="secondary mini" data-calendar-week="-7">이전 주</button><button type="button" class="secondary mini" data-calendar-week="0">이번 주</button><button type="button" class="secondary mini" data-calendar-week="7">다음 주</button></div></div>${filters}<div class="calendar-week-title">${isoDateOnly(weekStart)} ~ ${isoDateOnly(addLocalDays(weekStart, 6))}</div>${state.coachCalendarLoadState === "error" ? `<p class="save-status error">${escapeHtml(state.coachCalendarError)}</p>` : ""}<div class="calendar-scroll"><div class="calendar-grid"><div class="calendar-corner">시간</div>${labels.map((label, day) => `<div class="calendar-day" style="grid-column:${day + 2}">${label}<small>${isoDateOnly(addLocalDays(weekStart, day)).slice(5)}</small></div>`).join("")}${cells.join("")}${blocks}</div></div><div class="calendar-legend"><span class="type-site">사이트 강의</span><span class="type-lesson">외부 강의</span><span class="type-personal">개인 일정</span><span class="type-unavailable">휴무</span><span class="status-completed">완료</span></div></section>`;
+  target.querySelectorAll("[data-calendar-date]").forEach((button) => button.addEventListener("click", () => openCalendarEventDialog({ date: button.dataset.calendarDate, minute: Number(button.dataset.calendarMinute) })));
+  target.querySelectorAll("[data-calendar-event]").forEach((button) => button.addEventListener("click", () => openCalendarEventDialog({ event: state.coachCalendarEvents.find((item) => String(item.id) === button.dataset.calendarEvent) })));
+  target.querySelectorAll("[data-calendar-coach]").forEach((button) => button.addEventListener("click", () => { state.coachCalendarCoachKey = button.dataset.calendarCoach; state.coachCalendarLoadState = "idle"; loadCoachCalendar(); }));
+  target.querySelectorAll("[data-calendar-week]").forEach((button) => button.addEventListener("click", () => {
+    state.coachScheduleWeekStart = button.dataset.calendarWeek === "0" ? "" : isoDateOnly(addLocalDays(weekStart, Number(button.dataset.calendarWeek)));
+    state.coachCalendarLoadState = "idle";
+    state.coachScheduleLoadState = "idle";
+    loadCoachCalendar();
+    if (isCoachUser()) loadCoachSchedule();
+  }));
+  const form = $("calendarEventForm");
+  if (form && !form.dataset.bound) {
+    form.dataset.bound = "1";
+    form.addEventListener("submit", saveCalendarEvent);
+    form.elements.eventType.addEventListener("change", toggleCalendarStudentFields);
+    $("calendarEventCloseBtn").addEventListener("click", () => $("calendarEventDialog").close());
+    $("calendarEventDeleteBtn").addEventListener("click", () => removeCalendarEvent().catch((error) => alert(error.message)));
+    form.querySelectorAll("[data-calendar-status]").forEach((button) => button.addEventListener("click", () => setCalendarEventStatus(button.dataset.calendarStatus).catch((error) => alert(error.message))));
+  }
+}
+
 function renderCoachAvailabilityPanel() {
   const target = $("accountCoachAvailabilityPanel") || $("coachAvailabilityPanel");
   if (!target || !isCoachUser()) {
@@ -834,6 +1020,8 @@ async function saveCoachSelfLesson(event) {
     loadCoachAvailability,
     renderScheduleSummaryMarkup,
     renderCoachAvailabilityPanel,
+    renderCoachCalendarPanel,
+    loadCoachCalendar,
     bindCoachSelfLessonPicker,
     changeCoachScheduleWeek,
     saveCoachSchedule,

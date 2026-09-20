@@ -1,10 +1,10 @@
 import { API_BASE_URL } from "./config.js";
-import { apiFetch } from "./api.js?v=20260906c";
+import { apiFetch, getAdminHeaders } from "./api.js?v=20260906c";
 
 const apiUrl = (path) => `${API_BASE_URL.replace(/\/$/, "")}${path}`;
 
 async function requestJson(path, init = {}) {
-  const response = await apiFetch(apiUrl(path), { credentials: "include", ...init });
+  const response = await apiFetch(apiUrl(path), { credentials: "include", ...init, headers: { ...getAdminHeaders(), ...(init.headers || {}) } });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.ok) {
     const error = new Error(result.error || `HTTP ${response.status}`);
@@ -61,3 +61,15 @@ export const saveCoachSchedule = (query, payload) => requestJson(`/api/coach/sch
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify(payload),
 });
+
+export const fetchCoachCalendar = (query) => requestJson(`/api/coach/calendar?${new URLSearchParams(query).toString()}`).then((result) => result.events || []);
+
+export const createCoachCalendarEvent = (payload) => requestJson("/api/coach/calendar", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+}).then((result) => result.event);
+
+export const updateCoachCalendarEvent = (id, payload) => requestJson(`/api/coach/calendar/${encodeURIComponent(id)}`, {
+  method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+}).then((result) => result.event);
+
+export const deleteCoachCalendarEvent = (id) => requestJson(`/api/coach/calendar/${encodeURIComponent(id)}`, { method: "DELETE" });

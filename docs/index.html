@@ -369,6 +369,7 @@
               <span id="coachSelfHint">강의를 선택하면 오른쪽에서 수정합니다.</span>
             </div>
             <div id="coachSelfProfile"></div>
+            <div id="coachCalendarPanel"></div>
             <div id="coachAvailabilityPanel"></div>
           </section>
           <section class="coach-self-editor" id="coachSelfEditor">
@@ -399,6 +400,29 @@
       <button type="submit" class="primary" id="bookingSubmitBtn"></button>
     </form>
   </template>
+  <dialog class="calendar-event-dialog" id="calendarEventDialog">
+    <form class="calendar-event-form" id="calendarEventForm">
+      <input name="id" type="hidden">
+      <input name="coachId" type="hidden">
+      <div class="calendar-dialog-head"><div><span>코치 일정</span><h3 id="calendarEventTitle">일정 등록</h3></div><button type="button" class="secondary mini" id="calendarEventCloseBtn">닫기</button></div>
+      <label>일정 종류<select name="eventType"><option value="lesson">외부 강의</option><option value="personal">개인 일정</option><option value="unavailable">휴무 / 예약 불가</option></select></label>
+      <div class="calendar-student-fields">
+        <label>학생<input name="studentName" maxlength="120" placeholder="학생 닉네임"></label>
+        <label>Discord ID<input name="discordUserId" maxlength="32" inputmode="numeric"></label>
+        <label>강의 종류<input name="lessonType" maxlength="120" placeholder="예: 1:1 피드백"></label>
+        <label>가격<input name="price" type="number" min="0" max="100000000" step="1000"></label>
+        <label>결제 상태<select name="paymentStatus"><option value="unpaid">미결제</option><option value="paid">결제 완료</option><option value="partial">일부 결제</option><option value="refunded">환불</option></select></label>
+        <label>유입 경로<select name="referralSource"><option value="카카오톡">카카오톡</option><option value="개인 문의">개인 문의</option><option value="소개">소개</option><option value="아카데미">아카데미</option><option value="현장">현장</option><option value="기타">기타</option></select></label>
+      </div>
+      <label>날짜<input name="date" type="date" required></label>
+      <label>시작<input name="startTime" type="time" step="1800" required></label>
+      <label>종료<input name="endTime" type="time" step="1800" required></label>
+      <label class="wide">메모<textarea name="memo" rows="4" maxlength="4000"></textarea></label>
+      <p class="calendar-site-note" hidden>사이트 예약 일정은 예약 관리 화면의 결제·환불 안전 절차를 따릅니다.</p>
+      <div class="calendar-dialog-actions"><button class="primary" type="submit">저장</button><button class="secondary" type="button" data-calendar-status="completed">완료</button><button class="secondary" type="button" data-calendar-status="cancelled">취소</button><button class="danger" type="button" id="calendarEventDeleteBtn">삭제</button></div>
+      <span class="save-status" id="calendarEventStatus" aria-live="polite"></span>
+    </form>
+  </dialog>
   <div class="coach-explorer-modal" id="coachExplorerModal" hidden>
     <div class="coach-explorer-dialog" role="dialog" aria-modal="true" aria-labelledby="coachExplorerTitle">
       <button class="crop-close" id="coachExplorerCloseBtn" type="button" aria-label="닫기">×</button>
