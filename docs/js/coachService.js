@@ -73,3 +73,27 @@ export const updateCoachCalendarEvent = (id, payload) => requestJson(`/api/coach
 }).then((result) => result.event);
 
 export const deleteCoachCalendarEvent = (id) => requestJson(`/api/coach/calendar/${encodeURIComponent(id)}`, { method: "DELETE" });
+
+export const uploadLegacyImport = (file) => {
+  const body = new FormData();
+  body.append("file", file);
+  return requestJson("/api/admin/legacy-imports", { method: "POST", body });
+};
+
+export const fetchLegacyImports = (batchId = "", status = "") => requestJson(`/api/admin/legacy-imports?${new URLSearchParams({ batchId, status }).toString()}`);
+
+export const updateLegacyCandidate = (id, payload) => requestJson(`/api/admin/legacy-imports/candidates/${encodeURIComponent(id)}`, {
+  method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+});
+
+export const approveSafeLegacyCandidates = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/approve-safe`, { method: "POST" });
+
+export const previewLegacyImport = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/preview`);
+
+export const applyLegacyImport = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/apply`, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmBatchId: batchId }),
+});
+
+export const rollbackLegacyImport = (batchId) => requestJson(`/api/admin/legacy-imports/${encodeURIComponent(batchId)}/rollback`, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmBatchId: batchId }),
+});

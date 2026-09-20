@@ -25,7 +25,7 @@
   <meta name="twitter:description" content="롤 코칭을 찾고 원하는 코치와 연결되는 Lucid 강의">
   <meta name="twitter:image" content="https://lucidgame.kr/assets/lucid-logo-20260914.png">
   <script>try{document.documentElement.dataset.theme=localStorage.getItem("coach-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
-  <link rel="stylesheet" href="styles.css?v=20260920communitytheme1">
+  <link rel="stylesheet" href="styles.css?v=20260920legacyimport1">
 </head>
 <body>
   <script>document.body.dataset.theme=document.documentElement.dataset.theme</script>
@@ -66,6 +66,7 @@
               <button type="button" data-admin-view="bookings" id="navBookings"></button>
               <button type="button" data-admin-view="admin" id="navAdmin"></button>
               <button type="button" data-admin-view="users" id="navUsers">회원 관리</button>
+              <button type="button" data-admin-view="legacyImport" id="navLegacyImport">기존 기록 가져오기</button>
             </div>
           </details>
           <section class="side-coaches" aria-label="코치 목록" hidden>
@@ -331,6 +332,8 @@
         </div>
       </section>
 
+      <section class="view" id="legacyImportView"></section>
+
       <section class="view" id="coachApplyView">
         <div class="section-head">
           <div>
@@ -485,6 +488,6 @@
   </footer>
 
   <script src="https://js.tosspayments.com/v2/standard"></script>
-  <script type="module" src="app.js?v=20260914header1"></script>
+  <script type="module" src="app.js?v=20260920legacyimport1"></script>
 </body>
 </html>

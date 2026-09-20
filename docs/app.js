@@ -50,7 +50,7 @@ import {
   saveCoachLesson,
   saveCoachProfile,
   saveCoachSchedule as saveCoachScheduleApi,
-} from "./js/coachService.js";
+} from "./js/coachService.js?v=20260920legacyimport1";
 import {
   buildReservationPayload,
   cancelPayment,
@@ -97,6 +97,7 @@ import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911c
 import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260914header1";
 import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260907accountfix1";
 import { createCoachSelfPage } from "./js/pages/coachSelf.js";
+import { createLegacyImportPage } from "./js/pages/legacyImport.js?v=20260920legacyimport1";
 import { createImageCropController } from "./js/components/imageCrop.js";
 
 
@@ -357,7 +358,7 @@ function bindEvents() {
 }
 
 function render() {
-  if (["bookings", "admin", "users"].includes(state.activeView) && !isAdminUser()) state.activeView = "market";
+  if (["bookings", "admin", "users", "legacyImport"].includes(state.activeView) && !isAdminUser()) state.activeView = "market";
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === state.activeView);
   });
@@ -375,6 +376,7 @@ function render() {
   renderUsers();
   renderCoachRequests();
   renderCoachSelf();
+  legacyImportPage.render();
   maybeLoadCoachDashboardReservations();
   maybeLoadStudentReservations();
 }
@@ -406,7 +408,7 @@ function renderMetrics() {
 }
 
 async function openAdminView(nextView) {
-  if (!["bookings", "admin", "users", "coachSelf"].includes(nextView)) return;
+  if (!["bookings", "admin", "users", "coachSelf", "legacyImport"].includes(nextView)) return;
   const allowed = nextView === "coachSelf" && isCoachUser()
     ? true
     : await ensureAdminAccess();
@@ -424,6 +426,8 @@ async function openAdminView(nextView) {
     loadAdminCoachSettings();
   } else if (nextView === "users") {
     loadUsers();
+  } else if (nextView === "legacyImport") {
+    legacyImportPage.load();
   }
 }
 
@@ -629,6 +633,7 @@ function saveCoachSelfProfile(...args) { return coachSelfPage.saveCoachSelfProfi
 function saveCoachSelfLesson(...args) { return coachSelfPage.saveCoachSelfLesson(...args); }
 
 let studentDashboardPage;
+let legacyImportPage;
 function renderStudentHome(...args) { return studentDashboardPage.renderStudentHome(...args); }
 function setStudentHeader(...args) { return studentDashboardPage.setStudentHeader(...args); }
 function renderCoachDashboard(...args) { return studentDashboardPage.renderCoachDashboard(...args); }
@@ -688,6 +693,9 @@ adminDashboardPage = createAdminDashboardPage({
   migrateCoachImages: (...args) => migrateCoachImages(...args),
   openAuthModal: (...args) => openAuthModal(...args),
   renderRoleMenu: (...args) => renderRoleMenu(...args),
+});
+legacyImportPage = createLegacyImportPage({
+  runAdminRequest: (...args) => runAdminRequest(...args),
 });
 studentDashboardPage = createStudentDashboardPage({
   isCoachUser: (...args) => isCoachUser(...args),

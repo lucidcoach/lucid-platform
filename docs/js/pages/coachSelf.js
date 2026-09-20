@@ -14,7 +14,7 @@ import {
   saveCoachProfile,
   saveCoachSchedule as saveCoachScheduleApi,
   updateCoachCalendarEvent,
-} from "../coachService.js";
+} from "../coachService.js?v=20260920legacyimport1";
 import { getCoachPurposes, getImageStyle } from "../components/coachCard.js";
 import { addLocalDays, byId as $, escapeHtml, getIsoWeekday, isoDateOnly, localDateOnly } from "../utils.js";
 
