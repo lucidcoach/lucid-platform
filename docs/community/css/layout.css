@@ -18,6 +18,7 @@
 .nav-more-menu { position:absolute; top:calc(100% - 6px); right:0; z-index:30; display:grid; min-width:120px; padding:6px; border:1px solid var(--line); border-radius:10px; background:var(--surface-raised); box-shadow:var(--shadow); }
 .nav-more-menu .nav-tab { min-height:38px; border-radius:7px; text-align:left; }
 .nav-more-menu .nav-tab.active::after { display:none; }
+.mobile-more-item { display:none; }
 .coach-link { display:inline-flex; align-items:center; height:36px; padding:0 13px; border:1px solid var(--line); border-radius:9px; color:#fff; text-decoration:none; font-weight:750; font-size:13px; background:var(--panel); }
 .coach-link:hover { border-color:#4a5870; background:var(--panel-2); }
 .community-main { width:min(var(--content),calc(100% - var(--content-gutter) - var(--content-gutter))); margin:0 auto; padding:24px 0 64px; }

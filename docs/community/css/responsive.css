@@ -14,6 +14,10 @@
   .community-service-switcher { grid-template-columns:1fr 1fr; width:100%; min-width:0; }
   .service-switch { justify-content:center; grid-template-columns:26px auto; }
   .service-icon { width:26px; height:26px; }
+  .community-nav>.nav-tab[data-view="ranking"],.community-nav>#mileageNav{display:none}
+  .community-nav>.nav-hierarchy-divider{display:none}
+  .community-nav .nav-tab,.community-nav .nav-more summary{min-width:auto;padding-inline:10px}
+  .community-nav .mobile-more-item{display:flex}
   .analysis-filters { grid-template-columns:1fr; }
   .analysis-empty-state { min-height:240px; }
 }

@@ -11,12 +11,16 @@ function scheduleText(queue) {
   if (Number.isNaN(date.getTime())) return queue.scheduledAt;
   const today = new Date();
   const sameDay = date.toLocaleDateString("ko-KR") === today.toLocaleDateString("ko-KR");
-  return `${sameDay ? "오늘" : date.toLocaleDateString("ko-KR", { month:"2-digit", day:"2-digit" })} ${date.toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" })}`;
+  return `${sameDay ? "오늘" : date.toLocaleDateString("ko-KR", { month:"2-digit", day:"2-digit" })} ${date.toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit", hourCycle:"h23" })}`;
 }
 
 function formatText(queue) {
   const bestOf = Number(queue.bestOf || 1);
-  return bestOf > 1 ? `BO${bestOf}` : "단판 2경기";
+  return bestOf > 1 ? `BO${bestOf}` : "단판";
+}
+
+function displayTitle(queue) {
+  return String(queue.title || "내전 모집").replace(/^[0-9\uFE0F\u20E3]+\s*시\s*/u, "").trim() || "내전 모집";
 }
 
 function queueCard(queue) {
@@ -29,7 +33,7 @@ function queueCard(queue) {
   return `<article class="recruitment-card">
     <div class="recruitment-card-badges"><span class="recruitment-status${full ? " is-full" : ""}">${full ? "마감" : "모집 중"}</span></div>
     <time>${esc(scheduleText(queue))}</time>
-    <h3>${esc(queue.title || "내전 모집")}</h3>
+    <h3>${esc(displayTitle(queue))}</h3>
     <p>${esc(type)} · ${esc(formatText(queue))}</p>
     <div class="recruitment-card-foot"><strong>참가 인원 ${count}${capacity ? ` / ${capacity}` : ""}명${waiting ? ` · 대기 ${waiting}명` : ""}</strong>${positions.length ? `<span>${positions.map((position)=>`${esc(position)} 필요`).join(" · ")}</span>` : ""}</div>
     ${!full && queue.joinUrl ? `<a class="recruitment-join" href="${esc(queue.joinUrl)}" target="_blank" rel="noopener noreferrer">참가하기 →</a>` : ""}

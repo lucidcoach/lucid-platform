@@ -243,9 +243,24 @@ function getVisibleCoaches() {
   });
 }
 
+function getReviewCount(coach) {
+  return Math.max(Number(coach.reviewCount || 0), Array.isArray(coach.reviews) ? coach.reviews.length : 0);
+}
+
+function getReviewLabel(coach) {
+  const count = getReviewCount(coach);
+  return count ? `★ ${Number(coach.rating || 0).toFixed(1)} · 후기 ${count}` : "후기 없음";
+}
+
 function renderMarket() {
+  const availableCategories = categories.filter((category) =>
+    category.id !== "academy" && state.coaches.some((coach) => coach.active !== false && coach.category === category.id)
+  );
+  if (availableCategories.length && !availableCategories.some((category) => category.id === state.category)) {
+    state.category = availableCategories[0].id;
+  }
   const filters = getActiveFilterSet();
-  $("categoryTabs").innerHTML = categories.map((category) => `
+  $("categoryTabs").innerHTML = availableCategories.map((category) => `
     <button class="tab ${category.id === state.category ? "active" : ""}" data-category="${category.id}">
       ${category.label}
     </button>
@@ -389,7 +404,6 @@ function getFeaturedCoachSlots(visible) {
 }
 
 function renderFeaturedCard(coach) {
-  const originalPrice = getOriginalPrice(coach.price);
   const featuredImage = getFeaturedImage(coach);
   const purposeText = getPurposeLabels(coach.purpose).slice(0, 2).join(" · ");
   return `
@@ -404,21 +418,14 @@ function renderFeaturedCard(coach) {
         <p class="coach-owner">${escapeHtml(coach.coachProfileName || coach.name)}</p>
         <p class="purpose-label">${escapeHtml(purposeText)}</p>
         <p class="featured-summary">${escapeHtml(coach.tagline)}</p>
-        <div class="featured-rating">★ ${coach.rating.toFixed(1)} <span>(${coach.lessons || 0})</span></div>
+        <div class="featured-rating">${getReviewLabel(coach)}</div>
         <div class="featured-price">
           <strong>${escapeHtml(coach.price)}</strong>
-          ${originalPrice ? `<del>${escapeHtml(originalPrice)}</del>` : ""}
         </div>
         <button class="detail-link" type="button" data-detail-id="${escapeHtml(coach.id)}">상세보기</button>
       </div>
     </article>
   `;
-}
-
-function getOriginalPrice(price) {
-  const amount = Number(String(price || "").replace(/[^\d]/g, ""));
-  if (!amount) return "";
-  return `${Math.round(amount * 1.7).toLocaleString("ko-KR")}원`;
 }
 
 function renderCoachCard(coach) {
@@ -437,7 +444,7 @@ function renderCoachCard(coach) {
         <div class="chips">${(coach.roles || []).map((role) => `<span class="chip">${escapeHtml(role)}</span>`).join("")}</div>
       </div>
       <div class="card-foot">
-        <span>★ ${coach.rating.toFixed(1)} · 후기 ${coach.reviews?.length || 0}</span>
+        <span>${getReviewLabel(coach)}</span>
         <span class="price">${escapeHtml(coach.price)}</span>
       </div>
       <button class="detail-link card-detail-link" type="button" data-detail-id="${escapeHtml(coach.id)}">상세보기</button>
@@ -504,7 +511,6 @@ function renderDetail() {
     return;
   }
 
-  const reviews = coach.reviews || [];
   $("coachDetail").innerHTML = `
     <div class="detail-hero"><img src="${escapeHtml(getDetailImage(coach))}" alt="" style="${escapeHtml(getWideImageStyle(coach, "detailImagePosition"))}"></div>
     <div class="detail-body">
@@ -512,8 +518,7 @@ function renderDetail() {
       <h2>${escapeHtml(coach.name)}</h2>
       <p class="detail-owner">${escapeHtml(coach.coachProfileName || coach.name)} · ${escapeHtml(coach.coachSummary || coach.tier || "코치")}</p>
       <div class="detail-trust">
-        <strong>★ ${coach.rating.toFixed(1)} <span>(${coach.lessons || 0})</span></strong>
-        <em>${reviews.length}개 후기</em>
+        <strong>${getReviewLabel(coach)}</strong>
       </div>
       <p>${escapeHtml(coach.tagline || coach.bio)}</p>
       <div class="detail-summary">
@@ -533,8 +538,6 @@ function renderDetail() {
   state.selectedCoachId = coach.id;
   $("lessonDetailBody").innerHTML = renderLessonDetailMarkup(coach);
   bindAuthButtons($("lessonDetailBody"));
-  mountBookingForm("lessonBookingMount", coach);
-  loadPublicAvailability(coach.id);
   loadCoachReviews(coach.id);
   modal.hidden = false;
 }
@@ -662,7 +665,7 @@ async function loadCoachReviews(coachId) {
       coach.reviews = state.reviewsByCoach[key].map((review) => [review.author || review.displayName || review.studentName || "수강생", review.content || review.body || ""]);
       if (String(state.selectedCoachId) === key && $("lessonDetailModal") && !$("lessonDetailModal").hidden) {
         $("lessonDetailBody").innerHTML = renderLessonDetailMarkup(coach);
-        mountBookingForm("lessonBookingMount", coach);
+        bindAuthButtons($("lessonDetailBody"));
       }
     }
   } catch {
@@ -672,7 +675,6 @@ async function loadCoachReviews(coachId) {
 
 function renderLessonInfoBlocks(coach) {
   const focusItems = getLessonFocusItems(coach);
-  const reviewCount = coach.reviews?.length || 0;
   return `
     <section class="lesson-info-grid">
       <article>
@@ -690,7 +692,7 @@ function renderLessonInfoBlocks(coach) {
       <article>
         <span>추천 대상</span>
         <p>${escapeHtml(getCoachDetailTone(coach))}</p>
-        <small>판매 ${coach.lessons || 0}회 · 후기 ${reviewCount}개 · 평점 ${coach.rating.toFixed(1)}</small>
+        <small>${coach.lessons ? `판매 ${coach.lessons}회 · ` : ""}${getReviewLabel(coach)}</small>
       </article>
     </section>
   `;
@@ -705,8 +707,7 @@ function renderLessonDetailMarkup(coach) {
       <h2 id="lessonDetailTitle">${escapeHtml(coach.name)}</h2>
       <p class="detail-owner">${escapeHtml(coach.coachProfileName || coach.name)} · ${escapeHtml(coach.coachSummary || coach.tier || "코치")}</p>
       <div class="detail-trust">
-        <strong>★ ${coach.rating.toFixed(1)} <span>(${coach.lessons || 0})</span></strong>
-        <em>${reviews.length}개 후기</em>
+        <strong>${getReviewLabel(coach)}</strong>
       </div>
       <p class="lesson-detail-description">${escapeHtml(coach.bio || coach.tagline || "")}</p>
       <div class="detail-summary">
@@ -726,21 +727,14 @@ function renderLessonDetailMarkup(coach) {
       <section class="booking-panel">
         <div class="booking-panel-head">
           <div>
-             <strong>구매하기</strong>
-             <span>구매 정보를 남기면 운영진과 코치가 일정을 확인합니다.</span>
+             <strong>현재 코칭 문의만 가능합니다.</strong>
+             <span>점검이 끝날 때까지 문의를 남겨주시면 운영진이 가능한 일정을 안내합니다.</span>
           </div>
           <em>${escapeHtml(coach.price)}</em>
         </div>
-        <div class="booking-note">
-          디스코드 화면공유 또는 리플레이 리뷰로 진행됩니다.
+        <div class="booking-route">
+          <button class="primary" type="button" data-open-auth="guest">코칭 문의하기</button>
         </div>
-        ${state.currentUser ? "" : `
-          <div class="booking-route">
-            <button class="primary" type="button" data-open-auth="login">강의 구매</button>
-            <button class="secondary" type="button" data-open-auth="guest">비회원 상담 문의</button>
-          </div>
-        `}
-        <div id="lessonBookingMount"></div>
       </section>
     </div>
   `;

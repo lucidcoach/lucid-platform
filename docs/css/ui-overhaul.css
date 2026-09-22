@@ -801,6 +801,15 @@ body[data-theme="dark"] :where(.auth-dialog,.reservation-dialog,.lesson-detail-d
 body:not([data-theme="dark"]) :where(.nav-item,.service-nav-item,.lucid-brand,.profile-menu>summary,.catalog-heading h2,.market-head h2,.coach-main h3,.detail-body h2,.detail-body h3){color:var(--text)}
 body:not([data-theme="dark"]) :where(.coach-main>p,.featured-summary,.detail-copy,.detail-body p,.market-head span,.catalog-heading p){color:var(--muted)}
 
+@media (max-width: 620px) {
+  .main,.catalog-shell,.filter-block,.filter-row,.market-head,.featured-card,.featured-body,.coach-card,.coach-main{min-width:0;max-width:100%}
+  .tab,.purpose-tab{max-width:100%;white-space:normal}
+  .market-head{align-items:flex-start;flex-direction:column;gap:5px}
+  .market-head span{max-width:100%;white-space:normal;text-align:left;overflow-wrap:anywhere}
+  .featured-card{grid-template-columns:minmax(96px,116px) minmax(0,1fr)}
+  .featured-price{flex-wrap:wrap}
+}
+
 /* Coach calendar: native dialog + CSS grid, no calendar dependency. */
 .calendar-panel{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel-2)}
 .calendar-week-title{margin:10px 0;color:var(--muted);font-size:12px;font-weight:800}

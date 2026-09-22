@@ -10,6 +10,7 @@ const auth = read("../docs/community/js/auth.js");
 const profile = read("../docs/community/js/pages/playerSearch.js");
 const profileCss = read("../docs/community/css/profile.css");
 const tokens = read("../docs/community/css/tokens.css");
+const responsive = read("../docs/community/css/responsive.css");
 const coachPage = read("../docs/index.html");
 const coachShell = read("../docs/css/ui-overhaul.css");
 
@@ -22,6 +23,10 @@ assert.match(entry, /RECENT_SEARCH_LIMIT = 5/);
 assert.match(page, /communityProfileMenu/);
 assert.equal(page.match(/data-community-account/g)?.length, 1);
 assert.match(page, /nav-hierarchy-divider/);
+assert.match(page, /mobile-more-item"[^>]+data-view="ranking"/);
+assert.match(page, /mobile-more-item"[^>]+data-view="mileage"/);
+assert.match(responsive, /community-nav>\.nav-tab\[data-view="ranking"\][^}]+display:none/);
+assert.match(responsive, /community-nav \.mobile-more-item\{display:flex\}/);
 assert.match(scrimsPage, /service-nav-item current-service" href="\.\.\/">커뮤니티/);
 assert.match(scrimsPage, /service-nav-item" href="\.\.\/\.\.\/">강의/);
 assert.match(scrimsPage, /nav-hierarchy-divider/);
