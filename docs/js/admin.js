@@ -44,6 +44,20 @@ export async function fetchAdminSettlements(status = "") {
   return requestJson(`/api/admin/settlements${query}`, { headers: getAdminHeaders() });
 }
 
+export function fetchSiteSettings() {
+  return requestJson("/api/site-settings").then((result) => result.settings || {});
+}
+
+export function saveSiteSettings(payload) {
+  return requestJson("/api/admin/site-settings", {
+    method: "PATCH", headers: getAdminHeaders(true), body: JSON.stringify(payload),
+  }).then((result) => result.settings || payload);
+}
+
+export function fetchAdminOperations() {
+  return requestJson("/api/admin/operations", { headers: getAdminHeaders() });
+}
+
 export async function updateAdminSettlement(id, status, note = "") {
   return requestJson(`/api/admin/settlements/${encodeURIComponent(id)}`, {
     method: "PATCH", headers: getAdminHeaders(true), body: JSON.stringify({ status, note }),

@@ -4,6 +4,7 @@ import { $, escapeHtml } from "../utils.js?v=20260905ai";
 const esc = (value) => escapeHtml(String(value ?? ""));
 const emptyState = () => `<div class="home-empty-state"><strong>현재 모집 중인 내전이 없습니다.</strong><p>새로운 내전이 열리면 이곳에서 바로 확인할 수 있습니다.</p></div>`;
 let queues = [];
+let loadError = "";
 
 function scheduleText(queue) {
   if (!queue.scheduledAt) return queue.queueDate ? `${queue.queueDate} · 모이면 바로 시작` : "모이면 바로 시작";
@@ -36,14 +37,17 @@ function queueCard(queue) {
     <h3>${esc(displayTitle(queue))}</h3>
     <p>${esc(type)} · ${esc(formatText(queue))}</p>
     <div class="recruitment-card-foot"><strong>참가 인원 ${count}${capacity ? ` / ${capacity}` : ""}명${waiting ? ` · 대기 ${waiting}명` : ""}</strong>${positions.length ? `<span>${positions.map((position)=>`${esc(position)} 필요`).join(" · ")}</span>` : ""}</div>
-    ${!full && queue.joinUrl ? `<a class="recruitment-join" href="${esc(queue.joinUrl)}" target="_blank" rel="noopener noreferrer">참가하기 →</a>` : ""}
+    ${!full && queue.joinUrl ? `<a class="recruitment-join" href="${esc(queue.joinUrl)}" target="_blank" rel="noopener noreferrer">Discord에서 참가 ↗</a><small class="recruitment-join-note">Discord 앱 또는 웹으로 이동합니다.</small>` : ""}
   </article>`;
 }
 
 function renderRecruitments() {
   const root = $("recruitmentRoot");
   if (!root) return;
-  root.innerHTML = queues.length ? `<div class="recruitment-grid">${queues.map(queueCard).join("")}</div>` : emptyState();
+  root.innerHTML = loadError
+    ? `<div class="home-empty-state is-error"><strong>모집 일정을 불러오지 못했습니다.</strong><p>${esc(loadError)}</p><button type="button" data-recruitment-retry>다시 시도</button></div>`
+    : queues.length ? `<div class="recruitment-grid">${queues.map(queueCard).join("")}</div>` : emptyState();
+  root.querySelector("[data-recruitment-retry]")?.addEventListener("click", loadRecruitments);
 }
 
 export async function loadRecruitments() {
@@ -52,9 +56,11 @@ export async function loadRecruitments() {
   try {
     const data = await apiGet("/api/community/recruitments");
     queues = Array.isArray(data.queues) ? data.queues.slice(0, 3) : [];
+    loadError = "";
     renderRecruitments();
-  } catch (_error) {
+  } catch (error) {
     queues = [];
+    loadError = error.message || "네트워크 연결을 확인하고 다시 시도해주세요.";
     renderRecruitments();
   }
 }

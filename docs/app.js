@@ -1,5 +1,5 @@
 
-import { categories, filterSets, purposes, adminLineOptions, adminFieldOptions, priceUnits, badgeOptions, text, samples, imageMigration, tierRank, leagueLessonOverrides, legacyCoachKeys, state } from "./js/catalog.js";
+import { categories, filterSets, purposes, adminLineOptions, adminFieldOptions, priceUnits, badgeOptions, text, samples, imageMigration, tierRank, leagueLessonOverrides, legacyCoachKeys, state } from "./js/catalog.js?v=20260923ops1";
 import {
   ADMIN_TOKEN_KEY,
   API_BASE_URL,
@@ -16,6 +16,7 @@ import {
   deleteCoachFromApi,
   fetchAdminCoachSettings,
   fetchCoachRequests,
+  fetchSiteSettings,
   fetchUsers,
   loginAdmin,
   normalizeAdminCoachSetting,
@@ -23,7 +24,7 @@ import {
   saveAdminCoachSettings,
   saveCoachToApi,
   updateUserRole,
-} from "./js/admin.js";
+} from "./js/admin.js?v=20260923ops1";
 import { deleteCurrentUser as deleteCurrentUserApi, fetchCurrentUser, loginUser, logoutAuthSessions, signupUser, updateCurrentUser, userIsAdmin, userIsCoach, userRoles } from "./js/auth.js";
 import {
   getCoachBadges,
@@ -89,12 +90,12 @@ import {
   parseReservationPrice,
   splitCsv,
 } from "./js/utils.js";
-import { createMarketPage } from "./js/pages/market.js?v=20260923ux1";
+import { createMarketPage } from "./js/pages/market.js?v=20260923ops1";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
 import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911coupon1";
-import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260914header1";
-import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260907accountfix1";
-import { createCoachSelfPage } from "./js/pages/coachSelf.js";
+import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260923ops1";
+import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260923ops1";
+import { createCoachSelfPage } from "./js/pages/coachSelf.js?v=20260923ops1";
 import { createLegacyImportPage } from "./js/pages/legacyImport.js?v=20260921legacyreview1";
 import { createImageCropController } from "./js/components/imageCrop.js";
 
@@ -174,7 +175,19 @@ function boot() {
   bindEvents();
   showOAuthResult();
   loadCurrentUser();
+  loadSiteSettings();
   loadCoachesFromApi();
+}
+
+async function loadSiteSettings() {
+  state.siteSettingsLoadState = "loading";
+  try {
+    state.siteSettings = { ...state.siteSettings, ...await fetchSiteSettings() };
+    state.siteSettingsLoadState = "loaded";
+  } catch {
+    state.siteSettingsLoadState = "error";
+  }
+  renderMarket();
 }
 
 let eventsBound = false;
@@ -227,6 +240,7 @@ function bindEvents() {
         loadAdminRefundRequests();
       } else if (state.activeView === "admin") {
         loadAdminCoachSettings();
+        loadAdminOperations();
       }
     });
   });
@@ -371,6 +385,7 @@ function render() {
   renderAccountView();
   renderBookings();
   renderAdmin();
+  renderAdminOperations();
   renderUsers();
   renderCoachRequests();
   renderCoachSelf();
@@ -422,6 +437,7 @@ async function openAdminView(nextView) {
     loadAdminRefundRequests();
   } else if (nextView === "admin") {
     loadAdminCoachSettings();
+    loadAdminOperations();
   } else if (nextView === "users") {
     loadUsers();
   } else if (nextView === "legacyImport") {
@@ -563,6 +579,8 @@ function loginForReservations(...args) { return authAccountPage.loginForReservat
 
 let adminDashboardPage;
 function loadAdminCoachSettings(...args) { return adminDashboardPage.loadAdminCoachSettings(...args); }
+function loadAdminOperations(...args) { return adminDashboardPage.loadAdminOperations(...args); }
+function renderAdminOperations(...args) { return adminDashboardPage.renderAdminOperations(...args); }
 function resetCoachesToSamples(...args) { return adminDashboardPage.resetCoachesToSamples(...args); }
 function loadUsers(...args) { return adminDashboardPage.loadUsers(...args); }
 function saveUserRole(...args) { return adminDashboardPage.saveUserRole(...args); }

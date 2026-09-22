@@ -715,6 +715,7 @@ function renderAccountPanelMarkup() {
         <div><span>계정 설정</span><strong>프로필 · 게임 계정</strong></div>
       </div>
       ${needsNickname ? `<p class="account-required">닉네임을 설정해주세요.</p>` : ""}
+      <div class="account-link-guide"><strong>연동 순서</strong><span>사이트 로그인은 예약·결제 내역을 저장합니다. Discord 연결은 봇에서 등록한 Riot ID와 커뮤니티 전적을 이 계정에 연결합니다.</span><small>Discord 연결 후에도 Riot ID가 보이지 않으면 Discord에서 /소환사등록을 먼저 완료해주세요.</small></div>
       <div class="account-settings-grid">
         <form class="account-setting-card" id="accountNicknameForm">
           <div><span>닉네임</span><small>${escapeHtml(availableText)}</small></div>

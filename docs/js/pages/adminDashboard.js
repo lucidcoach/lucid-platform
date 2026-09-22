@@ -4,12 +4,15 @@ import {
   decideCoachRequest,
   deleteCoachFromApi,
   deleteCoachGroupFromApi,
+  fetchAdminOperations,
   fetchAdminCoachSettings,
   fetchCoachRequests,
+  fetchSiteSettings,
   fetchUsers,
   normalizeAdminCoachSetting,
   resetCoachesInApi,
   saveAdminCoachSettings,
+  saveSiteSettings,
   saveCoachToApi,
   updateUserRole,
 } from "../admin.js";
@@ -29,6 +32,70 @@ export function createAdminDashboardPage({
   openAuthModal,
   renderRoleMenu,
 }) {
+async function loadAdminOperations() {
+  state.adminOperationsLoadState = "loading";
+  renderAdminOperations();
+  try {
+    const [operations, settings] = await Promise.all([
+      runAdminRequest(fetchAdminOperations),
+      fetchSiteSettings(),
+    ]);
+    state.adminOperations = operations;
+    state.siteSettings = { ...state.siteSettings, ...settings };
+    state.adminOperationsLoadState = "loaded";
+  } catch (error) {
+    state.adminOperationsLoadState = "error";
+    state.adminOperations = { error: error.message || "운영 현황을 불러오지 못했습니다." };
+  }
+  renderAdminOperations();
+}
+
+function renderAdminOperations() {
+  const panel = $("adminOperationsPanel");
+  if (!panel) return;
+  if (state.adminOperationsLoadState === "loading") {
+    panel.innerHTML = '<div class="empty">운영 현황을 불러오는 중입니다.</div>';
+    return;
+  }
+  const counts = state.adminOperations?.counts || {};
+  const status = state.adminOperations?.status || {};
+  const setting = state.siteSettings;
+  panel.innerHTML = `
+    <div class="admin-operations-head"><div><span>오늘 처리할 일</span><strong>운영 현황</strong></div><button class="secondary mini" type="button" id="reloadAdminOperationsBtn">새로고침</button></div>
+    ${state.adminOperations?.error ? `<p class="save-status error">${escapeHtml(state.adminOperations.error)}</p>` : `
+      <div class="admin-operation-grid">
+        ${[["예약",counts.reservations],["환불",counts.refunds],["정산",counts.settlements],["코치 승인",counts.coachRequests],["문의",counts.inquiries],["상세스탯 누락",counts.missingDetails],["Riot 동기화 실패",counts.riotFailures],["실패·대기 작업",counts.adminActions]].map(([label,value])=>`<article><span>${label}</span><strong>${Number(value||0).toLocaleString("ko-KR")}</strong></article>`).join("")}
+      </div>
+      <p class="admin-system-status">DB ${status.database === "ok" ? "정상" : "확인 필요"} · 봇 ${status.botConfigured ? "설정됨" : "설정 필요"} · 커뮤니티 ${status.communityConfigured ? "연결됨" : "설정 필요"} · Riot 마지막 동기화 ${status.lastRiotSyncAt ? escapeHtml(new Date(status.lastRiotSyncAt).toLocaleString("ko-KR")) : "기록 없음"} · 프런트 20260923ops1 · 백엔드 ${escapeHtml(status.deployVersion || "확인 불가")}</p>
+    `}
+    <form id="siteSettingsForm" class="admin-site-settings">
+      <label class="toggle-line"><input name="maintenance" type="checkbox" ${setting.maintenance ? "checked" : ""}><span>코칭 점검 모드</span></label>
+      <label>점검 제목<input name="maintenanceTitle" maxlength="120" required value="${escapeHtml(setting.maintenanceTitle)}"></label>
+      <label class="wide">안내 문구<textarea name="maintenanceMessage" maxlength="500" required rows="2">${escapeHtml(setting.maintenanceMessage)}</textarea></label>
+      <label>문의 버튼 문구<input name="maintenanceCta" maxlength="60" required value="${escapeHtml(setting.maintenanceCta)}"></label>
+      <button class="primary" type="submit">점검 설정 저장</button><span id="siteSettingsStatus" class="save-status" aria-live="polite"></span>
+    </form>`;
+  $("reloadAdminOperationsBtn")?.addEventListener("click", loadAdminOperations);
+  $("siteSettingsForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const target = $("siteSettingsStatus");
+    target.textContent = "저장 중...";
+    try {
+      state.siteSettings = await runAdminRequest(() => saveSiteSettings({
+        maintenance: form.get("maintenance") === "on",
+        maintenanceTitle: form.get("maintenanceTitle"),
+        maintenanceMessage: form.get("maintenanceMessage"),
+        maintenanceCta: form.get("maintenanceCta"),
+      }));
+      target.textContent = "저장 완료";
+      renderMarket();
+    } catch (error) {
+      target.textContent = `저장 실패: ${error.message}`;
+    }
+  });
+}
+
 async function loadAdminCoachSettings() {
   const requestId = ++state.adminCoachSettingsRequestId;
   state.adminCoachSettingsLoadState = "loading";
@@ -620,6 +687,8 @@ async function deleteSelectedCoach() {
 
 
   return {
+    loadAdminOperations,
+    renderAdminOperations,
     loadAdminCoachSettings,
     resetCoachesToSamples,
     loadUsers,

@@ -253,6 +253,13 @@ function getReviewLabel(coach) {
 }
 
 function renderMarket() {
+  const maintenance = state.siteSettings?.maintenance !== false;
+  const maintenanceBanner = $("coachingMaintenanceBanner");
+  if (maintenanceBanner) {
+    maintenanceBanner.hidden = !maintenance;
+    $("coachingMaintenanceTitle").textContent = state.siteSettings.maintenanceTitle;
+    $("coachingMaintenanceMessage").textContent = state.siteSettings.maintenanceMessage;
+  }
   const availableCategories = categories.filter((category) =>
     category.id !== "academy" && state.coaches.some((coach) => coach.active !== false && coach.category === category.id)
   );
@@ -538,6 +545,7 @@ function renderDetail() {
   state.selectedCoachId = coach.id;
   $("lessonDetailBody").innerHTML = renderLessonDetailMarkup(coach);
   bindAuthButtons($("lessonDetailBody"));
+  mountLessonBooking(coach);
   loadCoachReviews(coach.id);
   modal.hidden = false;
 }
@@ -579,6 +587,12 @@ function normalizeAvailabilitySlot(slot) {
     label: slot.label || formatDateTime(startsAt) + (endsAt ? ` ~ ${formatDateTime(endsAt)}` : ""),
     available: Number.isFinite(startsAtMs) && startsAtMs > Date.now() && slot.available !== false && slot.isAvailable !== false && !["cancelled", "canceled"].includes(String(slot.status || "").toLowerCase()),
   };
+}
+
+function mountLessonBooking(coach) {
+  if (state.siteSettings?.maintenance !== false) return;
+  mountBookingForm("lessonBookingMount", coach);
+  loadPublicAvailability(coach.id);
 }
 
 const availabilityDateKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
@@ -666,6 +680,7 @@ async function loadCoachReviews(coachId) {
       if (String(state.selectedCoachId) === key && $("lessonDetailModal") && !$("lessonDetailModal").hidden) {
         $("lessonDetailBody").innerHTML = renderLessonDetailMarkup(coach);
         bindAuthButtons($("lessonDetailBody"));
+        mountLessonBooking(coach);
       }
     }
   } catch {
@@ -700,6 +715,7 @@ function renderLessonInfoBlocks(coach) {
 
 function renderLessonDetailMarkup(coach) {
   const reviews = coach.reviews || [];
+  const maintenance = state.siteSettings?.maintenance !== false;
   return `
     <div class="lesson-detail-hero"><img src="${escapeHtml(getDetailImage(coach))}" alt="" style="${escapeHtml(getWideImageStyle(coach, "detailImagePosition"))}"></div>
     <div class="lesson-detail-body">
@@ -724,18 +740,18 @@ function renderLessonDetailMarkup(coach) {
           ${reviews.slice(0, 3).map(([name, body]) => `<p><b>${escapeHtml(name)}</b> ${escapeHtml(body)}</p>`).join("")}
         </section>
       ` : ""}
-      <section class="booking-panel">
+      ${maintenance ? `<section class="booking-panel">
         <div class="booking-panel-head">
           <div>
-             <strong>현재 코칭 문의만 가능합니다.</strong>
-             <span>점검이 끝날 때까지 문의를 남겨주시면 운영진이 가능한 일정을 안내합니다.</span>
+             <strong>${escapeHtml(state.siteSettings.maintenanceTitle)}</strong>
+             <span>${escapeHtml(state.siteSettings.maintenanceMessage)}</span>
           </div>
           <em>${escapeHtml(coach.price)}</em>
         </div>
         <div class="booking-route">
-          <button class="primary" type="button" data-open-auth="guest">코칭 문의하기</button>
+          <button class="primary" type="button" data-open-auth="guest">${escapeHtml(state.siteSettings.maintenanceCta)}</button>
         </div>
-      </section>
+      </section>` : `<section class="booking-panel"><div class="booking-panel-head"><div><strong>예약 가능한 시간을 먼저 선택하세요.</strong><span>시간 확인은 로그인 없이 가능하며, 구매 단계에서 로그인합니다.</span></div><em>${escapeHtml(coach.price)}</em></div><div id="lessonBookingMount"></div></section>`}
     </div>
   `;
 }

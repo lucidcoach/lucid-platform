@@ -61,6 +61,7 @@
 .recruitment-card-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto}
 .recruitment-join{width:max-content;color:var(--accent-hover);font-size:12px;text-decoration:none}
 .recruitment-join:hover{text-decoration:underline}
+.recruitment-join-note{color:var(--text-muted);font-size:9px}.home-empty-state.is-error{border-color:color-mix(in srgb,var(--danger) 45%,var(--border-default))}.home-empty-state.is-error button{margin-top:10px}
 
 /* The archive keeps its existing cards and adds a fixed desktop sidebar. */
 .scrims-view .recent-live-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:28px;align-items:start}

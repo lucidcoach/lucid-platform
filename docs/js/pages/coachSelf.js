@@ -250,6 +250,13 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
   const purposeOptions = filters.type.filter((item) => item.id !== "all");
   const selectedPurposes = getCoachPurposes(lesson);
   const selectedRoles = lesson.roles || [];
+  const publishChecks = [
+    ["강의명", Boolean(lesson.name?.trim())],
+    ["한 줄 소개", Boolean(lesson.tagline?.trim())],
+    ["가격", /\d/.test(String(lesson.price || ""))],
+    ["강의 이미지", Boolean(lesson.image && !["assets/logo.jpg", "assets/lollogo.png"].includes(lesson.image))],
+    ["분류", Boolean(lesson.category)],
+  ];
   editor.innerHTML = `${picker}
     <form class="coach-self-form" id="coachSelfForm">
       <input type="hidden" id="coachSelfLessonId" value="${escapeHtml(lesson.id)}">
@@ -273,8 +280,14 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
       </div>
       <label class="toggle-line">
         <input id="coachSelfLessonPublished" type="checkbox" ${lesson.published !== false ? "checked" : ""}>
-        <span>이 강의를 홈페이지에 공개합니다</span>
+        <span>공개 상태 · 체크하면 홈페이지에 게시됩니다</span>
       </label>
+      <section class="publish-checklist" id="coachSelfPublishChecklist">
+        <strong>공개 전 체크</strong>
+        <div>${publishChecks.map(([label,done])=>`<span data-publish-check="${escapeHtml(label)}" class="${done?"done":""}">${done?"✓":"○"} ${escapeHtml(label)}</span>`).join("")}</div>
+        <small>예약 가능 시간은 일정 관리에서 별도로 등록하세요.</small>
+      </section>
+      <article class="lesson-draft-preview" id="coachSelfPublishPreview"></article>
       <label>강의명<input id="coachSelfLessonName" required value="${escapeHtml(lesson.name)}"></label>
       <label>한 줄 소개<input id="coachSelfTagline" ${lesson.published !== false ? "required" : ""} value="${escapeHtml(lesson.tagline || "")}"></label>
       <div class="price-builder">
@@ -311,15 +324,32 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
   updateWideImagePreview("coachSelfLessonImage", "coachSelfLessonImagePreview");
   $("coachSelfLessonImageFile").addEventListener("change", (event) => handleCoachSelfProfileImageFile(event, "coachSelfLessonImage", "coachSelfLessonImagePreview", "강의 이미지"));
   $("openCoachSelfLessonCropBtn").addEventListener("click", () => openCropModal({ inputId: "coachSelfLessonImage", previewId: "coachSelfLessonImagePreview", width: 520, height: 520, label: "강의 이미지" }));
-  $("coachSelfLessonPublished").addEventListener("change", (event) => { $("coachSelfTagline").required = event.target.checked; });
   renderCoachSelfPriceUnitOptions(unitType, unit);
   updateCoachSelfPriceValue();
+  const updatePublishPreview = () => {
+    const values = {
+      "강의명": $("coachSelfLessonName").value.trim(),
+      "한 줄 소개": $("coachSelfTagline").value.trim(),
+      "가격": /\d/.test($("coachSelfPrice").value),
+      "강의 이미지": Boolean($("coachSelfLessonImage").value && !["assets/logo.jpg", "assets/lollogo.png"].includes($("coachSelfLessonImage").value)),
+      "분류": Boolean(lesson.category),
+    };
+    $("coachSelfPublishChecklist").querySelectorAll("[data-publish-check]").forEach((item) => {
+      const done = Boolean(values[item.dataset.publishCheck]);
+      item.classList.toggle("done", done);
+      item.textContent = `${done ? "✓" : "○"} ${item.dataset.publishCheck}`;
+    });
+    $("coachSelfPublishPreview").innerHTML = `<img src="${escapeHtml($("coachSelfLessonImage").value || "assets/logo.jpg")}" alt=""><span><small>공개 미리보기</small><strong>${escapeHtml($("coachSelfLessonName").value.trim() || "강의명")}</strong><p>${escapeHtml($("coachSelfTagline").value.trim() || "한 줄 소개가 표시됩니다.")}</p><b>${escapeHtml($("coachSelfPrice").value || "가격 상담")}</b></span>`;
+  };
+  $("coachSelfLessonPublished").addEventListener("change", (event) => { $("coachSelfTagline").required = event.target.checked; updatePublishPreview(); });
   $("coachSelfPriceUnitType").addEventListener("change", () => {
     renderCoachSelfPriceUnitOptions($("coachSelfPriceUnitType").value);
     updateCoachSelfPriceValue();
   });
   $("coachSelfPriceAmount").addEventListener("input", updateCoachSelfPriceValue);
   $("coachSelfPriceUnit").addEventListener("change", updateCoachSelfPriceValue);
+  ["coachSelfLessonName","coachSelfTagline","coachSelfPriceAmount","coachSelfPriceUnit","coachSelfLessonImage"].forEach((id)=>$(id)?.addEventListener("input",updatePublishPreview));
+  updatePublishPreview();
   $("coachSelfForm").addEventListener("submit", saveCoachSelfLesson);
   $("coachSelfDeleteLessonBtn")?.addEventListener("click", async (event) => {
     if (!confirm(`'${lesson.name}' 강의를 삭제할까요?`)) return;
@@ -945,6 +975,18 @@ async function saveCoachSelfProfile(event) {
 
 async function saveCoachSelfLesson(event) {
   event.preventDefault();
+  if ($("coachSelfLessonPublished").checked) {
+    const missing = [
+      ["강의명", $("coachSelfLessonName").value.trim()],
+      ["한 줄 소개", $("coachSelfTagline").value.trim()],
+      ["가격", /\d/.test($("coachSelfPrice").value)],
+      ["강의 이미지", $("coachSelfLessonImage").value && !["assets/logo.jpg", "assets/lollogo.png"].includes($("coachSelfLessonImage").value)],
+    ].filter(([,done])=>!done).map(([label])=>label);
+    if (missing.length) {
+      alert(`공개 전에 확인해주세요: ${missing.join(", ")}\n아직 준비 중이면 공개 체크를 끄고 초안으로 저장할 수 있습니다.`);
+      return;
+    }
+  }
   const id = $("coachSelfLessonId").value;
   const previous = getCoachSelfLessons().find((coach) => coach.id === id);
   if (!previous) return;
