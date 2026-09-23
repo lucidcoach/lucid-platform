@@ -87,7 +87,7 @@ function dashboard(){
       <span class="admin-status-pill">관리자 권한 확인됨</span>
     </section>
     <div class="admin-card-grid">
-      ${sections.filter(([id])=>isCommunityAdmin()||!["retro","rofl","data","support"].includes(id)).map(([id,title,desc,icon])=>`
+      ${sections.filter(([id])=>!["events","data"].includes(id)&&(isCommunityAdmin()||!["retro","rofl","support"].includes(id))).map(([id,title,desc,icon])=>`
         <button class="admin-menu-card" type="button" data-admin-section="${id}">
           <span class="admin-menu-icon">${icon}</span>
           <span><strong>${title}</strong><small>${desc}</small></span>
@@ -412,7 +412,7 @@ function supportPanel(){
     ${panelTitle("문의 관리","/봇제작자문의를 홈페이지 문의 시스템으로 이관합니다.")}
     <section class="admin-work-panel">
       <div class="admin-subtabs"><button class="active" data-inquiry-status="">전체</button><button data-inquiry-status="open">미처리</button><button data-inquiry-status="processing">처리중</button><button data-inquiry-status="completed">완료</button></div>
-      <p class="admin-tab-feedback">전체 문의입니다.</p>
+      <div class="admin-toolbar"><p class="admin-tab-feedback">전체 문의입니다.</p><label>우선 보기<select id="inquiryQueueFilter"><option value="all">전체</option><option value="overdue">기한 초과</option><option value="unassigned">미배정</option><option value="mine">내 담당</option></select></label></div>
       <div id="adminInquiryList"><div class="admin-empty-admin"><strong>불러오는 중...</strong></div></div>
     </section>
   `);
@@ -656,18 +656,29 @@ async function loadOperationLogs(kind="chat"){
 }
 
 function inquiryDueInput(value){const date=new Date(value||"");if(Number.isNaN(date.getTime()))return "";return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+function inquiryTime(value){const date=new Date(value||"");return Number.isNaN(date.getTime())?"시간 미상":date.toLocaleString("ko-KR",{timeZone:"Asia/Seoul"});}
+const inquiryStatusLabel=value=>({open:"미처리",processing:"처리중",completed:"완료"})[value]||value;
 
 async function loadInquiries(status=""){
   const target=document.getElementById("adminInquiryList");if(!target)return;
   try{
-    const data=await adminRequest(`/api/community/admin/inquiries${status?`?status=${status}`:""}`),rows=data.inquiries||[];
+    const data=await adminRequest(`/api/community/admin/inquiries${status?`?status=${status}`:""}`);let rows=data.inquiries||[];
+    const queue=document.getElementById("inquiryQueueFilter")?.value||"all",user=getCurrentUser()||{},mine=[user.displayName,user.email,user.discordDisplayName].filter(Boolean).map(String);
+    if(queue==="overdue")rows=rows.filter(row=>row.dueAt&&row.status!=="completed"&&Date.parse(row.dueAt)<Date.now());
+    if(queue==="unassigned")rows=rows.filter(row=>!row.assignedTo);
+    if(queue==="mine")rows=rows.filter(row=>mine.includes(String(row.assignedTo||"")));
+    rows.sort((a,b)=>Number(Boolean(b.dueAt&&b.status!=="completed"&&Date.parse(b.dueAt)<Date.now()))-Number(Boolean(a.dueAt&&a.status!=="completed"&&Date.parse(a.dueAt)<Date.now()))||(Date.parse(a.dueAt)||Infinity)-(Date.parse(b.dueAt)||Infinity));
     target.innerHTML=rows.length?rows.map(row=>{
       const overdue=row.dueAt&&row.status!=="completed"&&Date.parse(row.dueAt)<Date.now();
-      const contactLink=String(row.contact||"").includes("@")?`<a href="mailto:${esc(row.contact)}">이메일 열기</a>`:`<button type="button" data-copy-contact="${esc(row.contact)}">연락처 복사</button>`;
-      return `<article class="admin-event-card inquiry-admin-card ${overdue?"is-overdue":""}"><div><small>${esc(row.status)} · ${esc(row.createdAt)}${overdue?" · 처리 기한 초과":""}</small><h3>${esc(row.subject)}</h3><p>${esc(row.message)}</p><p>${esc(row.contact)} · ${contactLink}</p></div><form data-inquiry-form="${esc(row.id)}" class="inquiry-admin-form"><label>상태<select name="status"><option value="open" ${row.status==="open"?"selected":""}>미처리</option><option value="processing" ${row.status==="processing"?"selected":""}>처리중</option><option value="completed" ${row.status==="completed"?"selected":""}>완료</option></select></label><label>담당자<input name="assignedTo" maxlength="120" value="${esc(row.assignedTo||"")}" placeholder="담당자"></label><label>처리 기한<input name="dueAt" type="datetime-local" value="${esc(inquiryDueInput(row.dueAt))}"></label><label class="wide">내부 메모<textarea name="note" rows="2" maxlength="1000">${esc(row.adminNote||"")}</textarea></label><label class="wide">사용자 답변 초안<textarea name="reply" rows="3" maxlength="3000">${esc(row.adminReply||"")}</textarea></label><button class="admin-primary" type="submit">저장</button></form></article>`;
+      return `<article class="admin-event-card inquiry-admin-card ${overdue?"is-overdue":""}"><div><small>${esc(inquiryStatusLabel(row.status))} · ${esc(inquiryTime(row.createdAt))}${overdue?" · 처리 기한 초과":""}</small><h3>${esc(row.subject)}</h3><p>${esc(row.message)}</p><p>${esc(row.contact)} · <button type="button" data-copy-contact="${esc(row.contact)}">연락처 복사</button></p></div><form data-inquiry-form="${esc(row.id)}" data-inquiry-contact="${esc(row.contact)}" data-inquiry-subject="${esc(row.subject)}" class="inquiry-admin-form"><label>상태<select name="status"><option value="open" ${row.status==="open"?"selected":""}>미처리</option><option value="processing" ${row.status==="processing"?"selected":""}>처리중</option><option value="completed" ${row.status==="completed"?"selected":""}>완료</option></select></label><label>담당자<input name="assignedTo" maxlength="120" value="${esc(row.assignedTo||"")}" placeholder="담당자"></label><label>처리 기한<input name="dueAt" type="datetime-local" value="${esc(inquiryDueInput(row.dueAt))}"></label><label class="wide">내부 메모<textarea name="note" rows="2" maxlength="1000">${esc(row.adminNote||"")}</textarea></label><label class="wide">사용자 답변 초안<textarea name="reply" rows="3" maxlength="3000">${esc(row.adminReply||"")}</textarea></label><div class="wide inquiry-reply-actions"><button type="button" data-copy-reply>답변 복사</button>${String(row.contact||"").includes("@")?`<button type="button" data-open-reply-email>답변 이메일 열기</button>`:""}<label><input name="replySent" type="checkbox" ${row.replySentAt?"checked":""}> 외부 발송 완료${row.replySentAt?` · ${esc(inquiryTime(row.replySentAt))}`:""}</label></div><button class="admin-primary" type="submit">저장</button></form></article>`;
     }).join(""):`<div class="admin-empty-admin"><strong>등록된 문의가 없습니다.</strong></div>`;
-    target.querySelectorAll("[data-copy-contact]").forEach(button=>button.addEventListener("click",async()=>{await navigator.clipboard.writeText(button.dataset.copyContact||"");button.textContent="복사됨";}));
-    target.querySelectorAll("[data-inquiry-form]").forEach(form=>form.addEventListener("submit",async event=>{event.preventDefault();const values=new FormData(form),dueAt=String(values.get("dueAt")||"");const button=form.querySelector("button[type=submit]");button.disabled=true;try{await adminRequest(`/api/community/admin/inquiries/${encodeURIComponent(form.dataset.inquiryForm)}`,{method:"PATCH",body:{status:values.get("status"),assignedTo:values.get("assignedTo"),dueAt:dueAt?new Date(dueAt).toISOString():"",note:values.get("note"),reply:values.get("reply")}});loadInquiries(status);}catch(error){alert(error.message);button.disabled=false;}}));
+    const copy=async(value,button)=>{try{await navigator.clipboard.writeText(value);button.textContent="복사됨";}catch{window.prompt("복사할 내용",value);}};
+    target.querySelectorAll("[data-copy-contact]").forEach(button=>button.addEventListener("click",()=>copy(button.dataset.copyContact||"",button)));
+    target.querySelectorAll("[data-inquiry-form]").forEach(form=>{
+      form.querySelector("[data-copy-reply]")?.addEventListener("click",event=>copy(form.elements.reply.value,event.currentTarget));
+      form.querySelector("[data-open-reply-email]")?.addEventListener("click",()=>{window.location.href=`mailto:${encodeURIComponent(form.dataset.inquiryContact)}?subject=${encodeURIComponent(`Re: ${form.dataset.inquirySubject}`)}&body=${encodeURIComponent(form.elements.reply.value)}`;});
+      form.addEventListener("submit",async event=>{event.preventDefault();const values=new FormData(form),dueAt=String(values.get("dueAt")||"");const button=form.querySelector("button[type=submit]");button.disabled=true;try{await adminRequest(`/api/community/admin/inquiries/${encodeURIComponent(form.dataset.inquiryForm)}`,{method:"PATCH",body:{status:values.get("status"),assignedTo:values.get("assignedTo"),dueAt:dueAt?new Date(dueAt).toISOString():"",note:values.get("note"),reply:values.get("reply"),replySent:values.get("replySent")==="on"}});loadInquiries(status);}catch(error){alert(error.message);button.disabled=false;}});
+    });
   }catch(error){target.innerHTML=`<div class="admin-empty-admin"><strong>불러오지 못했습니다.</strong><span>${esc(error.message)}</span></div>`;}
 }
 
@@ -685,6 +696,7 @@ function renderSection(){
   root.querySelectorAll("[data-admin-section]").forEach(btn=>btn.addEventListener("click",()=>{
     const next=btn.dataset.adminSection||"dashboard";
     activeSection=next;
+    const url=new URL(window.location.href);url.searchParams.set("view","admin");if(next==="dashboard")url.searchParams.delete("section");else url.searchParams.set("section",next);history.replaceState({...history.state,view:"admin"},"",`${url.pathname}${url.search}`);
     renderSection();
   }));
   root.querySelector("#adminGuildSelect")?.addEventListener("change",event=>{selectedGuild=event.currentTarget.value;renderSection();});
@@ -768,6 +780,7 @@ function renderSection(){
   }
   if(activeSection==="support"){
     loadInquiries("");
+    root.querySelector("#inquiryQueueFilter")?.addEventListener("change",()=>loadInquiries(root.querySelector("[data-inquiry-status].active")?.dataset.inquiryStatus||""));
     root.querySelectorAll("[data-inquiry-status]").forEach(button=>button.addEventListener("click",()=>{
       root.querySelectorAll("[data-inquiry-status]").forEach(item=>item.classList.toggle("active",item===button));
       loadInquiries(button.dataset.inquiryStatus);
@@ -791,7 +804,9 @@ export async function syncAdminAccess(){
 }
 
 export function renderCommunityAdmin({home=false}={}){
-  if(home)activeSection="dashboard";
+  const requested=new URL(window.location.href).searchParams.get("section");
+  if(home&&!requested)activeSection="dashboard";
+  if(requested&&sections.some(([id])=>id===requested)&&!["events","data"].includes(requested))activeSection=requested;
   activeSection=activeSection||"dashboard";
   renderSection();
   if(!guildsLoaded){

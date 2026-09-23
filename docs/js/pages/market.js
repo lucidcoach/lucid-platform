@@ -3,6 +3,22 @@ import { fetchCoachAvailability, fetchCoachReviews } from "../coachService.js";
 import { buildReservationPayload, fetchCoachingCoupons, previewTestCoachingCoupon, submitReservation } from "../reservations.js?v=20260911dryrun1";
 import { addLocalDays, byId as $, escapeHtml, formatDateTime, isoDateOnly } from "../utils.js";
 
+const BOOKING_DRAFT_KEY = "lucid-coaching-booking-draft";
+
+function readBookingDraft() {
+  try { return JSON.parse(sessionStorage.getItem(BOOKING_DRAFT_KEY) || "null"); }
+  catch { return null; }
+}
+
+function saveBookingDraft(coachId, form) {
+  sessionStorage.setItem(BOOKING_DRAFT_KEY, JSON.stringify({
+    coachId: String(coachId),
+    values: Object.fromEntries(new FormData(form).entries()),
+  }));
+}
+
+function clearBookingDraft() { sessionStorage.removeItem(BOOKING_DRAFT_KEY); }
+
 export function createMarketPage({
   render: renderApp,
   openAuthModal,
@@ -116,6 +132,7 @@ function renderSidebarCoaches() {
 function openCoachExplorer() {
   const modal = $("coachExplorerModal");
   if (!modal) return;
+  modal._returnFocus = document.activeElement;
   modal.hidden = false;
   if ($("coachExplorerSearch")) $("coachExplorerSearch").value = state.coachExplorerQuery;
   renderCoachExplorer();
@@ -124,7 +141,9 @@ function openCoachExplorer() {
 
 function closeCoachExplorer() {
   const modal = $("coachExplorerModal");
-  if (modal) modal.hidden = true;
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  modal._returnFocus?.focus?.();
 }
 
 function getCoachExplorerFilters() {
@@ -429,6 +448,7 @@ function renderFeaturedCard(coach) {
         <div class="featured-price">
           <strong>${escapeHtml(coach.price)}</strong>
         </div>
+        ${renderNextAvailability(coach)}
         <button class="detail-link" type="button" data-detail-id="${escapeHtml(coach.id)}">상세보기</button>
       </div>
     </article>
@@ -454,6 +474,7 @@ function renderCoachCard(coach) {
         <span>${getReviewLabel(coach)}</span>
         <span class="price">${escapeHtml(coach.price)}</span>
       </div>
+      ${renderNextAvailability(coach)}
       <button class="detail-link card-detail-link" type="button" data-detail-id="${escapeHtml(coach.id)}">상세보기</button>
     </article>
   `;
@@ -538,21 +559,40 @@ function renderDetail() {
   $("coachDetail").querySelector("[data-detail-id]")?.addEventListener("click", () => openLessonDetail(coach.id));
 }
 
-  function openLessonDetail(coachId) {
+  function openLessonDetail(coachId, { syncHistory = true } = {}) {
   const coach = state.coaches.find((item) => item.id === coachId);
   const modal = $("lessonDetailModal");
   if (!coach || !modal) return;
   state.selectedCoachId = coach.id;
+  if (syncHistory) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("lesson") !== String(coach.id)) {
+      url.searchParams.set("lesson", coach.id);
+      history.pushState({ ...(history.state || {}), lesson: coach.id }, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }
+  modal._returnFocus = document.activeElement;
   $("lessonDetailBody").innerHTML = renderLessonDetailMarkup(coach);
   bindAuthButtons($("lessonDetailBody"));
   mountLessonBooking(coach);
   loadCoachReviews(coach.id);
   modal.hidden = false;
+  requestAnimationFrame(() => $("lessonDetailCloseBtn")?.focus());
 }
 
-function closeLessonDetail() {
+function closeLessonDetail({ syncHistory = true } = {}) {
   const modal = $("lessonDetailModal");
-  if (modal) modal.hidden = true;
+  if (!modal) return;
+  modal.hidden = true;
+  const url = new URL(window.location.href);
+  if (syncHistory && url.searchParams.has("lesson")) {
+    if (history.state?.lesson) history.back();
+    else {
+      url.searchParams.delete("lesson");
+      history.replaceState({ ...(history.state || {}), lesson: null }, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  }
+  modal._returnFocus?.focus?.();
 }
 
 function getLessonFocusItems(coach) {
@@ -589,6 +629,14 @@ function normalizeAvailabilitySlot(slot) {
   };
 }
 
+function renderNextAvailability(coach) {
+  if (state.siteSettings?.maintenance !== false) return "";
+  const loadState = state.availabilityLoadStates[String(coach.id)];
+  const next = (state.availabilityByCoach[String(coach.id)] || [])[0];
+  if (next) return `<small class="next-availability">가장 빠른 시간 · ${escapeHtml(formatDateTime(next.startsAt))}</small>`;
+  return loadState === "loaded" ? '<small class="next-availability unavailable">현재 예약 가능한 시간이 없습니다.</small>' : "";
+}
+
 function mountLessonBooking(coach) {
   if (state.siteSettings?.maintenance !== false) return;
   mountBookingForm("lessonBookingMount", coach);
@@ -610,7 +658,7 @@ async function loadPublicAvailability(coachId) {
       from: isoDateOnly(fromDate),
       to: isoDateOnly(addLocalDays(fromDate, 13)),
     });
-    state.availabilityByCoach[key] = Array.isArray(raw) ? raw.map(normalizeAvailabilitySlot).filter((slot) => slot.id && slot.available && slot.status === "open") : [];
+    state.availabilityByCoach[key] = Array.isArray(raw) ? raw.map(normalizeAvailabilitySlot).filter((slot) => slot.id && slot.available && slot.status === "open").sort((a,b)=>Date.parse(a.startsAt)-Date.parse(b.startsAt)) : [];
     state.availabilityLoadStates[key] = "loaded";
   } catch (error) {
     state.availabilityByCoach[key] = [];
@@ -619,6 +667,12 @@ async function loadPublicAvailability(coachId) {
   if (String(state.selectedCoachId) === key) {
     renderAvailabilityPicker(state.coaches.find((coach) => String(coach.id) === key));
   }
+}
+
+async function prefetchAvailability(coaches = []) {
+  if (state.siteSettings?.maintenance !== false) return;
+  await Promise.all(coaches.map((coach) => loadPublicAvailability(coach.id)));
+  if (state.activeView === "market") renderMarket();
 }
 
 function renderAvailabilityPicker(coach) {
@@ -654,6 +708,9 @@ function renderAvailabilityPicker(coach) {
   if (error) error.hidden = true;
   const dates = [...new Map(slots.map((slot) => [availabilityDateKey(slot.startsAt), slot])).entries()];
   dateSelect.innerHTML = dates.map(([date, slot]) => `<option value="${date}">${escapeHtml(availabilityDateLabel(slot.startsAt))}</option>`).join("");
+  const savedSlotId = readBookingDraft()?.coachId === String(coach.id) ? String(readBookingDraft()?.values?.availabilitySlotId || "") : "";
+  const savedSlot = slots.find((slot) => slot.id === savedSlotId);
+  if (savedSlot) dateSelect.value = availabilityDateKey(savedSlot.startsAt);
   const renderTimes = () => {
     const visible = slots.filter((slot) => availabilityDateKey(slot.startsAt) === dateSelect.value);
     timeList.innerHTML = visible.map((slot) => `<button type="button" class="availability-time-button" data-availability-slot="${escapeHtml(slot.id)}" data-time="${escapeHtml(slot.label)}" aria-pressed="false">${escapeHtml(availabilityTimeLabel(slot.startsAt))}</button>`).join("");
@@ -662,7 +719,11 @@ function renderAvailabilityPicker(coach) {
       if (timeInput) timeInput.value = button.dataset.time;
       timeList.querySelectorAll("[data-availability-slot]").forEach((item) => { const selected = item === button; item.classList.toggle("selected", selected); item.setAttribute("aria-pressed", String(selected)); });
       if (error) error.hidden = true;
+      if ($("bookingForm")) saveBookingDraft(coach.id, $("bookingForm"));
     }));
+    const draft = readBookingDraft();
+    const draftSlot = draft?.coachId === String(coach.id) ? String(draft.values?.availabilitySlotId || "") : "";
+    timeList.querySelector(`[data-availability-slot="${CSS.escape(draftSlot)}"]`)?.click();
   };
   dateSelect.addEventListener("change", () => { slotInput.value = ""; if (timeInput) timeInput.value = ""; renderTimes(); });
   renderTimes();
@@ -678,14 +739,20 @@ async function loadCoachReviews(coachId) {
     if (coach) {
       coach.reviews = state.reviewsByCoach[key].map((review) => [review.author || review.displayName || review.studentName || "수강생", review.content || review.body || ""]);
       if (String(state.selectedCoachId) === key && $("lessonDetailModal") && !$("lessonDetailModal").hidden) {
-        $("lessonDetailBody").innerHTML = renderLessonDetailMarkup(coach);
-        bindAuthButtons($("lessonDetailBody"));
-        mountLessonBooking(coach);
+        const target = $("lessonReviews");
+        if (target) {
+          target.innerHTML = renderReviewsMarkup(coach.reviews || []);
+          target.hidden = !coach.reviews?.length;
+        }
       }
     }
   } catch {
     // Public reviews are optional; keep the catalog fallback.
   }
+}
+
+function renderReviewsMarkup(reviews = []) {
+  return reviews.length ? `<div><strong>후기</strong><span>${reviews.length}개</span></div>${reviews.slice(0, 3).map(([name, body]) => `<p><b>${escapeHtml(name)}</b> ${escapeHtml(body)}</p>`).join("")}` : "";
 }
 
 function renderLessonInfoBlocks(coach) {
@@ -731,15 +798,7 @@ function renderLessonDetailMarkup(coach) {
         <div><span>전문 분야</span><strong>${escapeHtml((coach.roles || []).slice(0, 5).join(", "))}</strong></div>
       </div>
       ${renderLessonInfoBlocks(coach)}
-      ${reviews.length ? `
-        <section class="review-preview full">
-          <div>
-            <strong>후기</strong>
-            <span>${reviews.length}개</span>
-          </div>
-          ${reviews.slice(0, 3).map(([name, body]) => `<p><b>${escapeHtml(name)}</b> ${escapeHtml(body)}</p>`).join("")}
-        </section>
-      ` : ""}
+      <section class="review-preview full" id="lessonReviews" ${reviews.length ? "" : "hidden"}>${renderReviewsMarkup(reviews)}</section>
       ${maintenance ? `<section class="booking-panel">
         <div class="booking-panel-head">
           <div>
@@ -782,10 +841,10 @@ function mountBookingForm(mountId, coach) {
       studentAuto.hidden = false;
       studentAuto.textContent = `수강생 닉네임 · ${displayName}`;
     }
-    $("bookingForm").contact.value = state.currentUser.email || "";
+    $("bookingForm").contact.value = state.currentUser.discordDisplayName || state.currentUser.discord_display_name || state.currentUser.email || "";
     fetchCoachingCoupons(coach.id).then(({ coupons = [], originalAmount = 0 }) => {
       const select = bookingForm.elements.couponPurchaseId;
-      const preferred = new URL(window.location.href).searchParams.get("coupon") || "";
+      const preferred = readBookingDraft()?.values?.couponPurchaseId || new URL(window.location.href).searchParams.get("coupon") || "";
       coupons.forEach((coupon) => select.insertAdjacentHTML(
         "beforeend",
         `<option value="${escapeHtml(coupon.id)}" data-discount="${Number(coupon.discountKrw || 0)}" data-test="${coupon.isTest?"1":"0"}">${coupon.isTest?"[TEST] ":""}${escapeHtml(coupon.itemIcon || "🎟️")} ${escapeHtml(coupon.itemName)} · ${Number(coupon.finalAmount || 0).toLocaleString("ko-KR")}원 ${coupon.isTest?"예상":"결제"}</option>`,
@@ -801,11 +860,20 @@ function mountBookingForm(mountId, coach) {
       updatePrice();
     }).catch(() => { couponField.hidden = true; });
   }
+  const draft = readBookingDraft();
+  if (draft?.coachId === String(coach.id)) {
+    for (const [name, value] of Object.entries(draft.values || {})) {
+      if (bookingForm.elements[name] && name !== "availabilitySlotId") bookingForm.elements[name].value = value;
+    }
+  }
+  bookingForm.addEventListener("input", () => saveBookingDraft(coach.id, bookingForm));
+  bookingForm.addEventListener("change", () => saveBookingDraft(coach.id, bookingForm));
   renderAvailabilityPicker(coach);
   $("bookingForm").noValidate = true;
   $("bookingForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!state.currentUser) {
+      saveBookingDraft(coach.id, event.target);
       openAuthModal("login");
       return;
     }
@@ -840,6 +908,7 @@ function mountBookingForm(mountId, coach) {
       }
       const savedReservation = await submitReservation(reservation);
       if (!savedReservation.id) throw new Error("생성된 구매 정보를 확인하지 못했습니다.");
+      clearBookingDraft();
       await startTossPayment(savedReservation.id, submitButton);
     } catch (error) {
       alert(`강의 구매를 저장하지 못했습니다.\n${error.message}`);
@@ -866,6 +935,7 @@ function mountBookingForm(mountId, coach) {
     openLessonDetail,
     closeLessonDetail,
     loadPublicAvailability,
+    prefetchAvailability,
     loadCoachReviews,
     mountBookingForm,
     normalizeAvailabilitySlot,

@@ -40,7 +40,7 @@ assert.match(source, /wallet\?page=\$\{transactionPage\}&limit=5/);
 assert.match(source, /transactionPagination/);
 assert.match(source, /mileageTransactionPager/);
 assert.match(entry, /pages\/mileage\.js\?v=20260918roflreward1/);
-assert.match(page, /styles\.css\?v=20260923ops1/);
-assert.match(page, /app-report6\.js\?v=20260923ops2/);
+assert.match(page, /styles\.css\?v=20260923ops3/);
+assert.match(page, /app-report6\.js\?v=20260923ops3/);
 
 console.log("mileage auth gate checks passed");

@@ -90,12 +90,12 @@ import {
   parseReservationPrice,
   splitCsv,
 } from "./js/utils.js";
-import { createMarketPage } from "./js/pages/market.js?v=20260923ops1";
+import { createMarketPage } from "./js/pages/market.js?v=20260923ops3";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
-import { createReservationPage } from "./js/pages/reservationPage.js?v=20260911coupon1";
+import { createReservationPage } from "./js/pages/reservationPage.js?v=20260923ops3";
 import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260923ops1";
-import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260923ops1";
-import { createCoachSelfPage } from "./js/pages/coachSelf.js?v=20260923ops1";
+import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260923ops3";
+import { createCoachSelfPage } from "./js/pages/coachSelf.js?v=20260923ops3";
 import { createLegacyImportPage } from "./js/pages/legacyImport.js?v=20260921legacyreview1";
 import { createImageCropController } from "./js/components/imageCrop.js";
 
@@ -196,6 +196,7 @@ function bindEvents() {
   if (eventsBound) return;
   eventsBound = true;
   $("homeLogo").addEventListener("click", () => {
+    if (state.activeView === "coachSelf" && !confirmDiscardCoachChanges()) return;
     state.activeView = "market";
     state.category = "league";
     state.type = "all";
@@ -211,6 +212,7 @@ function bindEvents() {
     button.addEventListener("click", () => {
       const nextView = button.dataset.viewJump;
       if (!nextView || !document.getElementById(`${nextView}View`)) return;
+      if (state.activeView === "coachSelf" && nextView !== "coachSelf" && !confirmDiscardCoachChanges()) return;
       state.activeView = nextView;
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -229,6 +231,7 @@ function bindEvents() {
       }
       let nextView = button.dataset.view;
       if (!nextView) return;
+      if (state.activeView === "coachSelf" && nextView !== "coachSelf" && !confirmDiscardCoachChanges()) return;
       if (["bookings", "admin"].includes(nextView)) {
         const allowed = await ensureAdminAccess();
         if (!allowed) return;
@@ -284,7 +287,31 @@ function bindEvents() {
     if (menu?.open && !menu.contains(event.target)) menu.removeAttribute("open");
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") $("profileMenu")?.removeAttribute("open");
+    if (event.key === "Escape") {
+      $("profileMenu")?.removeAttribute("open");
+      if (!$("authModal")?.hidden) closeAuthModal();
+      else if (!$("lessonDetailModal")?.hidden) closeLessonDetail();
+      else if (!$("coachExplorerModal")?.hidden) closeCoachExplorer();
+    }
+    if (event.key === "Tab") {
+      const modal = [...document.querySelectorAll('[role="dialog"]')].find((item) => !item.closest("[hidden]") && !item.hidden);
+      if (!modal) return;
+      const focusable = [...modal.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')];
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+  });
+  window.addEventListener("popstate", () => {
+    const lessonId = new URL(window.location.href).searchParams.get("lesson");
+    if (lessonId) marketPage.openLessonDetail(lessonId, { syncHistory: false });
+    else marketPage.closeLessonDetail({ syncHistory: false });
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (state.activeView !== "coachSelf" || !coachSelfPage?.hasUnsavedCoachChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
   $("authCloseBtn")?.addEventListener("click", closeAuthModal);
   $("authModal")?.addEventListener("click", (event) => {
@@ -470,9 +497,10 @@ async function loadCoachesFromApi() {
         }
         state.coachLoadState = state.coaches.length ? "loaded" : "empty";
         render();
+        marketPage.prefetchAvailability(state.coaches);
         const lessonId = new URL(window.location.href).searchParams.get("lesson");
         if (lessonId && state.coaches.some((coach) => coach.id === lessonId)) {
-          marketPage.openLessonDetail(lessonId);
+          marketPage.openLessonDetail(lessonId, { syncHistory: false });
         }
         return;
       }
@@ -521,6 +549,14 @@ function renderDetail(...args) { return marketPage.renderDetail(...args); }
 function openLessonDetail(...args) { return marketPage.openLessonDetail(...args); }
 function closeLessonDetail(...args) { return marketPage.closeLessonDetail(...args); }
 function loadPublicAvailability(...args) { return marketPage.loadPublicAvailability(...args); }
+function resumePendingBooking() {
+  const lessonId = new URL(window.location.href).searchParams.get("lesson");
+  if (!lessonId || !state.coaches.some((coach) => coach.id === lessonId)) return false;
+  state.activeView = "market";
+  render();
+  marketPage.openLessonDetail(lessonId, { syncHistory: false });
+  return true;
+}
 function loadCoachReviews(...args) { return marketPage.loadCoachReviews(...args); }
 function mountBookingForm(...args) { return marketPage.mountBookingForm(...args); }
 function normalizeAvailabilitySlot(...args) { return marketPage.normalizeAvailabilitySlot(...args); }
@@ -644,6 +680,7 @@ function renderCoachAvailabilityPanel(...args) { return coachSelfPage.renderCoac
 function bindCoachSelfLessonPicker(...args) { return coachSelfPage.bindCoachSelfLessonPicker(...args); }
 function changeCoachScheduleWeek(...args) { return coachSelfPage.changeCoachScheduleWeek(...args); }
 function saveCoachSchedule(...args) { return coachSelfPage.saveCoachSchedule(...args); }
+function confirmDiscardCoachChanges(...args) { return coachSelfPage?.confirmDiscardCoachChanges(...args) ?? true; }
 function loadCoachAvailability(...args) { return coachSelfPage.loadCoachAvailability(...args); }
 function saveCoachSelfProfile(...args) { return coachSelfPage.saveCoachSelfProfile(...args); }
 function saveCoachSelfLesson(...args) { return coachSelfPage.saveCoachSelfLesson(...args); }
@@ -695,6 +732,7 @@ authAccountPage = createAuthAccountPage({
   handlePaymentReturn: (...args) => handlePaymentReturn(...args),
   renderScheduleSummaryMarkup: (...args) => renderScheduleSummaryMarkup(...args),
   renderCoachAvailabilityPanel: (...args) => renderCoachAvailabilityPanel(...args),
+  resumePendingBooking: (...args) => resumePendingBooking(...args),
 });
 adminDashboardPage = createAdminDashboardPage({
   render: (...args) => render(...args),
@@ -709,6 +747,7 @@ adminDashboardPage = createAdminDashboardPage({
   migrateCoachImages: (...args) => migrateCoachImages(...args),
   openAuthModal: (...args) => openAuthModal(...args),
   renderRoleMenu: (...args) => renderRoleMenu(...args),
+  openAdminView: (...args) => openAdminView(...args),
 });
 legacyImportPage = createLegacyImportPage({
   runAdminRequest: (...args) => runAdminRequest(...args),

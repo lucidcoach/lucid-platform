@@ -36,6 +36,7 @@ export function createAuthAccountPage({
   handlePaymentReturn,
   renderScheduleSummaryMarkup,
   renderCoachAvailabilityPanel,
+  resumePendingBooking,
 }) {
 async function showOAuthResult() {
   const url = new URL(window.location.href);
@@ -256,13 +257,16 @@ function toggleTheme() {
 
 function closeAuthModal() {
   const modal = $("authModal");
-  if (modal) modal.hidden = true;
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  modal._returnFocus?.focus?.();
 }
 
 function openAuthModal(mode = "login") {
   const modal = $("authModal");
   const body = $("authBody");
   if (!modal || !body) return;
+  if (modal.hidden) modal._returnFocus = document.activeElement;
   const nextMode = ["login", "signup", "guest", "forgot", "reset"].includes(mode) ? mode : "login";
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.classList.toggle("active", button.dataset.authMode === nextMode);
@@ -271,6 +275,7 @@ function openAuthModal(mode = "login") {
   bindAuthForm(nextMode);
   bindPasswordToggles(body);
   modal.hidden = false;
+  requestAnimationFrame(() => body.querySelector("input,button")?.focus());
 }
 
 function bindPasswordToggles(root = document) {
@@ -445,6 +450,7 @@ function bindAuthForm(mode) {
       closeAuthModal();
       if (state.currentUser?.needsNickname || state.currentUser?.nicknameSetupRequired) state.activeView = "student";
       renderApp();
+      if (!state.currentUser?.needsNickname && !state.currentUser?.nicknameSetupRequired) resumePendingBooking?.();
       if (isCoachUser()) await loadCoachProfile();
       await handlePaymentReturn();
     } catch (error) {
@@ -861,7 +867,7 @@ async function saveAccountNickname(event) {
       status.textContent = `저장 완료 · 다음 변경 가능: ${formatDateTime(user.nicknameChangeAvailableAt || user.nickname_change_available_at || "") || "변경 가능"}`;
       status.className = "save-status success";
     }
-    renderApp();
+    if (!resumePendingBooking?.()) renderApp();
   } catch (error) {
     if (status) {
       const retryText = error.retryAt ? ` 다시 변경 가능: ${formatDateTime(error.retryAt)}` : "";

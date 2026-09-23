@@ -270,6 +270,8 @@ async function loadAdminRefundRequests() {
   renderSettlementAdminPanel();
 }
 
+const settlementStatusLabel = (status) => ({ pending:"확인 대기", ready:"지급 가능", held:"보류", paid:"지급 완료", adjusted:"조정 완료", refunded:"환불" })[status] || status;
+
 function renderSettlementAdminPanel() {
   const panel = $("settlementAdminPanel");
   if (!panel) return;
@@ -277,20 +279,26 @@ function renderSettlementAdminPanel() {
     panel.innerHTML = `<div class="refund-admin-empty error">${escapeHtml(state.settlementAdminLoadError)}</div>`;
     return;
   }
-  const rows = state.adminSettlements || [];
+  const allRows = state.adminSettlements || [];
+  const rows = state.settlementFilterStatus === "all" ? allRows : state.settlementFilterStatus === "unpaid"
+    ? allRows.filter((row) => !["paid", "adjusted"].includes(row.status))
+    : allRows.filter((row) => row.status === state.settlementFilterStatus);
   const totals = state.settlementTotals || {};
   panel.innerHTML = `
-    <div class="refund-admin-head"><div><span>정산 관리</span><strong>지급 장부</strong><small>총 결제 ${Number(totals.gross || 0).toLocaleString("ko-KR")}원 · 수수료 ${Number(totals.fees || 0).toLocaleString("ko-KR")}원 · 지급 대기 ${Number(totals.payout || 0).toLocaleString("ko-KR")}원</small></div></div>
+    <div class="refund-admin-head"><div><span>정산 관리</span><strong>지급 장부</strong><small>총 결제 ${Number(totals.gross || 0).toLocaleString("ko-KR")}원 · 수수료 ${Number(totals.fees || 0).toLocaleString("ko-KR")}원 · 지급 대기 ${Number(totals.payout || 0).toLocaleString("ko-KR")}원</small></div><label>상태<select id="settlementStatusFilter"><option value="unpaid">미지급 전체</option><option value="ready">지급 가능</option><option value="pending">확인 대기</option><option value="held">보류</option><option value="paid">지급 완료</option><option value="all">전체</option></select></label></div>
     ${rows.length ? `<div class="refund-admin-list">${rows.map((row) => `
       <article class="refund-admin-row">
         <div><strong>${escapeHtml(row.coachName || row.coachKey)} · ${escapeHtml(row.studentName || "-")}</strong><small>${Number(row.grossAmount || 0).toLocaleString("ko-KR")}원 / 지급 ${Number(row.payoutAmount || 0).toLocaleString("ko-KR")}원 · ${row.saleType === "direct" ? "직접판매" : `중개 ${row.commissionRate}%`}</small></div>
-        <div><span class="chip">${escapeHtml(row.status)}</span><small>${escapeHtml(row.adminNote || "메모 없음")}</small></div>
+        <div><span class="chip">${escapeHtml(settlementStatusLabel(row.status))}</span><small>${escapeHtml(row.adminNote || "메모 없음")}</small><small>${row.accountNumber ? `${escapeHtml(row.bankName)} · ${escapeHtml(row.accountNumber)} · ${escapeHtml(row.accountHolder)} <button type="button" class="mini" data-copy-payout="${escapeHtml(`${row.bankName} ${row.accountNumber} ${row.accountHolder}`)}">계좌 복사</button>` : "정산 계좌 미등록"}</small></div>
         <div class="booking-actions">
-          ${!["paid", "adjusted"].includes(row.status) ? `<button type="button" class="mini primary-mini" data-settlement-paid="${escapeHtml(row.id)}">지급 완료</button><button type="button" class="mini" data-settlement-held="${escapeHtml(row.id)}">보류</button>` : ""}
+          ${!["paid", "adjusted"].includes(row.status) ? `<button type="button" class="mini primary-mini" data-settlement-paid="${escapeHtml(row.id)}" ${row.accountNumber ? "" : "disabled title=\"코치가 정산 계좌를 등록해야 합니다\""}>지급 완료</button><button type="button" class="mini" data-settlement-held="${escapeHtml(row.id)}">보류</button>` : ""}
           ${row.orderId && ["pending", "ready"].includes(row.status) ? `<button type="button" class="mini" data-payment-reconcile="${escapeHtml(row.orderId)}">결제 확인</button>` : ""}
         </div>
       </article>`).join("")}</div>` : `<div class="refund-admin-empty">정산 장부가 없습니다.</div>`}
   `;
+  $("settlementStatusFilter").value = state.settlementFilterStatus;
+  $("settlementStatusFilter").addEventListener("change", (event) => { state.settlementFilterStatus = event.target.value; renderSettlementAdminPanel(); });
+  document.querySelectorAll("[data-copy-payout]").forEach((button) => button.addEventListener("click", async () => { try { await navigator.clipboard.writeText(button.dataset.copyPayout); button.textContent = "복사됨"; } catch { window.prompt("복사할 계좌 정보", button.dataset.copyPayout); } }));
   document.querySelectorAll("[data-settlement-paid], [data-settlement-held]").forEach((button) => button.addEventListener("click", async () => {
     const status = button.dataset.settlementPaid ? "paid" : "held";
     const id = button.dataset.settlementPaid || button.dataset.settlementHeld;

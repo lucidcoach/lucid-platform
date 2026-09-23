@@ -492,6 +492,25 @@ td { border-top: 1px solid var(--line); }
   .profile-menu>summary{max-width:140px}.profile-menu-popover{position:fixed;top:64px;right:12px;max-width:calc(100vw - 24px)}
 }
 
+.next-availability{display:block;margin-top:8px;color:var(--success);font-size:11px;font-weight:800}.next-availability.unavailable{color:var(--muted)}
+.coach-self-new-lesson{display:flex;align-items:end;gap:8px;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}.coach-self-new-lesson[hidden]{display:none}.coach-self-new-lesson label{display:grid;flex:1;gap:5px}.availability-head>div>small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+
+@media (max-width: 620px) {
+  html,body{max-width:100%;overflow-x:hidden}
+  .site-header-inner{grid-template-columns:minmax(0,1fr) auto}
+  .site-header-inner>.lucid-brand{grid-column:1;grid-row:1}
+  .site-header-tools{grid-column:2;grid-row:1}
+  .nav{grid-column:1/-1;grid-row:2}
+  .site-header-tools{min-width:0;max-width:100%;overflow:visible}
+  .site-header-tools .user-actions{overflow:visible}
+  .nav{max-width:calc(100vw - 24px)}
+  .filter-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .filter-row .purpose-tab{width:100%;min-width:0;padding-inline:7px}
+  .market-compact-head{margin:0 0 14px;padding:0;flex-direction:row}
+  .market-compact-head .secondary{width:auto}
+  .coach-self-new-lesson{align-items:stretch;flex-direction:column}
+}
+
 
 /* UI/UX v2: function-first layout */
 .market-compact-head { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:0 0 14px; padding:8px 2px; }
@@ -784,6 +803,7 @@ body[data-theme="dark"]{
   background:linear-gradient(135deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--brand) 12%));
 }
 .market-compact-head .market-kicker{margin:0 0 6px}.market-compact-head h2{margin:0;color:var(--text);font-size:28px;letter-spacing:-.04em}
+.catalog-heading.market-compact-head{margin:0 0 18px;padding:0;border:0;border-radius:0;background:none}
 .catalog-shell{border-radius:16px;box-shadow:none}.catalog-heading h2,.market-head h2{color:var(--text)}
 .filter-block,.coach-card,.featured-card,.detail-panel,.detail-empty{background:var(--panel-2);border-color:var(--line);box-shadow:none}
 .coach-card.active{background:color-mix(in srgb,var(--brand-soft) 54%,var(--panel-2));border-color:var(--brand)}

@@ -14,4 +14,4 @@ const scheduled = card({ title: "2️⃣0️⃣시 내전 🕹️", scheduledAt:
 assert.match(scheduled, /내전 🕹️/);
 assert.doesNotMatch(scheduled, /2️⃣0️⃣시|단판 2경기/);
 assert.match(scheduled, /단판/);
-assert.match(schedule({ scheduledAt: "2026-09-24 00:00:00" }), /00:00$/);
+assert.match(schedule({ scheduledAt: "2026-09-24 00:00:00" }), /00:00 KST$/);

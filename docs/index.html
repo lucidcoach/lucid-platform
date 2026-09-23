@@ -25,7 +25,7 @@
   <meta name="twitter:description" content="롤 코칭을 찾고 원하는 코치와 연결되는 Lucid 강의">
   <meta name="twitter:image" content="https://lucidgame.kr/assets/lucid-logo-20260914.png">
   <script>try{document.documentElement.dataset.theme=localStorage.getItem("coach-theme")||"dark"}catch{document.documentElement.dataset.theme="dark"}</script>
-  <link rel="stylesheet" href="styles.css?v=20260923ops1">
+  <link rel="stylesheet" href="styles.css?v=20260923ops3">
 </head>
 <body>
   <script>document.body.dataset.theme=document.documentElement.dataset.theme</script>
@@ -90,17 +90,10 @@
       </section>
 
       <section class="view active" id="marketView">
-        <section class="market-compact-head" aria-label="코칭 탐색">
-          <div>
-            <span class="market-kicker">LUCID COACH</span>
-            <h2>코칭</h2>
-          </div>
-          <button class="secondary" id="heroCoachSearchBtn" type="button">코치 빠르게 찾기</button>
-        </section>
         <section class="catalog-shell" aria-label="코칭 상품 탐색">
-          <div class="catalog-heading">
+          <div class="catalog-heading market-compact-head">
             <div><span>COACHING</span><h2>코칭 찾기</h2></div>
-            <p>게임, 포지션과 목적을 좁혀 필요한 강의를 빠르게 찾으세요.</p>
+            <button class="secondary" id="heroCoachSearchBtn" type="button">코치 빠르게 찾기</button>
           </div>
         <div class="toolbar">
           <div class="tabs" id="categoryTabs"></div>
@@ -489,6 +482,6 @@
   </footer>
 
   <script src="https://js.tosspayments.com/v2/standard"></script>
-  <script type="module" src="app.js?v=20260923ops1"></script>
+  <script type="module" src="app.js?v=20260923ops3"></script>
 </body>
 </html>

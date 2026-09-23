@@ -12,7 +12,7 @@ function scheduleText(queue) {
   if (Number.isNaN(date.getTime())) return queue.scheduledAt;
   const today = new Date();
   const sameDay = date.toLocaleDateString("ko-KR") === today.toLocaleDateString("ko-KR");
-  return `${sameDay ? "오늘" : date.toLocaleDateString("ko-KR", { month:"2-digit", day:"2-digit" })} ${date.toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit", hourCycle:"h23" })}`;
+  return `${sameDay ? "오늘" : date.toLocaleDateString("ko-KR", { month:"2-digit", day:"2-digit" })} ${date.toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit", hourCycle:"h23" })} KST`;
 }
 
 function formatText(queue) {
@@ -21,7 +21,9 @@ function formatText(queue) {
 }
 
 function displayTitle(queue) {
-  return String(queue.title || "내전 모집").replace(/^[0-9\uFE0F\u20E3]+\s*시\s*/u, "").trim() || "내전 모집";
+  const title = String(queue.title || "").replace(/^[0-9\uFE0F\u20E3]+\s*시\s*/u, "").trim();
+  if (title && title !== "내전") return title;
+  return queue.displayNumber ? `일반 내전 #${Number(queue.displayNumber)}` : "내전 모집";
 }
 
 function queueCard(queue) {

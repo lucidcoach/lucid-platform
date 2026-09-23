@@ -119,6 +119,25 @@ function getCoachProfileFormValue(current) {
   };
 }
 
+function coachFormSignature(form) {
+  if (!form) return "";
+  return [...form.querySelectorAll("input,textarea,select")]
+    .filter((field) => field.type !== "file")
+    .map((field) => `${field.id || field.name}:${field.type === "checkbox" ? field.checked : field.value}`)
+    .join("|");
+}
+
+function markCoachFormSaved(form) { if (form) form.dataset.savedSignature = coachFormSignature(form); }
+
+function hasUnsavedCoachChanges() {
+  const forms = [$("coachSelfProfileForm"), $("coachSelfForm")].filter(Boolean);
+  return forms.some((form) => form.dataset.savedSignature !== coachFormSignature(form)) || isCoachScheduleDraftDirty();
+}
+
+function confirmDiscardCoachChanges() {
+  return !hasUnsavedCoachChanges() || window.confirm("저장하지 않은 코치센터 변경사항이 있습니다. 저장하지 않고 이동할까요?");
+}
+
 function renderCoachSelfProfile(current) {
   const target = $("coachSelfProfile");
   if (!target) return;
@@ -156,7 +175,7 @@ function renderCoachSelfProfile(current) {
           ${roleOptions.map((role) => `<label><input type="checkbox" name="coachSelfProfileRole" value="${escapeHtml(role)}" ${profile.roles.includes(role) ? "checked" : ""}> ${escapeHtml(role)}</label>`).join("")}
         </div>
       </fieldset>
-      <label class="toggle-line"><input id="coachSelfProfileActive" type="checkbox" ${profile.active ? "checked" : ""}><span>홈페이지에 코치와 강의를 공개합니다</span></label>
+      <label class="toggle-line"><input id="coachSelfProfileActive" type="checkbox" ${profile.active ? "checked" : ""}><span>코치 전체 노출 · 끄면 공개된 강의도 모두 숨겨집니다</span></label>
       <span class="save-status" id="coachSelfProfileStatus" aria-live="polite"></span>
     </form>
   `;
@@ -170,6 +189,7 @@ function renderCoachSelfProfile(current) {
     label: "프로필 이미지",
   }));
   $("coachSelfProfileForm")?.addEventListener("submit", saveCoachSelfProfile);
+  markCoachFormSaved($("coachSelfProfileForm"));
 }
 
 function renderCoachSelf() {
@@ -207,6 +227,7 @@ function renderCoachSelf() {
   }
   document.querySelectorAll("[data-self-coach-key]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (!confirmDiscardCoachChanges()) return;
       state.coachSelfKey = button.dataset.selfCoachKey;
       state.coachCalendarCoachKey = button.dataset.selfCoachKey;
       state.coachSelfLessonId = null;
@@ -223,6 +244,7 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
   const picker = `
     <div class="coach-self-lesson-picker">
       <div class="coach-self-picker-head"><strong>강의 선택</strong><span>${lessons.length}/5</span><button type="button" class="secondary mini" id="coachSelfNewLessonBtn" ${lessons.length >= 5 ? "disabled" : ""}>새 강의 만들기</button></div>
+      <form class="coach-self-new-lesson" id="coachSelfNewLessonForm" hidden><label>강의명<input name="name" maxlength="120" required placeholder="예: 미드 라인전 집중 코칭"></label><button class="primary mini" type="submit">만들기</button><button class="secondary mini" type="button" data-new-lesson-cancel>취소</button></form>
       <div class="coach-self-grid" id="coachSelfLessonGrid">
         ${lessons.length ? lessons.map((item) => `
           <button class="coach-self-card ${item.id === state.coachSelfLessonId ? "active" : ""}" type="button" data-self-lesson-id="${escapeHtml(item.id)}">
@@ -255,7 +277,7 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
     ["한 줄 소개", Boolean(lesson.tagline?.trim())],
     ["가격", /\d/.test(String(lesson.price || ""))],
     ["강의 이미지", Boolean(lesson.image && !["assets/logo.jpg", "assets/lollogo.png"].includes(lesson.image))],
-    ["분류", Boolean(lesson.category)],
+    ["수강 목적", selectedPurposes.length > 0],
   ];
   editor.innerHTML = `${picker}
     <form class="coach-self-form" id="coachSelfForm">
@@ -332,7 +354,7 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
       "한 줄 소개": $("coachSelfTagline").value.trim(),
       "가격": /\d/.test($("coachSelfPrice").value),
       "강의 이미지": Boolean($("coachSelfLessonImage").value && !["assets/logo.jpg", "assets/lollogo.png"].includes($("coachSelfLessonImage").value)),
-      "분류": Boolean(lesson.category),
+      "수강 목적": getCheckedValues("coachSelfPurposeChoice").length > 0,
     };
     $("coachSelfPublishChecklist").querySelectorAll("[data-publish-check]").forEach((item) => {
       const done = Boolean(values[item.dataset.publishCheck]);
@@ -349,7 +371,9 @@ function renderCoachSelfEditor(lessons = getCoachSelfLessons()) {
   $("coachSelfPriceAmount").addEventListener("input", updateCoachSelfPriceValue);
   $("coachSelfPriceUnit").addEventListener("change", updateCoachSelfPriceValue);
   ["coachSelfLessonName","coachSelfTagline","coachSelfPriceAmount","coachSelfPriceUnit","coachSelfLessonImage"].forEach((id)=>$(id)?.addEventListener("input",updatePublishPreview));
+  document.querySelectorAll('[name="coachSelfPurposeChoice"]').forEach((input) => input.addEventListener("change", updatePublishPreview));
   updatePublishPreview();
+  markCoachFormSaved($("coachSelfForm"));
   $("coachSelfForm").addEventListener("submit", saveCoachSelfLesson);
   $("coachSelfDeleteLessonBtn")?.addEventListener("click", async (event) => {
     if (!confirm(`'${lesson.name}' 강의를 삭제할까요?`)) return;
@@ -527,6 +551,16 @@ function toggleCoachScheduleCell(key, shiftKey = false) {
 
   state.coachScheduleLastCellKey = key;
   state.coachScheduleNotice = "저장되지 않은 변경사항입니다. 저장 버튼을 눌러야 서버에 반영됩니다.";
+  renderCoachAvailabilityPanel();
+}
+
+function setCoachScheduleDay(weekday, open) {
+  if (!state.coachScheduleDraft) state.coachScheduleDraft = getSavedScheduleDraft();
+  const date = addLocalDays(getCoachScheduleWeekStart(), weekday - 1);
+  for (let minute = 0; minute < 1440; minute += 60) {
+    if (!getScheduleCell(state.coachSchedule, date, minute).booked) state.coachScheduleDraft[`${weekday}:${minute}`] = open;
+  }
+  state.coachScheduleNotice = `${["월","화","수","목","금","토","일"][weekday - 1]}요일을 모두 ${open ? "예약 가능" : "예약 불가"}로 변경했습니다.`;
   renderCoachAvailabilityPanel();
 }
 
@@ -773,7 +807,7 @@ function renderCoachCalendarPanel() {
     return `<button type="button" class="calendar-event type-${type} status-${item.status}" style="grid-column:${day + 2};grid-row:${row}/span ${Math.min(span, 50 - row)}" data-calendar-event="${escapeHtml(item.id)}"><strong>${escapeHtml(title)}</strong><span>${start.time}–${end.time} · ${calendarTypeLabels[type]}</span></button>`;
   }).join("");
   const filters = isAdminUser() ? `<div class="calendar-coach-filters"><button type="button" class="secondary mini ${!state.coachCalendarCoachKey ? "active" : ""}" data-calendar-coach="">전체</button>${coachFilters.map((coach) => `<button type="button" class="secondary mini ${state.coachCalendarCoachKey === coach.key ? "active" : ""}" data-calendar-coach="${escapeHtml(coach.key)}">${escapeHtml(coach.name)}</button>`).join("")}</div>` : "";
-  target.innerHTML = `<section class="calendar-panel"><div class="availability-head"><div><span>일정 DB</span><strong>주간 캘린더</strong></div><div class="schedule-actions"><button type="button" class="secondary mini" data-calendar-week="-7">이전 주</button><button type="button" class="secondary mini" data-calendar-week="0">이번 주</button><button type="button" class="secondary mini" data-calendar-week="7">다음 주</button></div></div>${filters}<div class="calendar-week-title">${isoDateOnly(weekStart)} ~ ${isoDateOnly(addLocalDays(weekStart, 6))}</div>${state.coachCalendarLoadState === "error" ? `<p class="save-status error">${escapeHtml(state.coachCalendarError)}</p>` : ""}<div class="calendar-scroll"><div class="calendar-grid"><div class="calendar-corner">시간</div>${labels.map((label, day) => `<div class="calendar-day" style="grid-column:${day + 2}">${label}<small>${isoDateOnly(addLocalDays(weekStart, day)).slice(5)}</small></div>`).join("")}${cells.join("")}${blocks}</div></div><div class="calendar-legend"><span class="type-site">사이트 강의</span><span class="type-lesson">외부 강의</span><span class="type-personal">개인 일정</span><span class="type-unavailable">휴무</span><span class="status-completed">완료</span></div></section>`;
+  target.innerHTML = `<section class="calendar-panel"><div class="availability-head"><div><span>예약·개인 일정</span><strong>확정 일정 캘린더</strong><small>예약된 강의와 외부 강의, 개인 일정, 휴무를 기록합니다.</small></div><div class="schedule-actions"><button type="button" class="secondary mini" data-calendar-week="-7">이전 주</button><button type="button" class="secondary mini" data-calendar-week="0">이번 주</button><button type="button" class="secondary mini" data-calendar-week="7">다음 주</button></div></div>${filters}<div class="calendar-week-title">${isoDateOnly(weekStart)} ~ ${isoDateOnly(addLocalDays(weekStart, 6))}</div>${state.coachCalendarLoadState === "error" ? `<p class="save-status error">${escapeHtml(state.coachCalendarError)}</p>` : ""}<div class="calendar-scroll"><div class="calendar-grid"><div class="calendar-corner">시간</div>${labels.map((label, day) => `<div class="calendar-day" style="grid-column:${day + 2}">${label}<small>${isoDateOnly(addLocalDays(weekStart, day)).slice(5)}</small></div>`).join("")}${cells.join("")}${blocks}</div></div><div class="calendar-legend"><span class="type-site">사이트 강의</span><span class="type-lesson">외부 강의</span><span class="type-personal">개인 일정</span><span class="type-unavailable">휴무</span><span class="status-completed">완료</span></div></section>`;
   target.querySelectorAll("[data-calendar-date]").forEach((button) => button.addEventListener("click", () => openCalendarEventDialog({ date: button.dataset.calendarDate, minute: Number(button.dataset.calendarMinute) })));
   target.querySelectorAll("[data-calendar-event]").forEach((button) => button.addEventListener("click", () => openCalendarEventDialog({ event: state.coachCalendarEvents.find((item) => String(item.id) === button.dataset.calendarEvent) })));
   target.querySelectorAll("[data-calendar-coach]").forEach((button) => button.addEventListener("click", () => { state.coachCalendarCoachKey = button.dataset.calendarCoach; state.coachCalendarLoadState = "idle"; loadCoachCalendar(); }));
@@ -828,10 +862,10 @@ function renderCoachAvailabilityPanel() {
   }
   target.innerHTML = `
     <section class="availability-panel schedule-panel">
-      <div class="availability-head"><div><span>예약 일정</span><strong>주간 시간표</strong></div><div class="schedule-actions"><button type="button" class="secondary mini" id="schedulePrevWeekBtn">이전 주</button><button type="button" class="secondary mini" id="scheduleTodayBtn">이번 주</button><button type="button" class="secondary mini" id="scheduleNextWeekBtn">다음 주</button></div></div>
+      <div class="availability-head"><div><span>신규 예약 접수</span><strong>예약 가능 시간 설정</strong><small>사용자에게 열어둘 시간만 선택합니다.</small></div><div class="schedule-actions"><button type="button" class="secondary mini" id="schedulePrevWeekBtn">이전 주</button><button type="button" class="secondary mini" id="scheduleTodayBtn">이번 주</button><button type="button" class="secondary mini" id="scheduleNextWeekBtn">다음 주</button></div></div>
       <div class="schedule-week-title"><strong>${from} ~ ${to}</strong><span>${state.coachScheduleEditMode === "week" ? "이 주에만 적용됩니다." : "다음 주에도 같은 시간으로 반복됩니다."} 예약된 칸은 수정할 수 없습니다.</span></div>
       ${state.coachScheduleLoadState === "error" ? `<small class="save-status error">${escapeHtml(state.coachScheduleLoadError)}</small>` : ""}
-      <div class="schedule-toolbar"><label class="schedule-mode">편집 범위<select id="scheduleEditMode"><option value="weekly" ${state.coachScheduleEditMode === "weekly" ? "selected" : ""}>매주 반복 기본값</option><option value="week" ${state.coachScheduleEditMode === "week" ? "selected" : ""}>이 주만 변경</option></select></label><button type="button" class="secondary mini" id="scheduleHourToggleBtn">${state.coachScheduleShowAllHours ? "06시 이후만 보기" : "전체 24시간 보기"}</button><span>Shift+클릭하면 같은 요일의 시간 구간을 한 번에 선택합니다.</span></div>
+      <div class="schedule-toolbar"><label class="schedule-mode">편집 범위<select id="scheduleEditMode"><option value="weekly" ${state.coachScheduleEditMode === "weekly" ? "selected" : ""}>매주 반복 기본값</option><option value="week" ${state.coachScheduleEditMode === "week" ? "selected" : ""}>이 주만 변경</option></select></label><button type="button" class="secondary mini" id="scheduleHourToggleBtn">${state.coachScheduleShowAllHours ? "06시 이후만 보기" : "전체 24시간 보기"}</button><label class="schedule-mode">요일<select id="scheduleBulkDay">${weekdayLabels.map((label,index)=>`<option value="${index + 1}">${label}요일</option>`).join("")}</select></label><button type="button" class="secondary mini" data-schedule-day-open="1">하루 전체 가능</button><button type="button" class="secondary mini" data-schedule-day-open="0">하루 전체 불가</button><span>PC에서는 Shift+클릭으로 같은 요일의 구간을 선택할 수 있습니다.</span></div>
       <div class="schedule-grid-wrap"><div class="schedule-grid" style="--schedule-days: 7"><div class="schedule-corner">시간</div>${weekdayLabels.map((label, index) => `<div class="schedule-day-head">${label}<small>${isoDateOnly(addLocalDays(weekStart, index)).slice(5)}</small></div>`).join("")}${cells.join("")}</div></div>
       <div class="schedule-legend"><span><i class="open"></i>가능</span><span><i class="closed"></i>불가능</span><span><i class="booked"></i>예약됨</span></div>
       <div class="schedule-save-row">
@@ -865,28 +899,39 @@ function renderCoachAvailabilityPanel() {
     renderCoachAvailabilityPanel();
   });
   $("scheduleHourToggleBtn")?.addEventListener("click", () => { state.coachScheduleShowAllHours = !state.coachScheduleShowAllHours; renderCoachAvailabilityPanel(); });
+  document.querySelectorAll("[data-schedule-day-open]").forEach((button) => button.addEventListener("click", () => setCoachScheduleDay(Number($("scheduleBulkDay").value), button.dataset.scheduleDayOpen === "1")));
   $("resetCoachScheduleBtn")?.addEventListener("click", resetCoachScheduleDraft);
   $("saveCoachScheduleBtn")?.addEventListener("click", saveCoachSchedule);
 }
 
 function bindCoachSelfLessonPicker(editor) {
   editor.querySelectorAll("[data-self-lesson-id]").forEach((button) => button.addEventListener("click", () => {
+    if (!confirmDiscardCoachChanges()) return;
     state.coachSelfLessonId = button.dataset.selfLessonId;
     renderCoachSelf();
   }));
-  editor.querySelector("#coachSelfNewLessonBtn")?.addEventListener("click", async (event) => {
+  const newForm = editor.querySelector("#coachSelfNewLessonForm");
+  editor.querySelector("#coachSelfNewLessonBtn")?.addEventListener("click", () => {
     if (getCoachSelfLessons().length >= 5) return alert("코치 한 명당 강의는 최대 5개까지 등록할 수 있습니다.");
-    const name = window.prompt("새 강의 이름을 입력하세요.", "새 강의");
-    if (!name?.trim()) return;
-    event.currentTarget.disabled = true;
+    if (!confirmDiscardCoachChanges()) return;
+    newForm.hidden = false;
+    newForm.elements.name.focus();
+  });
+  newForm?.querySelector("[data-new-lesson-cancel]")?.addEventListener("click", () => { newForm.hidden = true; newForm.reset(); });
+  newForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const name = String(new FormData(newForm).get("name") || "").trim();
+    const button = newForm.querySelector("button[type=submit]");
+    if (!name) return;
+    button.disabled = true;
     try {
-      const lesson = await createCoachLessonApi(name.trim());
+      const lesson = await createCoachLessonApi(name);
       await Promise.all([loadCoachSelfLessonsApi(), loadCoachesFromApi()]);
       state.coachSelfLessonId = lesson.id;
       renderCoachSelf();
     } catch (error) {
       alert(error.message === "coach_lesson_limit_reached" ? "코치 한 명당 강의는 최대 5개까지 등록할 수 있습니다." : `강의를 만들지 못했습니다.\n${error.message}`);
-      event.currentTarget.disabled = false;
+      button.disabled = false;
     }
   });
 }
@@ -981,6 +1026,7 @@ async function saveCoachSelfLesson(event) {
       ["한 줄 소개", $("coachSelfTagline").value.trim()],
       ["가격", /\d/.test($("coachSelfPrice").value)],
       ["강의 이미지", $("coachSelfLessonImage").value && !["assets/logo.jpg", "assets/lollogo.png"].includes($("coachSelfLessonImage").value)],
+      ["수강 목적", getCheckedValues("coachSelfPurposeChoice").length > 0],
     ].filter(([,done])=>!done).map(([label])=>label);
     if (missing.length) {
       alert(`공개 전에 확인해주세요: ${missing.join(", ")}\n아직 준비 중이면 공개 체크를 끄고 초안으로 저장할 수 있습니다.`);
@@ -1065,6 +1111,8 @@ async function saveCoachSelfLesson(event) {
     renderCoachCalendarPanel,
     loadCoachCalendar,
     bindCoachSelfLessonPicker,
+    hasUnsavedCoachChanges,
+    confirmDiscardCoachChanges,
     changeCoachScheduleWeek,
     saveCoachSchedule,
     saveCoachSelfProfile,

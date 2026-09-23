@@ -31,6 +31,7 @@ export function createAdminDashboardPage({
   migrateCoachImages,
   openAuthModal,
   renderRoleMenu,
+  openAdminView,
 }) {
 async function loadAdminOperations() {
   state.adminOperationsLoadState = "loading";
@@ -60,13 +61,23 @@ function renderAdminOperations() {
   const counts = state.adminOperations?.counts || {};
   const status = state.adminOperations?.status || {};
   const setting = state.siteSettings;
+  const operations = [
+    ["예약", counts.reservations, "bookings", ""],
+    ["환불", counts.refunds, "bookings", ""],
+    ["정산", counts.settlements, "bookings", `지급 가능 ${Number(counts.settlementsReady || 0)} · 보류 ${Number(counts.settlementsHeld || 0)}`],
+    ["코치 승인", counts.coachRequests, "users", ""],
+    ["문의", counts.inquiries, "community:support", counts.inquiriesOverdue ? `기한 초과 ${Number(counts.inquiriesOverdue)}` : ""],
+    ["상세스탯 누락", counts.missingDetails, "community:missing", ""],
+    ["Riot 동기화 실패", counts.riotFailures, "community:riot", ""],
+    ["관리 작업", counts.adminActions, "community:server", `대기 ${Number(counts.adminActionsPending || 0)} · 실패 ${Number(counts.adminActionsFailed || 0)}`],
+  ];
   panel.innerHTML = `
-    <div class="admin-operations-head"><div><span>오늘 처리할 일</span><strong>운영 현황</strong></div><button class="secondary mini" type="button" id="reloadAdminOperationsBtn">새로고침</button></div>
+    <div class="admin-operations-head"><div><span>현재 남아 있는 일</span><strong>미처리 업무</strong></div><button class="secondary mini" type="button" id="reloadAdminOperationsBtn">새로고침</button></div>
     ${state.adminOperations?.error ? `<p class="save-status error">${escapeHtml(state.adminOperations.error)}</p>` : `
       <div class="admin-operation-grid">
-        ${[["예약",counts.reservations],["환불",counts.refunds],["정산",counts.settlements],["코치 승인",counts.coachRequests],["문의",counts.inquiries],["상세스탯 누락",counts.missingDetails],["Riot 동기화 실패",counts.riotFailures],["실패·대기 작업",counts.adminActions]].map(([label,value])=>`<article><span>${label}</span><strong>${Number(value||0).toLocaleString("ko-KR")}</strong></article>`).join("")}
+        ${operations.map(([label,value,target,detail])=>`<button type="button" data-operation-target="${target}"><span>${label}</span><strong>${Number(value||0).toLocaleString("ko-KR")}</strong>${detail ? `<small>${detail}</small>` : ""}</button>`).join("")}
       </div>
-      <p class="admin-system-status">DB ${status.database === "ok" ? "정상" : "확인 필요"} · 봇 ${status.botConfigured ? "설정됨" : "설정 필요"} · 커뮤니티 ${status.communityConfigured ? "연결됨" : "설정 필요"} · Riot 마지막 동기화 ${status.lastRiotSyncAt ? escapeHtml(new Date(status.lastRiotSyncAt).toLocaleString("ko-KR")) : "기록 없음"} · 프런트 20260923ops1 · 백엔드 ${escapeHtml(status.deployVersion || "확인 불가")}</p>
+      <p class="admin-system-status">DB ${status.database === "ok" ? "응답 정상" : "확인 필요"} · 봇 토큰 ${status.botConfigured ? "설정" : "미설정"} · 커뮤니티 서버 ${status.communityConfigured ? "설정" : "미설정"} · 최근 관리 작업 ${status.lastAdminActionAt ? escapeHtml(new Date(status.lastAdminActionAt).toLocaleString("ko-KR")) : "기록 없음"}${status.oldestPendingActionAt ? ` · 가장 오래 대기 ${escapeHtml(new Date(status.oldestPendingActionAt).toLocaleString("ko-KR"))}` : ""} · Riot 마지막 동기화 ${status.lastRiotSyncAt ? escapeHtml(new Date(status.lastRiotSyncAt).toLocaleString("ko-KR")) : "기록 없음"} · 백엔드 ${escapeHtml(status.deployVersion || "확인 불가")}</p>
     `}
     <form id="siteSettingsForm" class="admin-site-settings">
       <label class="toggle-line"><input name="maintenance" type="checkbox" ${setting.maintenance ? "checked" : ""}><span>코칭 점검 모드</span></label>
@@ -76,6 +87,11 @@ function renderAdminOperations() {
       <button class="primary" type="submit">점검 설정 저장</button><span id="siteSettingsStatus" class="save-status" aria-live="polite"></span>
     </form>`;
   $("reloadAdminOperationsBtn")?.addEventListener("click", loadAdminOperations);
+  panel.querySelectorAll("[data-operation-target]").forEach((button) => button.addEventListener("click", () => {
+    const target = button.dataset.operationTarget;
+    if (target.startsWith("community:")) window.location.assign(`community/?view=admin&section=${encodeURIComponent(target.split(":")[1])}`);
+    else openAdminView(target);
+  }));
   $("siteSettingsForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
