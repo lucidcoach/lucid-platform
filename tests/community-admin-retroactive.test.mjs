@@ -16,6 +16,6 @@ assert.match(source, /data-retro-reinspect/);
 assert.match(source, /retroactive-rofl\/reinspect/);
 assert.match(source, /data-retro-mode="new"/);
 assert.match(source, /data-retro-mode="replace"/);
-assert.match(fs.readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8"), /communityAdmin\.js\?v=20260923ops1/);
+assert.match(fs.readFileSync(new URL("../docs/community/js/app-report6.js", import.meta.url), "utf8"), /communityAdmin\.js\?v=20260923ops2/);
 
 console.log("community admin retroactive ROFL checks passed");

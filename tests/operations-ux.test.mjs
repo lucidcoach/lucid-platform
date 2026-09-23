@@ -12,5 +12,6 @@ for (const label of ["공개 전 체크", "공개 미리보기", "초안으로 �
 assert.match(recruitment, /모집 일정을 불러오지 못했습니다/);
 assert.match(recruitment, /Discord에서 참가/);
 for (const field of ["assignedTo", "dueAt", "adminReply", "사용자 답변 초안"]) assert.match(inquiries, new RegExp(field));
+assert.match(inquiries, /new Date\(dueAt\)\.toISOString\(\)/);
 
 console.log("operations UX checks passed");
