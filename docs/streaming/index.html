@@ -7,7 +7,7 @@
   <title>Lucid 스트리밍</title>
   <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260924j">
+  <link rel="stylesheet" href="streaming.css?v=20260924k">
 </head>
 <body>
   <header class="topbar">
@@ -52,6 +52,7 @@
 
     <section id="auctionView" class="content-view">
       <header class="page-head"><h1>경매</h1><div class="page-head-meta"><span id="auctionMode" class="badge" hidden></span><span id="auctionBroadcast" class="muted"></span></div></header>
+      <form id="auctionJoinForm" class="auction-join"><div><strong>팀장 입장</strong><span>전달받은 코드를 입력하세요.</span></div><input id="auctionJoinCode" maxlength="8" autocomplete="off" placeholder="입장 코드" required><button>입장</button></form>
       <div id="auctionRoot"><p class="empty">방송 관리에서 방송을 선택해주세요.</p></div>
     </section>
 
@@ -72,6 +73,6 @@
   </main>
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
-  <script type="module" src="streaming.js?v=20260924m"></script>
+  <script type="module" src="streaming.js?v=20260924n"></script>
 </body>
 </html>
