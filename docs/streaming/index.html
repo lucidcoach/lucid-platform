@@ -4,81 +4,81 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0c0f16">
-  <title>Lucid 스트리밍 | 내전 운영</title>
-  <meta name="description" content="채팅 참가부터 팀 편성, 승패와 전적 기록까지 한곳에서 운영하는 Lucid 스트리밍">
+  <title>Lucid 스트리밍</title>
+  <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260924a">
+  <link rel="stylesheet" href="streaming.css?v=20260924c">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../">Lucid</a>
-    <nav aria-label="서비스 메뉴">
-      <a href="../community/">커뮤니티</a><a href="../">강의</a><a class="active" href="./" aria-current="page">스트리밍</a>
-    </nav>
+    <nav class="service-nav" aria-label="서비스 메뉴"><a href="../community/">커뮤니티</a><a href="../">강의</a><a class="active" href="./" aria-current="page">스트리밍</a></nav>
     <button id="loginOpen" class="quiet" type="button">로그인</button>
   </header>
+  <nav class="stream-nav" aria-label="스트리밍 메뉴">
+    <button class="active" data-view="home" type="button">방송 찾기</button>
+    <button data-view="mine" type="button">내 방송</button>
+    <button id="workspaceNav" data-view="workspace" type="button" hidden>방송 화면</button>
+    <button data-view="records" type="button">전적</button>
+    <button data-view="examples" type="button">화면 예시</button>
+    <button id="adminNav" data-view="admin" type="button" hidden>사용 현황</button>
+  </nav>
 
   <main>
-    <section class="hero">
-      <div><span class="badge">방송 내전 운영</span><h1>참가는 채팅에서,<br>운영은 웹에서.</h1><p>봇 명령어를 관리할 필요 없이 참가자 티어, 팀 편성, 승패와 누적 전적을 한 화면에서 관리하세요.</p></div>
-      <form id="openForm" class="open-form"><label for="openSlug">방송 찾기</label><div><input id="openSlug" required maxlength="40" placeholder="방송 주소 입력"><button>입장</button></div></form>
-    </section>
-
     <section id="notice" class="notice" hidden></section>
 
-    <section class="panel search-panel">
-      <div><h2>참가자 전적 찾기</h2><p>전적 공개를 신청한 참가자의 내전 기록을 확인할 수 있습니다.</p></div>
-      <form id="playerSearchForm"><input id="playerSearch" type="search" minlength="2" placeholder="닉네임 또는 Riot ID"><button>검색</button></form>
-      <button id="exampleBtn" class="quiet" type="button">예시 보기</button>
-      <div id="playerResults" class="profile-results"></div>
+    <section id="homeView" class="content-view active">
+      <header class="page-head"><h1>방송 찾기</h1></header>
+      <form id="openForm" class="large-search"><input id="openSlug" required maxlength="40" placeholder="방송 주소"><button>입장</button></form>
+      <section class="command-card"><h2>채팅 명령어</h2><div><code>!티어신청 미드 정글</code><code>!참가 탑 정글</code><code>!취소</code><code>!대기열</code></div></section>
     </section>
 
-    <section id="accountSection" class="panel account-panel" hidden>
-      <div><h2>내 방송 공간</h2><p>방송마다 공간을 따로 만들고 전환할 수 있습니다.</p></div>
-      <div id="workspaceList" class="workspace-list"></div>
-      <form id="createWorkspaceForm" class="compact-form">
-        <input name="name" required maxlength="80" placeholder="방송 이름">
-        <input name="slug" required pattern="[a-z0-9][a-z0-9-]{2,39}" placeholder="주소 (영문 소문자)">
-        <input name="chatKey" maxlength="80" placeholder="채팅 연결 키 (선택)">
-        <button>방송 공간 만들기</button>
-      </form>
+    <section id="mineView" class="content-view">
+      <header class="page-head"><h1>내 방송</h1></header>
+      <button id="mineLogin" type="button">로그인</button>
+      <section id="accountSection" hidden>
+        <div id="workspaceList" class="workspace-list"></div>
+        <form id="createWorkspaceForm" class="create-form"><input name="name" required maxlength="80" placeholder="방송 이름"><input name="slug" required pattern="[a-z0-9][a-z0-9-]{2,39}" placeholder="방송 주소 (영문 소문자)"><button>만들기</button></form>
+      </section>
     </section>
 
-    <section id="workspaceSection" hidden>
-      <header class="workspace-head"><div><span id="workspaceLabel" class="badge"></span><h2 id="workspaceName"></h2><p>시청자는 로그인 후 웹이나 채팅에서 참가할 수 있습니다.</p></div><button id="copyLink" class="quiet" type="button">참가 링크 복사</button></header>
+    <section id="workspaceView" class="content-view">
+      <header class="workspace-head"><div><span id="workspaceLabel" class="badge"></span><h1 id="workspaceName"></h1></div><button id="copyLink" class="quiet" type="button">링크 복사</button></header>
+      <section id="tierPanel" class="panel" hidden><div class="section-head"><h2>티어 신청</h2><span id="applicationCount"></span></div><div id="applicationList" class="queue-list"></div></section>
       <div class="workspace-grid">
-        <section class="panel">
-          <div class="section-head"><div><h3>참가 대기열</h3><p id="queueCount"></p></div><div><button id="leaveBtn" class="quiet" type="button">참가 취소</button><button id="joinBtn" type="button">참가</button></div></div>
-          <div id="queueList" class="queue-list"></div>
-          <button id="balanceBtn" class="wide" type="button" hidden>10명 팀 편성</button>
-        </section>
-
-        <aside class="panel">
-          <h3>내 참가 정보</h3>
-          <form id="profileForm" class="profile-form">
-            <label>Riot ID<input name="riotId" maxlength="100" placeholder="게임이름#태그"></label>
-            <fieldset><legend>선호 라인</legend><div id="roleChecks" class="checks"></div></fieldset>
-            <label class="toggle"><input name="profileEnabled" type="checkbox"><span>전적 페이지 공개 신청</span></label>
-            <button>저장</button>
-          </form>
-          <a id="publicProfileLink" class="public-link" href="#" hidden>내 전적 페이지 보기</a>
-          <a id="discordLink" class="quiet-link" href="#">디스코드 계정 연결</a>
-          <a id="chzzkConnect" class="quiet-link" href="#" hidden>치지직 채팅 연결</a>
+        <section class="panel"><div class="section-head"><h2>참가 대기열</h2><div><span id="queueCount"></span><button id="leaveBtn" class="quiet" type="button">취소</button><button id="joinBtn" type="button">참가</button></div></div><div id="queueList" class="queue-list"></div><button id="balanceBtn" class="wide" type="button" hidden>팀 편성</button></section>
+        <aside class="panel side-panel">
+          <section><h2>내 참가 정보</h2><form id="profileForm" class="profile-form"><label>Riot ID<input name="riotId" maxlength="100" placeholder="게임이름#태그"></label><fieldset><legend>선호 라인</legend><div id="roleChecks" class="checks"></div></fieldset><label class="toggle"><input name="profileEnabled" type="checkbox"><span>전적 공개</span></label><button>저장</button></form><a id="publicProfileLink" class="text-link" href="#" hidden>내 전적 보기</a></section>
+          <section id="connectSection"><h2>연결</h2><a id="discordLink" class="link-button" href="#">디스코드 연결</a><a id="chzzkConnect" class="link-button" href="#">치지직 연결</a></section>
         </aside>
       </div>
-
-      <section class="panel matches-panel"><div class="section-head"><div><h3>경기와 팀 편성</h3><p>결과를 입력하면 참가자 전적에 바로 반영됩니다.</p></div></div><div id="matchList"></div></section>
+      <section class="panel"><div class="section-head"><h2>경기</h2></div><div id="matchList"></div></section>
     </section>
 
-    <section id="adminSection" class="panel" hidden>
-      <div class="section-head"><div><h2>스트리밍 사용 현황</h2><p>방송별 참가와 경기 사용량입니다.</p></div><button id="adminRefresh" class="quiet" type="button">새로고침</button></div>
-      <div class="table-wrap"><table><thead><tr><th>방송</th><th>운영자</th><th>연결 서버</th><th>누적 참가</th><th>참가자</th><th>전체 경기</th><th>최근 30일</th><th>현재 대기</th><th>최근 사용</th></tr></thead><tbody id="adminRows"></tbody></table></div>
+    <section id="recordsView" class="content-view">
+      <header class="page-head"><h1>전적</h1></header>
+      <form id="playerSearchForm" class="large-search"><input id="playerSearch" type="search" minlength="2" placeholder="닉네임 또는 Riot ID"><button>검색</button></form>
+      <div id="playerResults" class="profile-results"></div>
+      <section id="recordExample" class="record-page">
+        <header><div class="avatar">L</div><div><h2>Lucid#KR1</h2><span>플래티넘 II · 미드 / 정글</span></div><span class="example-mark">전적 예시</span></header>
+        <div class="record-summary"><article><span>전체 경기</span><strong>30</strong></article><article><span>승리</span><strong>18</strong></article><article><span>패배</span><strong>12</strong></article><article><span>승률</span><strong>60%</strong></article></div>
+        <div class="recent-games"><h3>최근 경기</h3><div class="game win"><strong>승리</strong><span>파랑 팀 · 미드</span><time>오늘</time></div><div class="game loss"><strong>패배</strong><span>빨강 팀 · 정글</span><time>어제</time></div><div class="game win"><strong>승리</strong><span>파랑 팀 · 미드</span><time>3일 전</time></div></div>
+      </section>
+    </section>
+
+    <section id="examplesView" class="content-view">
+      <header class="page-head"><h1>화면 예시</h1></header>
+      <div class="example-tabs"><button class="active" data-example="streamer" type="button">스트리머</button><button class="quiet" data-example="admin" type="button">관리자</button></div>
+      <div id="exampleRoot"></div>
+    </section>
+
+    <section id="adminView" class="content-view">
+      <header class="page-head"><h1>사용 현황</h1><button id="adminRefresh" class="quiet" type="button">새로고침</button></header>
+      <div class="table-wrap"><table><thead><tr><th>방송</th><th>운영자</th><th>치지직 채널</th><th>누적 참가</th><th>참가자</th><th>전체 경기</th><th>최근 30일</th><th>현재 대기</th><th>최근 사용</th></tr></thead><tbody id="adminRows"></tbody></table></div>
     </section>
   </main>
 
-  <dialog id="loginDialog">
-    <form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="oauth" href="#">디스코드로 로그인</a></form>
-  </dialog>
-  <script type="module" src="streaming.js?v=20260924a"></script>
+  <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
+  <script type="module" src="streaming.js?v=20260924c"></script>
 </body>
 </html>
