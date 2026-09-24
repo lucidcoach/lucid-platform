@@ -7,7 +7,7 @@
   <title>Lucid 스트리밍</title>
   <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260924g">
+  <link rel="stylesheet" href="streaming.css?v=20260924h">
 </head>
 <body>
   <header class="topbar">
@@ -18,7 +18,6 @@
       <button class="active" data-view="mine" type="button">방송 관리</button>
       <button id="workspaceNav" data-view="workspace" type="button" hidden>방송 화면</button>
       <button data-view="records" type="button">전적</button>
-      <button data-view="examples" type="button">미리보기</button>
       <button id="adminNav" data-view="admin" type="button" hidden>사용 현황</button>
     </nav>
     <button id="loginOpen" class="quiet" type="button">로그인</button>
@@ -61,12 +60,6 @@
       </section>
     </section>
 
-    <section id="examplesView" class="content-view">
-      <header class="page-head"><h1>미리보기</h1></header>
-      <div class="example-tabs"><button class="active" data-example="streamer" type="button">스트리머</button><button class="quiet" data-example="admin" type="button">관리자</button></div>
-      <div id="exampleRoot"></div>
-    </section>
-
     <section id="adminView" class="content-view">
       <header class="page-head"><h1>사용 현황</h1><button id="adminRefresh" class="quiet" type="button">새로고침</button></header>
       <div class="table-wrap"><table><thead><tr><th>방송</th><th>운영자</th><th>치지직 채널</th><th>누적 참가</th><th>참가자</th><th>전체 경기</th><th>최근 30일</th><th>현재 대기</th><th>최근 사용</th></tr></thead><tbody id="adminRows"></tbody></table></div>
@@ -74,6 +67,6 @@
   </main>
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
-  <script type="module" src="streaming.js?v=20260924i"></script>
+  <script type="module" src="streaming.js?v=20260924j"></script>
 </body>
 </html>
