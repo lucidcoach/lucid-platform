@@ -1,5 +1,5 @@
 
-import { categories, filterSets, purposes, adminLineOptions, adminFieldOptions, priceUnits, badgeOptions, text, samples, imageMigration, tierRank, leagueLessonOverrides, legacyCoachKeys, state } from "./js/catalog.js?v=20260923ops1";
+import { categories, filterSets, purposes, adminLineOptions, adminFieldOptions, priceUnits, badgeOptions, text, samples, imageMigration, tierRank, leagueLessonOverrides, legacyCoachKeys, state } from "./js/catalog.js";
 import {
   ADMIN_TOKEN_KEY,
   API_BASE_URL,
