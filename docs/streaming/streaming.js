@@ -11,7 +11,7 @@ let state = null;
 let ownedWorkspaces = [];
 
 async function request(path, options = {}) {
-  const response = await fetch(`${apiBase}${path}`, { credentials:"include", ...options, headers:{ "Content-Type":"application/json", ...(options.headers || {}) } });
+  const response = await fetch(`${apiBase}${path}`, { credentials:"include", ...options, headers:{ ...(options.body ? {"Content-Type":"application/json"} : {}), ...(options.headers || {}) } });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.ok) throw new Error(result.error || `요청 실패 (${response.status})`);
   return result;
@@ -19,7 +19,7 @@ async function request(path, options = {}) {
 
 function escapeHtml(value) { const div = document.createElement("div"); div.textContent = String(value ?? ""); return div.innerHTML; }
 function notice(message = "") { $("#notice").hidden = !message; $("#notice").textContent = message; }
-function errorText(error) { return ({login_required:"로그인이 필요합니다.",workspace_not_found:"방송을 찾지 못했습니다.",invalid_workspace:"방송 정보를 확인해주세요.",workspace_already_exists:"이미 사용 중인 방송입니다.",invalid_placement:"라인과 세부 티어를 모두 선택해주세요.",not_enough_players:"참가자가 10명 이상 필요합니다.",unrated_players:"모든 참가자의 라인별 티어를 먼저 배치해주세요.",result_already_recorded:"이미 기록한 경기입니다.",invalid_riot_accounts:"Riot ID를 게임이름#태그 형식으로 입력해주세요."})[error.message] || error.message; }
+function errorText(error) { return ({"Failed to fetch":"서버 연결에 실패했습니다. 다시 시도해주세요.",login_required:"로그인이 필요합니다.",workspace_not_found:"방송을 찾지 못했습니다.",invalid_workspace:"방송 정보를 확인해주세요.",workspace_already_exists:"이미 사용 중인 방송입니다.",invalid_placement:"라인과 세부 티어를 모두 선택해주세요.",not_enough_players:"참가자가 10명 이상 필요합니다.",unrated_players:"모든 참가자의 라인별 티어를 먼저 배치해주세요.",result_already_recorded:"이미 기록한 경기입니다.",invalid_riot_accounts:"Riot ID를 게임이름#태그 형식으로 입력해주세요."})[error.message] || error.message; }
 function options(values, selected) { return values.map((value) => `<option${value === selected ? " selected" : ""}>${value}</option>`).join(""); }
 function tierParts(value = "") { const match=String(value).match(/^(아이언|브론즈|실버|골드|플래티넘|에메랄드|다이아(?:몬드)?)\s+(IV|III|II|I|[1-4])$/);if(match){const roman={IV:"4",III:"3",II:"2",I:"1"};return [match[1].startsWith("다이아")?"다이아몬드":match[1],roman[match[2]]||match[2]];}for(const category of ["그랜드마스터","마스터"]){if(String(value).startsWith(category))return[category,String(value).split(" ")[1]||"중"];}return value==="챌린저"?["챌린저","없음"]:["티어 선택","세부 등급"]; }
 function tierDetails(category, selected = "") { const values=category==="챌린저"?["없음"]:["마스터","그랜드마스터"].includes(category)?["하","중","상"]:tierCategories.includes(category)&&category!=="티어 선택"?["4","3","2","1"]:["세부 등급"];return options(values,selected||values[0]); }
@@ -50,7 +50,7 @@ async function loadAccount() {
   if (!user) return;
   const { workspaces } = await request("/api/streaming/workspaces");
   ownedWorkspaces = workspaces;
-  $("#workspaceList").innerHTML = workspaces.length ? workspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelName ? `${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("") : "";
+  $("#workspaceList").innerHTML = workspaces.length ? workspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelName ? `연결됨 · ${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("") : "";
   $("#connectBroadcast").textContent = workspaces.some((item) => item.channelName) ? "방송 추가" : "치지직 방송 연결";
   if (userIsAdmin(user)) await loadAdmin();
 }
@@ -70,6 +70,7 @@ function renderWorkspace() {
   $("#tierPanel").hidden = !workspace.canManage; $("#applicationCount").textContent = `${applications.length}명`;
   $("#applicationList").innerHTML = applications.length ? applications.map((player) => playerEditor(player)).join("") : '<p class="empty">신청 없음</p>';
   $("#chzzkConnect").hidden = !workspace.canManage; $("#chzzkConnect").href = `${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(workspace.chatKey)}&redirect=1`; $("#chzzkConnect").target = "_blank"; $("#chzzkConnect").rel = "noopener";
+  $("#connectionState").textContent = workspace.connected ? `${workspace.channelName} 연결됨` : "연결되지 않음"; $("#chzzkConnect").textContent = workspace.connected ? "다시 연결" : "치지직 방송 연결";
   $("#connectSection").hidden = !workspace.canManage; $("#queueCount").textContent = `${queue.length}명`;
   const joined = me && queue.some((player) => player.id === me.id);
   $("#joinBtn").disabled = !user || joined; $("#leaveBtn").disabled = !user || !joined;
@@ -95,7 +96,7 @@ function renderExample(type) {
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
 document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",() => showView(button.dataset.view)));
 $("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]"); if(button) openWorkspace(button.dataset.open); });
-$("#connectBroadcast").addEventListener("click",async()=>{const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{const pending=ownedWorkspaces.find((item)=>!item.channelName);let chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`;await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=`web-${slug}`;}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;}catch(error){authTab.close();notice(errorText(error));}});
+$("#connectBroadcast").addEventListener("click",async()=>{const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{const pending=ownedWorkspaces.find((item)=>!item.channelName);let chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`;await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=`web-${slug}`;}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;notice("새 탭에서 치지직 연결을 완료해주세요.");}catch(error){authTab.close();notice(errorText(error));}});
 $("#joinBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/queue`,{method:"POST",body:"{}"});await reload();}catch(error){notice(errorText(error));}});
 $("#leaveBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/queue`,{method:"DELETE"});await reload();}catch(error){notice(errorText(error));}});
 $("#profileForm").addEventListener("submit",async(event)=>{event.preventDefault();const data=new FormData(event.currentTarget);const payload={riotId:data.get("riotId").trim(),roles:data.getAll("roles"),profileEnabled:data.get("profileEnabled")==="on"};try{if(payload.riotId)await updateRiotAccounts([payload.riotId]);await request(`/api/streaming/workspaces/${currentSlug}/me`,{method:"PUT",body:JSON.stringify(payload)});await reload();notice("저장했습니다.");}catch(error){notice(errorText(error));}});
@@ -114,6 +115,7 @@ renderExample("streamer");
 const pageParams=new URLSearchParams(location.search),initialView=pageParams.get("view");
 if(!pageParams.get("player")&&!currentSlug&&["mine","records","examples"].includes(initialView))showView(initialView);
 await loadAccount();
+window.addEventListener("focus",()=>{if(user)loadAccount().catch(()=>{});});
 const publicSlug=pageParams.get("player");
 if(publicSlug){try{const{player}=await request(`/api/streaming/players/${encodeURIComponent(publicSlug)}`);$("#playerResults").innerHTML=profileCard(player);$("#recordExample").hidden=true;showView("records");}catch(error){notice(errorText(error));}}
 else if(currentSlug)await openWorkspace(currentSlug);
