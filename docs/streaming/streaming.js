@@ -51,7 +51,7 @@ async function loadAccount() {
   const { workspaces } = await request("/api/streaming/workspaces");
   ownedWorkspaces = workspaces;
   const visibleWorkspaces = workspaces.filter((item) => item.channelId), pending = workspaces.find((item) => !item.channelId);
-  if (pending) visibleWorkspaces.push(pending);
+  if (!visibleWorkspaces.length && pending) visibleWorkspaces.push(pending);
   $("#workspaceList").innerHTML = visibleWorkspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelId ? `연결됨 · ${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("");
   $("#connectBroadcast").textContent = workspaces.some((item) => item.channelId) ? "방송 추가" : "치지직 방송 연결";
   if (userIsAdmin(user)) await loadAdmin();
