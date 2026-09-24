@@ -4,10 +4,12 @@ import { fetchCurrentUser, loginUser, updateRiotAccounts, userIsAdmin } from "..
 const apiBase = API_BASE_URL.replace(/\/$/, "");
 const roles = ["탑", "정글", "미드", "원딜", "서폿"];
 const tiers = ["평가 대기","미평가","아이언 IV","아이언 III","아이언 II","아이언 I","브론즈 IV","브론즈 III","브론즈 II","브론즈 I","실버 IV","실버 III","실버 II","실버 I","골드 IV","골드 III","골드 II","골드 I","플래티넘 IV","플래티넘 III","플래티넘 II","플래티넘 I","에메랄드 IV","에메랄드 III","에메랄드 II","에메랄드 I","다이아 IV","다이아 III","다이아 II","다이아 I","마스터","그랜드마스터","챌린저"];
+const placementTiers = ["티어 선택", ...tiers.slice(2)];
 const $ = (selector) => document.querySelector(selector);
 let user = null;
 let currentSlug = new URLSearchParams(location.search).get("channel") || "";
 let state = null;
+let ownedWorkspaces = [];
 
 async function request(path, options = {}) {
   const response = await fetch(`${apiBase}${path}`, { credentials:"include", ...options, headers:{ "Content-Type":"application/json", ...(options.headers || {}) } });
@@ -18,7 +20,7 @@ async function request(path, options = {}) {
 
 function escapeHtml(value) { const div = document.createElement("div"); div.textContent = String(value ?? ""); return div.innerHTML; }
 function notice(message = "") { $("#notice").hidden = !message; $("#notice").textContent = message; }
-function errorText(error) { return ({login_required:"로그인이 필요합니다.",workspace_not_found:"방송을 찾지 못했습니다.",invalid_workspace:"방송 이름과 주소를 확인해주세요.",workspace_already_exists:"이미 사용 중인 방송 주소입니다.",not_enough_players:"참가자가 10명 이상 필요합니다.",result_already_recorded:"이미 기록한 경기입니다.",invalid_riot_accounts:"Riot ID를 게임이름#태그 형식으로 입력해주세요."})[error.message] || error.message; }
+function errorText(error) { return ({login_required:"로그인이 필요합니다.",workspace_not_found:"방송을 찾지 못했습니다.",invalid_workspace:"방송 정보를 확인해주세요.",workspace_already_exists:"이미 사용 중인 방송입니다.",not_enough_players:"참가자가 10명 이상 필요합니다.",unrated_players:"모든 참가자의 라인별 티어를 먼저 배치해주세요.",result_already_recorded:"이미 기록한 경기입니다.",invalid_riot_accounts:"Riot ID를 게임이름#태그 형식으로 입력해주세요."})[error.message] || error.message; }
 function options(values, selected) { return values.map((value) => `<option${value === selected ? " selected" : ""}>${value}</option>`).join(""); }
 
 function showView(name) {
@@ -29,12 +31,15 @@ function showView(name) {
 
 function profileCard(player) {
   const total = player.wins + player.losses;
-  return `<article class="profile-card"><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.riotId || "Riot ID 미등록")}</span><span>${escapeHtml(player.tier)} · ${player.wins}승 ${player.losses}패${total ? ` · ${Math.round(player.wins / total * 100)}%` : ""}</span>${player.workspaceName ? `<small>${escapeHtml(player.workspaceName)}</small>` : ""}${player.publicSlug ? `<a href="?player=${encodeURIComponent(player.publicSlug)}">전적 보기</a>` : ""}</article>`;
+  const placements = Object.entries(player.roleTiers || {}).map(([role,tier]) => `${role} ${tier}`).join(" · ") || player.tier;
+  return `<article class="profile-card"><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.riotId || "Riot ID 미등록")}</span><span>${escapeHtml(placements)} · ${player.wins}승 ${player.losses}패${total ? ` · ${Math.round(player.wins / total * 100)}%` : ""}</span>${player.workspaceName ? `<small>${escapeHtml(player.workspaceName)}</small>` : ""}${player.publicSlug ? `<a href="?player=${encodeURIComponent(player.publicSlug)}">전적 보기</a>` : ""}</article>`;
 }
 
 function playerEditor(player, index = "") {
   const role1 = player.roles?.[0] || "라인 미정", role2 = player.roles?.[1] || "라인 미정";
-  return `<div class="queue-row"><strong>${index}</strong><div><b>${escapeHtml(player.name)}</b><br><small>${escapeHtml(player.riotId || player.tier)}</small></div><select data-tier>${options(tiers, player.tier)}</select><select data-role1>${options(["라인 미정",...roles], role1)}</select><select data-role2>${options(["라인 미정",...roles], role2)}</select><button class="quiet" data-save-player="${player.id}">저장</button><button class="quiet" data-cancel-player="${player.id}">취소</button></div>`;
+  const tier1 = player.roleTiers?.[role1] || (!tiers.slice(0,2).includes(player.tier) ? player.tier : "티어 선택");
+  const tier2 = player.roleTiers?.[role2] || (!tiers.slice(0,2).includes(player.tier) ? player.tier : "티어 선택");
+  return `<div class="queue-row"><strong>${index}</strong><div><b>${escapeHtml(player.name)}</b><br><small>${escapeHtml(player.riotId || player.tier)}</small></div><select data-role1>${options(["라인 미정",...roles], role1)}</select><select data-tier1>${options(placementTiers, tier1)}</select><select data-role2>${options(["라인 미정",...roles], role2)}</select><select data-tier2>${options(placementTiers, tier2)}</select><button class="quiet" data-save-player="${player.id}">저장</button><button class="quiet" data-cancel-player="${player.id}">취소</button></div>`;
 }
 
 async function loadAccount() {
@@ -44,7 +49,9 @@ async function loadAccount() {
   $("#adminNav").hidden = !userIsAdmin(user);
   if (!user) return;
   const { workspaces } = await request("/api/streaming/workspaces");
-  $("#workspaceList").innerHTML = workspaces.length ? workspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.name)}</strong><br><small>${item.queueCount}명 · ${item.matchCount}경기${item.channelName ? ` · ${escapeHtml(item.channelName)}` : ""}</small></button>`).join("") : '<p class="empty">방송이 없습니다.</p>';
+  ownedWorkspaces = workspaces;
+  $("#workspaceList").innerHTML = workspaces.length ? workspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelName ? `${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("") : "";
+  $("#connectBroadcast").textContent = workspaces.some((item) => item.channelName) ? "방송 추가" : "치지직 방송 연결";
   if (userIsAdmin(user)) await loadAdmin();
 }
 
@@ -66,9 +73,9 @@ function renderWorkspace() {
   $("#connectSection").hidden = !workspace.canManage; $("#queueCount").textContent = `${queue.length}명`;
   const joined = me && queue.some((player) => player.id === me.id);
   $("#joinBtn").disabled = !user || joined; $("#leaveBtn").disabled = !user || !joined;
-  $("#balanceBtn").hidden = !workspace.canManage; $("#balanceBtn").disabled = queue.length < 10;
+  $("#balanceBtn").hidden = !workspace.canManage; $("#balanceBtn").disabled = queue.length < 10 || queue.some((player) => !player.roles?.length || player.roles.some((role) => !player.roleTiers?.[role]));
   $("#queueList").innerHTML = queue.length ? queue.map((player,index) => workspace.canManage ? playerEditor(player,index + 1) : `<div class="queue-row"><strong>${index + 1}</strong><div><b>${escapeHtml(player.name)}</b><br><small>${escapeHtml(player.riotId || "Riot ID 미등록")}</small></div><span>${escapeHtml(player.tier)}</span><span>${escapeHtml((player.roles || []).join(" / ") || "라인 미정")}</span></div>`).join("") : '<p class="empty">대기 없음</p>';
-  $("#matchList").innerHTML = matches.length ? matches.map((match) => `<article class="match-card"><div class="teams"><div class="team blue"><strong>파랑 팀</strong><ul>${match.blue.map((p) => `<li>${escapeHtml(p.name)} · ${escapeHtml(p.tier)}</li>`).join("")}</ul></div><div class="team red"><strong>빨강 팀</strong><ul>${match.red.map((p) => `<li>${escapeHtml(p.name)} · ${escapeHtml(p.tier)}</li>`).join("")}</ul></div></div>${workspace.canManage && match.status === "pending" ? `<div class="result-actions"><button data-result="${match.id}:blue">파랑 승리</button><button data-result="${match.id}:red">빨강 승리</button></div>` : `<p>${match.status === "completed" ? `${match.winner === "blue" ? "파랑" : "빨강"} 승리` : "진행 중"}</p>`}</article>`).join("") : '<p class="empty">경기 없음</p>';
+  $("#matchList").innerHTML = matches.length ? matches.map((match) => `<article class="match-card"><div class="teams"><div class="team blue"><strong>파랑 팀</strong><ul>${match.blue.map((p) => `<li>${escapeHtml(p.assignedRole || "")} · ${escapeHtml(p.name)} · ${escapeHtml(p.tier)}</li>`).join("")}</ul></div><div class="team red"><strong>빨강 팀</strong><ul>${match.red.map((p) => `<li>${escapeHtml(p.assignedRole || "")} · ${escapeHtml(p.name)} · ${escapeHtml(p.tier)}</li>`).join("")}</ul></div></div>${workspace.canManage && match.status === "pending" ? `<div class="result-actions"><button data-result="${match.id}:blue">파랑 승리</button><button data-result="${match.id}:red">빨강 승리</button></div>` : `<p>${match.status === "completed" ? `${match.winner === "blue" ? "파랑" : "빨강"} 승리` : "진행 중"}</p>`}</article>`).join("") : '<p class="empty">경기 없음</p>';
   $("#profileForm").hidden = !user;
   if (me) { $("#profileForm").riotId.value = me.riotId; $("#profileForm").profileEnabled.checked = me.profileEnabled; document.querySelectorAll('#roleChecks input').forEach((input) => input.checked = me.roles.includes(input.value)); $("#publicProfileLink").hidden = !me.publicSlug; $("#publicProfileLink").href = `?player=${encodeURIComponent(me.publicSlug)}`; }
   else { $("#profileForm").reset(); $("#publicProfileLink").hidden = true; }
@@ -87,13 +94,12 @@ function renderExample(type) {
 
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
 document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",() => showView(button.dataset.view)));
-$("#openForm").addEventListener("submit",(event) => { event.preventDefault(); openWorkspace($("#openSlug").value.trim().toLowerCase()); });
 $("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]"); if(button) openWorkspace(button.dataset.open); });
-$("#createWorkspaceForm").addEventListener("submit",async(event) => { event.preventDefault(); try { const result=await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify(Object.fromEntries(new FormData(event.currentTarget)))}); event.currentTarget.reset(); await loadAccount(); await openWorkspace(result.slug); } catch(error){ notice(errorText(error)); } });
+$("#connectBroadcast").addEventListener("click",async()=>{try{const pending=ownedWorkspaces.find((item)=>!item.channelName);if(pending){location.href=`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(pending.chatKey)}&redirect=1`;return;}const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`;await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});location.href=`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(`web-${slug}`)}&redirect=1`;}catch(error){notice(errorText(error));}});
 $("#joinBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/queue`,{method:"POST",body:"{}"});await reload();}catch(error){notice(errorText(error));}});
 $("#leaveBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/queue`,{method:"DELETE"});await reload();}catch(error){notice(errorText(error));}});
 $("#profileForm").addEventListener("submit",async(event)=>{event.preventDefault();const data=new FormData(event.currentTarget);const payload={riotId:data.get("riotId").trim(),roles:data.getAll("roles"),profileEnabled:data.get("profileEnabled")==="on"};try{if(payload.riotId)await updateRiotAccounts([payload.riotId]);await request(`/api/streaming/workspaces/${currentSlug}/me`,{method:"PUT",body:JSON.stringify(payload)});await reload();notice("저장했습니다.");}catch(error){notice(errorText(error));}});
-document.addEventListener("click",async(event)=>{const save=event.target.closest("[data-save-player]");if(save&&!save.closest("#exampleRoot")){const id=save.dataset.savePlayer,row=save.closest(".queue-row"),tier=row.querySelector("[data-tier]").value;const selected=[row.querySelector("[data-role1]").value,row.querySelector("[data-role2]").value].filter((role,index,array)=>role!=="라인 미정"&&array.indexOf(role)===index);try{await request(`/api/streaming/workspaces/${currentSlug}/players/${id}`,{method:"PATCH",body:JSON.stringify({tier,roles:selected})});await reload();}catch(error){notice(errorText(error));}}const cancel=event.target.closest("[data-cancel-player]");if(cancel&&!cancel.closest("#exampleRoot")){try{await request(`/api/streaming/workspaces/${currentSlug}/players/${cancel.dataset.cancelPlayer}`,{method:"DELETE"});await reload();}catch(error){notice(errorText(error));}}const result=event.target.closest("[data-result]");if(result){const[id,winner]=result.dataset.result.split(":");try{await request(`/api/streaming/workspaces/${currentSlug}/matches/${id}/result`,{method:"POST",body:JSON.stringify({winner})});await reload();}catch(error){notice(errorText(error));}}});
+document.addEventListener("click",async(event)=>{const save=event.target.closest("[data-save-player]");if(save&&!save.closest("#exampleRoot")){const id=save.dataset.savePlayer,row=save.closest(".queue-row"),pairs=[[row.querySelector("[data-role1]").value,row.querySelector("[data-tier1]").value],[row.querySelector("[data-role2]").value,row.querySelector("[data-tier2]").value]],selected=pairs.map(([role])=>role).filter((role,index,array)=>role!=="라인 미정"&&array.indexOf(role)===index),roleTiers=Object.fromEntries(pairs.filter(([role,tier])=>selected.includes(role)&&tier!=="티어 선택"));try{await request(`/api/streaming/workspaces/${currentSlug}/players/${id}`,{method:"PATCH",body:JSON.stringify({roles:selected,roleTiers})});await reload();}catch(error){notice(errorText(error));}}const cancel=event.target.closest("[data-cancel-player]");if(cancel&&!cancel.closest("#exampleRoot")){try{await request(`/api/streaming/workspaces/${currentSlug}/players/${cancel.dataset.cancelPlayer}`,{method:"DELETE"});await reload();}catch(error){notice(errorText(error));}}const result=event.target.closest("[data-result]");if(result){const[id,winner]=result.dataset.result.split(":");try{await request(`/api/streaming/workspaces/${currentSlug}/matches/${id}/result`,{method:"POST",body:JSON.stringify({winner})});await reload();}catch(error){notice(errorText(error));}}});
 $("#balanceBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/balance`,{method:"POST",body:"{}"});await reload();}catch(error){notice(errorText(error));}});
 $("#copyLink").addEventListener("click",async()=>{await navigator.clipboard.writeText(location.href);notice("복사했습니다.");});
 $("#playerSearchForm").addEventListener("submit",async(event)=>{event.preventDefault();try{const{players}=await request(`/api/streaming/players?q=${encodeURIComponent($("#playerSearch").value)}`);$("#playerResults").innerHTML=players.length?players.map(profileCard).join(""):'<p class="empty">검색 결과 없음</p>';$("#recordExample").hidden=true;}catch(error){notice(errorText(error));}});
@@ -105,7 +111,7 @@ $("#roleChecks").addEventListener("change",(event)=>{if(document.querySelectorAl
 
 renderExample("streamer");
 const pageParams=new URLSearchParams(location.search),initialView=pageParams.get("view");
-if(!pageParams.get("player")&&!currentSlug&&["home","mine","records","examples"].includes(initialView))showView(initialView);
+if(!pageParams.get("player")&&!currentSlug&&["mine","records","examples"].includes(initialView))showView(initialView);
 await loadAccount();
 const publicSlug=pageParams.get("player");
 if(publicSlug){try{const{player}=await request(`/api/streaming/players/${encodeURIComponent(publicSlug)}`);$("#playerResults").innerHTML=profileCard(player);$("#recordExample").hidden=true;showView("records");}catch(error){notice(errorText(error));}}
