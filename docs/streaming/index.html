@@ -7,7 +7,7 @@
   <title>Lucid 스트리밍</title>
   <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260924i">
+  <link rel="stylesheet" href="streaming.css?v=20260924j">
 </head>
 <body>
   <header class="topbar">
@@ -51,7 +51,7 @@
     </section>
 
     <section id="auctionView" class="content-view">
-      <header class="page-head"><h1>경매</h1><span id="auctionBroadcast" class="muted"></span></header>
+      <header class="page-head"><h1>경매</h1><div class="page-head-meta"><span id="auctionMode" class="badge" hidden></span><span id="auctionBroadcast" class="muted"></span></div></header>
       <div id="auctionRoot"><p class="empty">방송 관리에서 방송을 선택해주세요.</p></div>
     </section>
 
@@ -60,9 +60,8 @@
       <form id="playerSearchForm" class="large-search"><input id="playerSearch" type="search" minlength="2" placeholder="닉네임 또는 Riot ID"><button>검색</button></form>
       <div id="playerResults" class="profile-results"></div>
       <section id="recordExample" class="record-page">
-        <header><div class="avatar">L</div><div><h2>Lucid#KR1</h2><span>플래티넘 II · 미드 / 정글</span></div><span class="example-mark">전적 예시</span></header>
-        <div class="record-summary"><article><span>전체 경기</span><strong>30</strong></article><article><span>승리</span><strong>18</strong></article><article><span>패배</span><strong>12</strong></article><article><span>승률</span><strong>60%</strong></article></div>
-        <div class="recent-games"><h3>최근 경기</h3><div class="game win"><strong>승리</strong><span>파랑 팀 · 미드</span><time>오늘</time></div><div class="game loss"><strong>패배</strong><span>빨강 팀 · 정글</span><time>어제</time></div><div class="game win"><strong>승리</strong><span>파랑 팀 · 미드</span><time>3일 전</time></div></div>
+        <header class="record-example-head"><div><span class="example-mark">공개 예시</span><h2>커뮤니티 내전 기록</h2></div><small>닉네임#태그 비공개</small></header>
+        <div id="communityMatchExamples" class="example-match-list"><p class="empty">경기 기록을 불러오는 중입니다.</p></div>
       </section>
     </section>
 
@@ -73,6 +72,6 @@
   </main>
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
-  <script type="module" src="streaming.js?v=20260924l"></script>
+  <script type="module" src="streaming.js?v=20260924m"></script>
 </body>
 </html>
