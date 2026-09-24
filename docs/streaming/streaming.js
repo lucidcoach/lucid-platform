@@ -50,8 +50,10 @@ async function loadAccount() {
   if (!user) return;
   const { workspaces } = await request("/api/streaming/workspaces");
   ownedWorkspaces = workspaces;
-  $("#workspaceList").innerHTML = workspaces.length ? workspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelName ? `연결됨 · ${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("") : "";
-  $("#connectBroadcast").textContent = workspaces.some((item) => item.channelName) ? "방송 추가" : "치지직 방송 연결";
+  const visibleWorkspaces = workspaces.filter((item) => item.channelId), pending = workspaces.find((item) => !item.channelId);
+  if (pending) visibleWorkspaces.push(pending);
+  $("#workspaceList").innerHTML = visibleWorkspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelId ? `연결됨 · ${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("");
+  $("#connectBroadcast").textContent = workspaces.some((item) => item.channelId) ? "방송 추가" : "치지직 방송 연결";
   if (userIsAdmin(user)) await loadAdmin();
 }
 
@@ -95,8 +97,9 @@ function renderExample(type) {
 
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
 document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",() => showView(button.dataset.view)));
-$("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]"); if(button) openWorkspace(button.dataset.open); });
-$("#connectBroadcast").addEventListener("click",async()=>{const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{const pending=ownedWorkspaces.find((item)=>!item.channelName);let chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`;await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=`web-${slug}`;}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;notice("새 탭에서 치지직 연결을 완료해주세요.");}catch(error){authTab.close();notice(errorText(error));}});
+async function connectBroadcast(chatKey=""){const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{if(!chatKey){const pending=ownedWorkspaces.find((item)=>!item.channelId);chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`,created=await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=created.chatKey;}}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;notice("새 탭에서 치지직 연결을 완료해주세요.");}catch(error){authTab.close();notice(errorText(error));}}
+$("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]");if(!button)return;const workspace=ownedWorkspaces.find((item)=>item.slug===button.dataset.open);workspace?.channelId?openWorkspace(workspace.slug):connectBroadcast(workspace?.chatKey); });
+$("#connectBroadcast").addEventListener("click",()=>connectBroadcast());
 $("#joinBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/queue`,{method:"POST",body:"{}"});await reload();}catch(error){notice(errorText(error));}});
 $("#leaveBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/queue`,{method:"DELETE"});await reload();}catch(error){notice(errorText(error));}});
 $("#profileForm").addEventListener("submit",async(event)=>{event.preventDefault();const data=new FormData(event.currentTarget);const payload={riotId:data.get("riotId").trim(),roles:data.getAll("roles"),profileEnabled:data.get("profileEnabled")==="on"};try{if(payload.riotId)await updateRiotAccounts([payload.riotId]);await request(`/api/streaming/workspaces/${currentSlug}/me`,{method:"PUT",body:JSON.stringify(payload)});await reload();notice("저장했습니다.");}catch(error){notice(errorText(error));}});
