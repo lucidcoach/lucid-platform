@@ -9,6 +9,7 @@ const examples = script.slice(script.indexOf("const exampleChampions"), script.i
 assert.match(script, /linked\.length\?linked:ownedWorkspaces\.filter[^;]+\.slice\(0,1\)/);
 assert.match(script, /data-preview-team/);
 assert.match(script, /preview=team/);
+assert.match(script, /!\(auctionState\?\.canManage&&auctionPanel==="setup"\)\)loadAuction/);
 assert.match(examples, /`소환사 \$\{index\+1\}`/);
 assert.match(examples, /ddragon\.leagueoflegends\.com/);
 assert.doesNotMatch(examples, /privatePlayerName|focus\.name|item\.name/);

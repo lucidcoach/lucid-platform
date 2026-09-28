@@ -154,7 +154,7 @@ await loadAccount();
 if(initialView==="auction"&&!currentSlug)await loadAuction();
 loadRecordExamples();
 window.addEventListener("focus",()=>{if(user)loadAccount().catch(()=>{});});
-setInterval(()=>{if(currentSlug&&$("#auctionView").classList.contains("active"))loadAuction();},2000);
+setInterval(()=>{if(currentSlug&&$("#auctionView").classList.contains("active")&&!(auctionState?.canManage&&auctionPanel==="setup"))loadAuction();},2000);
 const publicSlug=pageParams.get("player");
 if(publicSlug){try{const{player}=await request(`/api/streaming/players/${encodeURIComponent(publicSlug)}`);$("#playerResults").innerHTML=profileCard(player);$("#recordExample").hidden=true;showView("records");}catch(error){notice(errorText(error));}}
 else if(currentSlug){await openWorkspace(currentSlug);if(initialView==="auction"){showView("auction");await loadAuction();}}
