@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "../js/config.js";
 import { fetchCurrentUser, loginUser, updateRiotAccounts, userIsAdmin } from "../js/auth.js";
 import { DDRAGON_VERSION } from "../community/js/config.js?v=20260904d";
-import { balanceQuickPlayers, QUICK_TIERS } from "./quick-balance.js?v=20260930b";
+import { balanceQuickPlayers, QUICK_ROLES, QUICK_TIERS } from "./quick-balance.js?v=20260930c";
 
 const apiBase = API_BASE_URL.replace(/\/$/, "");
 const roles = ["탑", "정글", "미드", "원딜", "서폿"];
@@ -95,11 +95,11 @@ function adminRows(workspaces) { return workspaces.map((w) => `<tr><td>${w.slug 
 async function loadAdmin() { const {workspaces} = await request("/api/streaming/workspaces?scope=all"); $("#adminRows").innerHTML = workspaces.length ? adminRows(workspaces.map((w) => ({...w,lastUsedAt:w.lastUsedAt ? new Date(w.lastUsedAt).toLocaleString("ko-KR") : "-"}))) : '<tr><td colspan="9">사용 중인 방송 없음</td></tr>'; }
 
 function quickTeam(name, players, side) {
-  return `<article class="quick-team ${side}"><header><span>${name}</span><strong>${players.reduce((sum, player) => sum + player.score, 0)}점</strong></header><ol>${players.map((player) => `<li><b>${escapeHtml(player.name)}</b><span>${escapeHtml(player.tier)}</span></li>`).join("")}</ol></article>`;
+  return `<article class="quick-team ${side}"><header><span>${name}</span><strong>${players.reduce((sum, player) => sum + player.score, 0)}점</strong></header><ol>${players.map((player) => `<li><b>${escapeHtml(player.name)}</b><span><em>${player.role}</em>${escapeHtml(player.tier)}</span></li>`).join("")}</ol></article>`;
 }
 
 const quickTierOptions = QUICK_TIERS.map((tier) => `<option value="${tier.score}"${tier.label === "골드 4" ? " selected" : ""}>${tier.label}</option>`).join("");
-$("#quickPlayers").innerHTML = Array.from({length:10}, (_, index) => `<label class="quick-player"><b>${index + 1}</b><input maxlength="20" placeholder="플레이어 ${index + 1}" aria-label="${index + 1}번 플레이어 이름"><select aria-label="${index + 1}번 플레이어 티어">${quickTierOptions}</select></label>`).join("");
+$("#quickPlayers").innerHTML = Array.from({length:10}, (_, index) => {const selectedRole=QUICK_ROLES[Math.floor(index/2)];const roleOptions=QUICK_ROLES.map((role)=>`<option${role===selectedRole?" selected":""}>${role}</option>`).join("");return `<label class="quick-player"><b>${index + 1}</b><input maxlength="20" placeholder="플레이어 ${index + 1}" aria-label="${index + 1}번 플레이어 이름"><select aria-label="${index + 1}번 플레이어 포지션">${roleOptions}</select><select aria-label="${index + 1}번 플레이어 티어">${quickTierOptions}</select></label>`;}).join("");
 
 let auctionState = null, auctionPanel = "setup";
 function imageUrl(value){return value?.startsWith("/api/")?`${apiBase}${value}`:value||"../logo.png";}
@@ -141,8 +141,8 @@ async function loadRecordExamples(){try{const {matches=[]}=await request("/api/c
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
 document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",async()=>{showView(button.dataset.view);if(button.dataset.view==="auction")await loadAuction();}));
 $("#quickStart").addEventListener("click",()=>showView("quick"));
-$("#quickForm").addEventListener("submit",(event)=>{event.preventDefault();const players=Array.from(document.querySelectorAll(".quick-player"),(row,index)=>{const input=row.querySelector("input"),select=row.querySelector("select");return{name:input.value.trim()||`플레이어 ${index+1}`,tier:select.selectedOptions[0].textContent,score:Number(select.value)};});const result=balanceQuickPlayers(players);$("#quickResult").innerHTML=`<header><div><span class="badge">편성 완료</span><h2>티어 점수 차이 ${result.difference}점</h2></div></header><div>${quickTeam("BLUE TEAM",result.blue,"blue")}${quickTeam("RED TEAM",result.red,"red")}</div>`;$("#quickResult").hidden=false;$("#quickResult").scrollIntoView({behavior:"smooth",block:"start"});});
-$("#quickForm").addEventListener("reset",()=>{$("#quickResult").hidden=true;});
+$("#quickForm").addEventListener("submit",(event)=>{event.preventDefault();const players=Array.from(document.querySelectorAll(".quick-player"),(row,index)=>{const input=row.querySelector("input"),[roleSelect,tierSelect]=row.querySelectorAll("select");return{name:input.value.trim()||`플레이어 ${index+1}`,role:roleSelect.value,tier:tierSelect.selectedOptions[0].textContent,score:Number(tierSelect.value)};});try{const result=balanceQuickPlayers(players);$("#quickError").hidden=true;$("#quickResult").innerHTML=`<header><div><span class="badge">편성 완료</span><h2>티어 점수 차이 ${result.difference}점</h2></div></header><div>${quickTeam("BLUE TEAM",result.blue,"blue")}${quickTeam("RED TEAM",result.red,"red")}</div>`;$("#quickResult").hidden=false;$("#quickResult").scrollIntoView({behavior:"smooth",block:"start"});}catch{$("#quickError").hidden=false;$("#quickResult").hidden=true;}});
+$("#quickForm").addEventListener("reset",()=>{$("#quickError").hidden=true;$("#quickResult").hidden=true;});
 async function connectBroadcast(chatKey=""){const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{if(!chatKey){const pending=ownedWorkspaces.find((item)=>!item.channelId);chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`,created=await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=created.chatKey;}}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;notice("새 탭에서 치지직 연결을 완료해주세요.");}catch(error){authTab.close();notice(errorText(error));}}
 $("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]");if(!button)return;const workspace=ownedWorkspaces.find((item)=>item.slug===button.dataset.open);workspace?.channelId?openWorkspace(workspace.slug):connectBroadcast(workspace?.chatKey); });
 $("#connectBroadcast").addEventListener("click",()=>connectBroadcast());

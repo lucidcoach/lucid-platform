@@ -10,18 +10,20 @@ export const QUICK_TIERS = [
   { label: "그랜드마스터 하", score: 3300 }, { label: "그랜드마스터 중", score: 3400 }, { label: "그랜드마스터 상", score: 3500 },
   { label: "챌린저", score: 3800 },
 ];
+export const QUICK_ROLES = ["탑", "정글", "미드", "원딜", "서폿"];
 
 export function balanceQuickPlayers(players) {
   if (players.length !== 10 || players.some((player) => !Number.isFinite(player.score))) throw new Error("ten_players_required");
+  const pairs = QUICK_ROLES.map((role) => players.filter((player) => player.role === role));
+  if (pairs.some((pair) => pair.length !== 2)) throw new Error("two_per_role_required");
   const total = players.reduce((sum, player) => sum + player.score, 0);
   let best = null;
-  // ponytail: fixed 10-player exhaustive search; revisit only if party size becomes configurable.
-  for (let mask = 0; mask < 1 << 10; mask += 1) {
-    if (mask.toString(2).replaceAll("0", "").length !== 5) continue;
-    const blue = players.filter((_, index) => mask & (1 << index));
+  // ponytail: fixed five-role exhaustive search; revisit only if multi-role preferences are added.
+  for (let mask = 0; mask < 1 << QUICK_ROLES.length; mask += 1) {
+    const blue = pairs.map((pair, index) => pair[(mask >> index) & 1]);
     const difference = Math.abs(total - 2 * blue.reduce((sum, player) => sum + player.score, 0));
     const orderDifference = Math.abs(45 - 2 * blue.reduce((sum, player) => sum + players.indexOf(player), 0));
-    if (!best || difference < best.difference || (difference === best.difference && orderDifference < best.orderDifference)) best = { blue, red: players.filter((_, index) => !(mask & (1 << index))), difference, orderDifference };
+    if (!best || difference < best.difference || (difference === best.difference && orderDifference < best.orderDifference)) best = { blue, red: pairs.map((pair, index) => pair[1 - ((mask >> index) & 1)]), difference, orderDifference };
   }
   return best;
 }
