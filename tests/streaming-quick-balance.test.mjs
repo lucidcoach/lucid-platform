@@ -17,6 +17,8 @@ assert.match(script, /data-match-action/);
 assert.match(script, /matches\/\$\{id\}\/\$\{name\}/);
 assert.match(script, /MMR 변동/);
 assert.match(script, /beforeMmr.*afterMmr.*mmrDelta/);
+assert.match(script, /role_bottleneck/);
+assert.match(script, /textContent=errorText\(error\)/);
 assert.doesNotMatch(readFileSync(new URL("../docs/streaming/quick-balance.js", import.meta.url), "utf8"), /function balance/);
 
 console.log("streaming anonymous quick balance checks passed");
