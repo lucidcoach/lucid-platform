@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "../js/config.js";
 import { fetchCurrentUser, loginUser, updateRiotAccounts, userIsAdmin } from "../js/auth.js";
 import { DDRAGON_VERSION } from "../community/js/config.js?v=20260904d";
+import { balanceQuickPlayers, QUICK_TIERS } from "./quick-balance.js?v=20260930b";
 
 const apiBase = API_BASE_URL.replace(/\/$/, "");
 const roles = ["탑", "정글", "미드", "원딜", "서폿"];
@@ -47,6 +48,7 @@ async function loadAccount() {
   user = await fetchCurrentUser().catch(() => null);
   $("#loginOpen").textContent = user ? user.displayName || "내 계정" : "로그인";
   $("#mineLogin").hidden = Boolean(user); $("#accountSection").hidden = !user;
+  $("#quickStart").textContent = user ? "빠른 팀 나누기" : "비로그인으로 계속하기";
   $("#mineEyebrow").textContent = user ? "방송 대시보드" : "치지직 방송 도구";
   $("#mineTitle").textContent = user ? `${user.displayName || "스트리머"}님의 방송을 관리하세요` : "방송 내전을 한곳에서 관리하세요";
   $("#mineDescription").textContent = user ? "연결된 방송을 열어 대기열과 팀 편성, 경기 기록을 바로 관리할 수 있습니다." : "참가 신청부터 팀 편성, 경기 기록까지 반복 작업을 줄이고 방송에 집중할 수 있습니다.";
@@ -92,6 +94,13 @@ async function reload() { if (currentSlug) await openWorkspace(currentSlug); }
 function adminRows(workspaces) { return workspaces.map((w) => `<tr><td>${w.slug ? `<a href="?channel=${encodeURIComponent(w.slug)}">${escapeHtml(w.name)}</a>` : escapeHtml(w.name)}</td><td>${escapeHtml(w.ownerName)}</td><td>${escapeHtml(w.channelName || "미연결")}</td><td>${w.usageCount}</td><td>${w.playerCount}</td><td>${w.matchCount}</td><td>${w.recentMatchCount}</td><td>${w.queueCount}</td><td>${escapeHtml(w.lastUsedAt || "-")}</td></tr>`).join(""); }
 async function loadAdmin() { const {workspaces} = await request("/api/streaming/workspaces?scope=all"); $("#adminRows").innerHTML = workspaces.length ? adminRows(workspaces.map((w) => ({...w,lastUsedAt:w.lastUsedAt ? new Date(w.lastUsedAt).toLocaleString("ko-KR") : "-"}))) : '<tr><td colspan="9">사용 중인 방송 없음</td></tr>'; }
 
+function quickTeam(name, players, side) {
+  return `<article class="quick-team ${side}"><header><span>${name}</span><strong>${players.reduce((sum, player) => sum + player.score, 0)}점</strong></header><ol>${players.map((player) => `<li><b>${escapeHtml(player.name)}</b><span>${escapeHtml(player.tier)}</span></li>`).join("")}</ol></article>`;
+}
+
+const quickTierOptions = QUICK_TIERS.map((tier) => `<option value="${tier.score}"${tier.label === "골드 4" ? " selected" : ""}>${tier.label}</option>`).join("");
+$("#quickPlayers").innerHTML = Array.from({length:10}, (_, index) => `<label class="quick-player"><b>${index + 1}</b><input maxlength="20" placeholder="플레이어 ${index + 1}" aria-label="${index + 1}번 플레이어 이름"><select aria-label="${index + 1}번 플레이어 티어">${quickTierOptions}</select></label>`).join("");
+
 let auctionState = null, auctionPanel = "setup";
 function imageUrl(value){return value?.startsWith("/api/")?`${apiBase}${value}`:value||"../logo.png";}
 async function loadAuction(){const join=$("#auctionJoinForm");if(!currentSlug){join.hidden=false;$("#auctionMode").hidden=true;$("#auctionBroadcast").textContent="";const linked=ownedWorkspaces.filter((item)=>item.slug&&item.channelId),rooms=linked.length?linked:ownedWorkspaces.filter((item)=>item.slug).slice(0,1);$("#auctionRoot").innerHTML=user?`<section class="panel"><div class="section-head"><h2>경매 관리자</h2></div><div class="auction-workspace-list">${rooms.map((item)=>`<article class="workspace-card auction-workspace"><div><strong>${escapeHtml(item.channelName||item.name)}</strong><small>${item.channelId?"연결된 방송":"치지직 연결 전"}</small></div><button data-auction-open="${escapeHtml(item.slug)}">관리자 화면</button><button data-auction-create="${escapeHtml(item.slug)}">경매 만들기</button></article>`).join("")||'<p class="empty">방송 관리에서 방송을 먼저 추가해주세요.</p>'}</div></section>`:'<p class="empty">경매를 만들려면 로그인해주세요.</p>';return;}join.hidden=true;try{const params=new URLSearchParams(location.search),token=params.get("team")||"",preview=params.get("preview")==="team",result=await request(`/api/streaming/workspaces/${encodeURIComponent(currentSlug)}/auction${token?`?team=${encodeURIComponent(token)}${preview?"&preview=team":""}`:""}`);auctionState=result.auction;renderAuction();}catch(error){notice(errorText(error));}}
@@ -131,6 +140,9 @@ async function loadRecordExamples(){try{const {matches=[]}=await request("/api/c
 
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
 document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",async()=>{showView(button.dataset.view);if(button.dataset.view==="auction")await loadAuction();}));
+$("#quickStart").addEventListener("click",()=>showView("quick"));
+$("#quickForm").addEventListener("submit",(event)=>{event.preventDefault();const players=Array.from(document.querySelectorAll(".quick-player"),(row,index)=>{const input=row.querySelector("input"),select=row.querySelector("select");return{name:input.value.trim()||`플레이어 ${index+1}`,tier:select.selectedOptions[0].textContent,score:Number(select.value)};});const result=balanceQuickPlayers(players);$("#quickResult").innerHTML=`<header><div><span class="badge">편성 완료</span><h2>티어 점수 차이 ${result.difference}점</h2></div></header><div>${quickTeam("BLUE TEAM",result.blue,"blue")}${quickTeam("RED TEAM",result.red,"red")}</div>`;$("#quickResult").hidden=false;$("#quickResult").scrollIntoView({behavior:"smooth",block:"start"});});
+$("#quickForm").addEventListener("reset",()=>{$("#quickResult").hidden=true;});
 async function connectBroadcast(chatKey=""){const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{if(!chatKey){const pending=ownedWorkspaces.find((item)=>!item.channelId);chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`,created=await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=created.chatKey;}}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;notice("새 탭에서 치지직 연결을 완료해주세요.");}catch(error){authTab.close();notice(errorText(error));}}
 $("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]");if(!button)return;const workspace=ownedWorkspaces.find((item)=>item.slug===button.dataset.open);workspace?.channelId?openWorkspace(workspace.slug):connectBroadcast(workspace?.chatKey); });
 $("#connectBroadcast").addEventListener("click",()=>connectBroadcast());
@@ -152,7 +164,7 @@ $("#adminRefresh").addEventListener("click",loadAdmin);$("#discordLogin").href=`
 $("#roleChecks").addEventListener("change",(event)=>{if(document.querySelectorAll('#roleChecks input:checked').length>2){event.target.checked=false;notice("선호 라인은 두 개까지 선택할 수 있습니다.");}});
 
 const pageParams=new URLSearchParams(location.search),initialView=pageParams.get("view");
-if(!pageParams.get("player")&&!currentSlug&&["mine","records","auction"].includes(initialView))showView(initialView);
+if(!pageParams.get("player")&&!currentSlug&&["mine","quick","records","auction"].includes(initialView))showView(initialView);
 await loadAccount();
 if(initialView==="auction"&&!currentSlug)await loadAuction();
 loadRecordExamples();
