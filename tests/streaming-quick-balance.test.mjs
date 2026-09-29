@@ -15,6 +15,8 @@ assert.match(page, /data-quick-mode="roles"[^>]*>포지션별 설정/);
 assert.equal((script.match(/\/api\/streaming\/quick-balance/g) || []).length, 2);
 assert.match(script, /data-match-action/);
 assert.match(script, /matches\/\$\{id\}\/\$\{name\}/);
+assert.match(script, /MMR 변동/);
+assert.match(script, /beforeMmr.*afterMmr.*mmrDelta/);
 assert.doesNotMatch(readFileSync(new URL("../docs/streaming/quick-balance.js", import.meta.url), "utf8"), /function balance/);
 
 console.log("streaming anonymous quick balance checks passed");
