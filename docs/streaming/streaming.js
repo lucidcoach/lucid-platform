@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "../js/config.js";
 import { fetchCurrentUser, loginUser, updateRiotAccounts, userIsAdmin } from "../js/auth.js";
 import { DDRAGON_VERSION } from "../community/js/config.js?v=20260904d";
-import { balanceQuickPlayers, QUICK_ROLES, QUICK_TIERS } from "./quick-balance.js?v=20260930c";
+import { balanceQuickPlayers, balanceRolePlayers, QUICK_ROLES, QUICK_TIERS } from "./quick-balance.js?v=20260930d";
 
 const apiBase = API_BASE_URL.replace(/\/$/, "");
 const roles = ["탑", "정글", "미드", "원딜", "서폿"];
@@ -100,6 +100,8 @@ function quickTeam(name, players, side) {
 
 const quickTierOptions = QUICK_TIERS.map((tier) => `<option value="${tier.score}"${tier.label === "골드 4" ? " selected" : ""}>${tier.label}</option>`).join("");
 $("#quickPlayers").innerHTML = Array.from({length:10}, (_, index) => {const selectedRole=QUICK_ROLES[Math.floor(index/2)];const roleOptions=QUICK_ROLES.map((role)=>`<option${role===selectedRole?" selected":""}>${role}</option>`).join("");return `<label class="quick-player"><b>${index + 1}</b><input maxlength="20" placeholder="플레이어 ${index + 1}" aria-label="${index + 1}번 플레이어 이름"><select aria-label="${index + 1}번 플레이어 포지션">${roleOptions}</select><select aria-label="${index + 1}번 플레이어 티어">${quickTierOptions}</select></label>`;}).join("");
+const quickRoleOptions = (selected="",optional=false) => `${optional?'<option value="">선택 안 함</option>':""}${QUICK_ROLES.map((role)=>`<option${role===selected?" selected":""}>${role}</option>`).join("")}`;
+$("#quickRolePlayers").innerHTML = Array.from({length:10},(_,index)=>{const primary=QUICK_ROLES[Math.floor(index/2)];return `<article class="quick-role-player"><label><b>${index+1}</b><input maxlength="20" placeholder="플레이어 ${index+1}" aria-label="${index+1}번 플레이어 이름"></label><div class="quick-choice"><strong>1순위</strong><select data-role>${quickRoleOptions(primary)}</select><select data-tier>${quickTierOptions}</select></div><div class="quick-choice"><strong>2순위</strong><select data-role>${quickRoleOptions("",true)}</select><select data-tier disabled>${quickTierOptions}</select></div><div class="quick-choice"><strong>3순위</strong><select data-role>${quickRoleOptions("",true)}</select><select data-tier disabled>${quickTierOptions}</select></div></article>`;}).join("");
 
 let auctionState = null, auctionPanel = "setup";
 function imageUrl(value){return value?.startsWith("/api/")?`${apiBase}${value}`:value||"../logo.png";}
@@ -141,8 +143,12 @@ async function loadRecordExamples(){try{const {matches=[]}=await request("/api/c
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
 document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",async()=>{showView(button.dataset.view);if(button.dataset.view==="auction")await loadAuction();}));
 $("#quickStart").addEventListener("click",()=>showView("quick"));
+document.querySelectorAll("[data-quick-mode]").forEach((button)=>button.addEventListener("click",()=>{document.querySelectorAll("[data-quick-mode]").forEach((item)=>item.classList.toggle("active",item===button));document.querySelectorAll("[data-quick-panel]").forEach((panel)=>panel.hidden=panel.dataset.quickPanel!==button.dataset.quickMode);}));
 $("#quickForm").addEventListener("submit",(event)=>{event.preventDefault();const players=Array.from(document.querySelectorAll(".quick-player"),(row,index)=>{const input=row.querySelector("input"),[roleSelect,tierSelect]=row.querySelectorAll("select");return{name:input.value.trim()||`플레이어 ${index+1}`,role:roleSelect.value,tier:tierSelect.selectedOptions[0].textContent,score:Number(tierSelect.value)};});try{const result=balanceQuickPlayers(players);$("#quickError").hidden=true;$("#quickResult").innerHTML=`<header><div><span class="badge">편성 완료</span><h2>티어 점수 차이 ${result.difference}점</h2></div></header><div>${quickTeam("BLUE TEAM",result.blue,"blue")}${quickTeam("RED TEAM",result.red,"red")}</div>`;$("#quickResult").hidden=false;$("#quickResult").scrollIntoView({behavior:"smooth",block:"start"});}catch{$("#quickError").hidden=false;$("#quickResult").hidden=true;}});
 $("#quickForm").addEventListener("reset",()=>{$("#quickError").hidden=true;$("#quickResult").hidden=true;});
+$("#quickRolePlayers").addEventListener("change",(event)=>{const role=event.target.closest("[data-role]");if(role)role.closest(".quick-choice").querySelector("[data-tier]").disabled=!role.value;});
+$("#quickRoleForm").addEventListener("submit",(event)=>{event.preventDefault();const players=Array.from(document.querySelectorAll(".quick-role-player"),(card,index)=>({name:card.querySelector("input").value.trim()||`플레이어 ${index+1}`,choices:Array.from(card.querySelectorAll(".quick-choice")).flatMap((row,preference)=>{const role=row.querySelector("[data-role]").value,tier=row.querySelector("[data-tier]");return role?[{role,tier:tier.selectedOptions[0].textContent,score:Number(tier.value),preference}]:[];})}));try{const result=balanceRolePlayers(players);$("#quickRoleError").hidden=true;$("#quickRoleResult").innerHTML=`<header><div><span class="badge">편성 완료</span><h2>티어 점수 차이 ${result.difference}점 · 선호 순위 합 ${result.preference}</h2></div></header><div>${quickTeam("BLUE TEAM",result.blue,"blue")}${quickTeam("RED TEAM",result.red,"red")}</div>`;$("#quickRoleResult").hidden=false;$("#quickRoleResult").scrollIntoView({behavior:"smooth",block:"start"});}catch{$("#quickRoleError").hidden=false;$("#quickRoleResult").hidden=true;}});
+$("#quickRoleForm").addEventListener("reset",()=>{setTimeout(()=>{document.querySelectorAll("#quickRolePlayers [data-role]").forEach((role)=>role.closest(".quick-choice").querySelector("[data-tier]").disabled=!role.value);},0);$("#quickRoleError").hidden=true;$("#quickRoleResult").hidden=true;});
 async function connectBroadcast(chatKey=""){const authTab=window.open("about:blank","_blank");if(!authTab){notice("팝업을 허용한 뒤 다시 눌러주세요.");return;}authTab.document.body.textContent="치지직 연결 화면을 여는 중입니다.";try{if(!chatKey){const pending=ownedWorkspaces.find((item)=>!item.channelId);chatKey=pending?.chatKey;if(!chatKey){const slug=`broadcast-${crypto.randomUUID().slice(0,8)}`,created=await request("/api/streaming/workspaces",{method:"POST",body:JSON.stringify({name:`${user.displayName || "내"} 방송`,slug})});chatKey=created.chatKey;}}authTab.location.replace(`${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(chatKey)}&redirect=1`);authTab.opener=null;notice("새 탭에서 치지직 연결을 완료해주세요.");}catch(error){authTab.close();notice(errorText(error));}}
 $("#workspaceList").addEventListener("click",(event) => { const button=event.target.closest("[data-open]");if(!button)return;const workspace=ownedWorkspaces.find((item)=>item.slug===button.dataset.open);workspace?.channelId?openWorkspace(workspace.slug):connectBroadcast(workspace?.chatKey); });
 $("#connectBroadcast").addEventListener("click",()=>connectBroadcast());
@@ -165,6 +171,7 @@ $("#roleChecks").addEventListener("change",(event)=>{if(document.querySelectorAl
 
 const pageParams=new URLSearchParams(location.search),initialView=pageParams.get("view");
 if(!pageParams.get("player")&&!currentSlug&&["mine","quick","records","auction"].includes(initialView))showView(initialView);
+if(initialView==="quick"&&pageParams.get("mode")==="roles")document.querySelector('[data-quick-mode="roles"]').click();
 await loadAccount();
 if(initialView==="auction"&&!currentSlug)await loadAuction();
 loadRecordExamples();

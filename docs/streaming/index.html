@@ -7,7 +7,7 @@
   <title>Lucid 스트리밍</title>
   <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260930c">
+  <link rel="stylesheet" href="streaming.css?v=20260930d">
 </head>
 <body>
   <header class="topbar">
@@ -49,13 +49,22 @@
     </section>
 
     <section id="quickView" class="content-view">
-      <header class="page-head"><div><span class="badge">DB 저장 없음</span><h1>빠른 팀 나누기</h1><p>포지션별 2명과 현재 티어로 가장 비슷한 5:5 팀을 만듭니다. 입력 내용은 이 화면을 나가면 사라집니다.</p></div></header>
-      <form id="quickForm" class="quick-panel">
+      <header class="page-head"><div><span class="badge">DB 저장 없음</span><h1>빠른 팀 나누기</h1><p>간편하게 현재 티어로 나누거나, 최대 3개 포지션과 라인별 티어까지 반영하세요.</p></div></header>
+      <nav class="quick-mode-tabs" aria-label="빠른 팀 나누기 설정 방식"><button class="active" data-quick-mode="basic" type="button">간편 설정</button><button data-quick-mode="roles" type="button">포지션별 설정</button></nav>
+      <form id="quickForm" class="quick-panel" data-quick-panel="basic">
+        <header class="quick-form-head"><div><h2>간편 설정</h2><span>주 포지션 1개 · 현재 티어 1개</span></div></header>
         <div id="quickPlayers" class="quick-player-list"></div>
         <p id="quickError" class="quick-error" hidden>탑·정글·미드·원딜·서폿을 각각 2명씩 선택해주세요.</p>
         <div class="quick-actions"><button type="submit">팀 나누기</button><button id="quickReset" class="quiet" type="reset">초기화</button></div>
       </form>
       <section id="quickResult" class="quick-result" hidden></section>
+      <form id="quickRoleForm" class="quick-panel" data-quick-panel="roles" hidden>
+        <header class="quick-form-head"><div><h2>포지션별 설정</h2><span>선호 포지션 최대 3개 · 포지션마다 다른 티어</span></div></header>
+        <div id="quickRolePlayers" class="quick-role-player-list"></div>
+        <p id="quickRoleError" class="quick-error" hidden>중복 없는 포지션을 선택하고, 양 팀의 5개 포지션을 구성할 수 있게 입력해주세요.</p>
+        <div class="quick-actions"><button type="submit">팀 나누기</button><button class="quiet" type="reset">초기화</button></div>
+      </form>
+      <section id="quickRoleResult" class="quick-result" hidden></section>
     </section>
 
     <section id="workspaceView" class="content-view">
@@ -95,6 +104,6 @@
   </main>
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
-  <script type="module" src="streaming.js?v=20260930c"></script>
+  <script type="module" src="streaming.js?v=20260930d"></script>
 </body>
 </html>

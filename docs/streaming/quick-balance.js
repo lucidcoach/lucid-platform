@@ -27,3 +27,40 @@ export function balanceQuickPlayers(players) {
   }
   return best;
 }
+
+function permutations(values) {
+  if (values.length < 2) return [values];
+  return values.flatMap((value, index) => permutations(values.filter((_, itemIndex) => itemIndex !== index)).map((rest) => [value, ...rest]));
+}
+
+function teamAssignments(team) {
+  return permutations(team).flatMap((ordered) => {
+    let preference = 0, score = 0;
+    const players = [];
+    for (let index = 0; index < QUICK_ROLES.length; index += 1) {
+      const player = ordered[index], choiceIndex = player.choices.findIndex((choice) => choice.role === QUICK_ROLES[index]);
+      if (choiceIndex < 0) return [];
+      const choice = player.choices[choiceIndex];
+      preference += choice.preference ?? choiceIndex; score += choice.score;
+      players.push({ ...player, ...choice });
+    }
+    return [{ players, preference, score }];
+  });
+}
+
+export function balanceRolePlayers(players) {
+  if (players.length !== 10 || players.some((player) => !player.choices?.length || player.choices.length > 3 || new Set(player.choices.map((choice) => choice.role)).size !== player.choices.length || player.choices.some((choice) => !QUICK_ROLES.includes(choice.role) || !Number.isFinite(choice.score)))) throw new Error("invalid_role_preferences");
+  let best = null;
+  // ponytail: mirrors the production five-role exhaustive matcher; 10 fixed players keep it bounded.
+  for (let mask = 0; mask < 1 << 10; mask += 1) {
+    if (mask.toString(2).replaceAll("0", "").length !== 5) continue;
+    const blueOptions = teamAssignments(players.filter((_, index) => mask & (1 << index)));
+    const redOptions = teamAssignments(players.filter((_, index) => !(mask & (1 << index))));
+    for (const blue of blueOptions) for (const red of redOptions) {
+      const preference = blue.preference + red.preference, difference = Math.abs(blue.score - red.score);
+      if (!best || preference < best.preference || (preference === best.preference && difference < best.difference)) best = { blue: blue.players, red: red.players, preference, difference };
+    }
+  }
+  if (!best) throw new Error("roles_unavailable");
+  return best;
+}
