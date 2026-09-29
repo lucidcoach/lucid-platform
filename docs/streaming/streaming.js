@@ -47,13 +47,16 @@ async function loadAccount() {
   user = await fetchCurrentUser().catch(() => null);
   $("#loginOpen").textContent = user ? user.displayName || "내 계정" : "로그인";
   $("#mineLogin").hidden = Boolean(user); $("#accountSection").hidden = !user;
+  $("#mineEyebrow").textContent = user ? "방송 대시보드" : "치지직 방송 도구";
+  $("#mineTitle").textContent = user ? `${user.displayName || "스트리머"}님의 방송을 관리하세요` : "방송 내전을 한곳에서 관리하세요";
+  $("#mineDescription").textContent = user ? "연결된 방송을 열어 대기열과 팀 편성, 경기 기록을 바로 관리할 수 있습니다." : "참가 신청부터 팀 편성, 경기 기록까지 반복 작업을 줄이고 방송에 집중할 수 있습니다.";
   $("#adminNav").hidden = !userIsAdmin(user);
   if (!user) return;
   const { workspaces } = await request("/api/streaming/workspaces");
   ownedWorkspaces = workspaces;
   const visibleWorkspaces = workspaces.filter((item) => item.channelId), pending = workspaces.find((item) => !item.channelId);
   if (!visibleWorkspaces.length && pending) visibleWorkspaces.push(pending);
-  $("#workspaceList").innerHTML = visibleWorkspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><strong>${escapeHtml(item.channelName || item.name)}</strong><br><small>${item.channelId ? `연결됨 · ${item.queueCount}명 · ${item.matchCount}경기` : "치지직 연결 필요"}</small></button>`).join("");
+  $("#workspaceList").innerHTML = visibleWorkspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><span class="workspace-status${item.channelId ? " connected" : ""}">${item.channelId ? "연결됨" : "연결 필요"}</span><strong>${escapeHtml(item.channelName || item.name)}</strong><small>${item.channelId ? `대기 ${item.queueCount}명 · 누적 ${item.matchCount}경기` : "눌러서 치지직 채널 연결하기"}</small><span class="workspace-open">관리 화면 열기 →</span></button>`).join("") || '<div class="mine-empty"><strong>연결된 방송이 없습니다.</strong><span>치지직 채널을 연결하면 참가자 대기열을 바로 열 수 있어요.</span></div>';
   $("#connectBroadcast").textContent = workspaces.some((item) => item.channelId) ? "방송 추가" : "치지직 방송 연결";
   if (userIsAdmin(user)) await loadAdmin();
 }

@@ -7,7 +7,7 @@
   <title>Lucid 스트리밍</title>
   <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260924l">
+  <link rel="stylesheet" href="streaming.css?v=20260930a">
 </head>
 <body>
   <header class="topbar">
@@ -28,11 +28,22 @@
     <section id="notice" class="notice" hidden></section>
 
     <section id="mineView" class="content-view active">
-      <header class="page-head"><h1>방송 관리</h1></header>
-      <button id="mineLogin" type="button">로그인</button>
+      <section class="mine-hero">
+        <div class="mine-copy">
+          <span id="mineEyebrow" class="badge">치지직 방송 도구</span>
+          <h1 id="mineTitle">방송 내전을 한곳에서 관리하세요</h1>
+          <p id="mineDescription">참가 신청부터 팀 편성, 경기 기록까지 반복 작업을 줄이고 방송에 집중할 수 있습니다.</p>
+          <button id="mineLogin" type="button">로그인하고 시작하기</button>
+        </div>
+        <ol class="mine-flow" aria-label="방송 관리 이용 순서">
+          <li><b>01</b><div><strong>방송 연결</strong><span>치지직 채널을 한 번만 연결하세요.</span></div></li>
+          <li><b>02</b><div><strong>참가자 모집</strong><span>채팅 명령어로 대기열을 받습니다.</span></div></li>
+          <li><b>03</b><div><strong>팀 편성 · 기록</strong><span>라인별 티어로 팀을 나누고 결과를 남깁니다.</span></div></li>
+        </ol>
+      </section>
       <section id="accountSection" hidden>
+        <header class="mine-section-head"><div><span>MY BROADCAST</span><h2>내 방송</h2></div><button id="connectBroadcast" type="button">치지직 방송 연결</button></header>
         <div id="workspaceList" class="workspace-list"></div>
-        <button id="connectBroadcast" type="button">치지직 방송 연결</button>
       </section>
     </section>
 
@@ -73,6 +84,6 @@
   </main>
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
-  <script type="module" src="streaming.js?v=20260929b"></script>
+  <script type="module" src="streaming.js?v=20260930a"></script>
 </body>
 </html>
