@@ -28,6 +28,7 @@ assert.match(script, /aria-label="남은 입찰 시간"/);
 assert.match(css, /\.auction-team\.is-leading/);
 assert.match(css, /\.auction-stage\.is-urgent/);
 assert.match(css, /body:has\(#auctionView\.active \.auction-stage\)>main/);
+assert.match(css, /grid-template-columns:repeat\(20,minmax\(0,1fr\)\)/);
 assert.match(examples, /`소환사 \$\{index\+1\}`/);
 assert.match(examples, /ddragon\.leagueoflegends\.com/);
 assert.doesNotMatch(examples, /privatePlayerName|focus\.name|item\.name/);
