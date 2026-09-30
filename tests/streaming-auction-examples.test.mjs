@@ -15,6 +15,8 @@ assert.match(script, /team\.points>=nextBid/);
 assert.match(script, /data-expected-amount/);
 assert.match(script, /peakTier/);
 assert.match(script, /TEAM CAPTAINS/);
+assert.match(script, /item\.name\|\|item\.riotId/);
+assert.match(script, /auction-waiting-name/);
 assert.match(script, /\.\.\/assets\/logo\.png/);
 assert.doesNotMatch(script, /\.\.\/logo\.png/);
 assert.match(script, /aria-label="남은 입찰 시간"/);
