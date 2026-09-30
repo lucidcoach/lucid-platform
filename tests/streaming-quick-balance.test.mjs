@@ -13,6 +13,8 @@ assert.match(page, /DB 저장 없음/);
 assert.match(page, /data-quick-mode="basic"[^>]*>간편 설정/);
 assert.match(page, /data-quick-mode="roles"[^>]*>포지션별 설정/);
 assert.equal((script.match(/\/api\/streaming\/quick-balance/g) || []).length, 2);
+assert.match(script, /평균 티어 \$\{escapeHtml\(result\.blueAvgTier\)\} vs \$\{escapeHtml\(result\.redAvgTier\)\}/);
+assert.doesNotMatch(script, /평균 MMR 차이/);
 assert.match(script, /data-match-action/);
 assert.match(script, /matches\/\$\{id\}\/\$\{name\}/);
 assert.match(script, /MMR 변동/);
