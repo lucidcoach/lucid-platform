@@ -176,7 +176,7 @@ async function loadQuickProfiles() {
   document.querySelectorAll("#quickPlayers input,#quickRolePlayers input").forEach((input)=>{input.placeholder=slug?"게임이름#태그":input.getAttribute("aria-label").replace(" 이름","");delete input.dataset.known;});
 }
 async function setupQuickWorkspaces() {
-  const workspaces=ownedWorkspaces.filter((workspace)=>workspace.status==="active"),bar=$("#quickWorkspaceBar"),select=$("#quickWorkspace");bar.hidden=!workspaces.length;
+  const workspaces=ownedWorkspaces.filter((workspace)=>workspace.status==="active"&&workspace.channelId),bar=$("#quickWorkspaceBar"),select=$("#quickWorkspace");bar.hidden=!workspaces.length;
   select.innerHTML=`<option value="">일회성 편성</option>${workspaces.map((workspace)=>`<option value="${escapeHtml(workspace.slug)}">${escapeHtml(workspace.channelName||workspaceName(workspace))}</option>`).join("")}`;
   if(workspaces.length)select.value=workspaces.some((item)=>item.slug===currentSlug)?currentSlug:(workspaces.find((item)=>item.channelId)||workspaces[0]).slug;
   await loadQuickProfiles();

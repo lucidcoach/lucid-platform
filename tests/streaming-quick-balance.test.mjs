@@ -17,6 +17,7 @@ assert.match(page, /id="quickProfiles"/);
 assert.match(script, /\/api\/streaming\/quick-balance/);
 assert.match(script, /workspaces\/\$\{encodeURIComponent\(slug\)\}\/quick-match/);
 assert.match(script, /workspaces\/\$\{encodeURIComponent\(slug\)\}\/players/);
+assert.match(script, /workspace\.status==="active"&&workspace\.channelId/);
 assert.match(script, /평균 티어 \$\{escapeHtml\(result\.blueAvgTier\)\} vs \$\{escapeHtml\(result\.redAvgTier\)\}/);
 assert.doesNotMatch(script, /평균 MMR 차이/);
 assert.match(script, /data-match-action/);
