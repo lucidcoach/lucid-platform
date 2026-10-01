@@ -103,6 +103,10 @@
           <section id="connectSection"><h2>방송 연결</h2><p id="connectionState" class="muted"></p><a id="chzzkConnect" class="link-button" href="#">치지직 방송 연결</a></section>
         </aside>
       </div>
+      <section id="registeredPlayersPanel" class="panel" hidden>
+        <div class="section-head"><h2>등록 참가자</h2><span id="registeredPlayerCount" class="muted"></span></div>
+        <div class="table-wrap"><table><thead><tr><th>등록 이름</th><th>치지직</th><th>Riot ID</th><th>라인 · 티어</th><th>전적</th></tr></thead><tbody id="registeredPlayerRows"></tbody></table></div>
+      </section>
       <section class="panel"><div class="section-head"><h2>경기</h2></div><div id="matchList"></div></section>
     </section>
 
@@ -130,6 +134,6 @@
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
   <dialog id="workspaceDialog"><form id="workspaceForm"><div class="dialog-head"><h2>새 Streamer Workspace</h2><button id="workspaceDialogClose" type="button" class="quiet">닫기</button></div><label>표시명<input name="name" maxlength="80" placeholder="스트리머 A" required></label><label>slug<input name="slug" pattern="[a-z0-9][a-z0-9-]{2,39}" placeholder="streamer-a" required></label><label>Owner Discord User ID<input name="ownerDiscordUserId" inputmode="numeric" required></label><label>Discord Guild ID<input name="discordGuildId" inputmode="numeric"></label><label>초기 상태<select name="status"><option value="inactive">비활성</option><option value="active">활성</option></select></label><label>만료일<input name="expiresAt" type="datetime-local"></label><button>생성</button></form></dialog>
-  <script type="module" src="streaming.js?v=20261001h"></script>
+  <script type="module" src="streaming.js?v=20261001i"></script>
 </body>
 </html>

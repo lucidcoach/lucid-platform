@@ -10,6 +10,9 @@ const publicHome = read("../docs/index.html");
 
 assert.match(streaming, /id="adminNav"[^>]*>스트리머 서버 관리<\/button>\s*<button id="contentNav"[^>]*>콘텐츠 관리<\/button>/);
 assert.match(streamingScript, /\.\.\/s\/\?slug=\$\{encodeURIComponent\(workspace\.slug\)\}&view=manage/);
+assert.match(streaming, /id="registeredPlayersPanel"[\s\S]*등록 참가자[\s\S]*id="registeredPlayerRows"/);
+assert.match(streamingScript, /state\.workspace\.canManage \? \(await request\(`\/api\/streaming\/workspaces\/\$\{encodeURIComponent\(slug\)\}\/players`\)\)\.players : \[\]/);
+assert.match(streamingScript, /총 \$\{players\.length\}명 · 현재 참가 \$\{state\.queue\.length\}명/);
 
 for (const label of ["홈", "콘텐츠", "내전", "랭킹", "관리"]) assert.match(publicPage, new RegExp(`>${label}<`));
 assert.match(script, /public\/workspaces\/\$\{encodeURIComponent\(slug\)\}/);

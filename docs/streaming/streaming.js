@@ -117,6 +117,7 @@ async function loadAccount() {
 async function openWorkspace(slug, {historyMode="push", display=true} = {}) {
   try {
     state = (await request(`/api/streaming/workspaces/${encodeURIComponent(slug)}`)).data;
+    state.players = state.workspace.canManage ? (await request(`/api/streaming/workspaces/${encodeURIComponent(slug)}/players`)).players : [];
     currentSlug = slug;
     if (historyMode !== "none") history.pushState({streamingView:"workspace"}, "", viewUrl("workspace", slug));
     $("#workspaceNav").hidden = false; renderWorkspace(); if (display) showView("workspace"); notice();
@@ -124,13 +125,16 @@ async function openWorkspace(slug, {historyMode="push", display=true} = {}) {
 }
 
 function renderWorkspace() {
-  const {workspace,matches} = state;
+  const {workspace,matches,players=[]} = state;
   $("#workspaceLabel").textContent = workspace.canManage ? "스트리머" : "참가자";
   $("#workspaceName").textContent = workspaceName(workspace);
   $("#workspaceQuick").hidden = !workspace.canManage;
   $("#chzzkConnect").hidden = !workspace.canManage; $("#chzzkConnect").href = `${apiBase}/chzzk/auth-url?guild_id=${encodeURIComponent(workspace.chatKey)}&redirect=1`; $("#chzzkConnect").target = "_blank"; $("#chzzkConnect").rel = "noopener";
   $("#connectionState").textContent = workspace.connected ? `${workspace.channelName} 연결됨` : "연결되지 않음"; $("#chzzkConnect").textContent = workspace.connected ? "다시 연결" : "치지직 방송 연결";
   $("#connectSection").hidden = !workspace.canManage;
+  $("#registeredPlayersPanel").hidden = !workspace.canManage;
+  $("#registeredPlayerCount").textContent = `총 ${players.length}명 · 현재 참가 ${state.queue.length}명`;
+  $("#registeredPlayerRows").innerHTML = players.length ? players.map((player) => `<tr><td>${escapeHtml(player.name)}</td><td>${escapeHtml(player.chzzkNickname||"-")}</td><td>${escapeHtml(player.riotId)}</td><td>${escapeHtml((player.roles||[]).map((role)=>`${role} ${player.roleTiers?.[role]||player.tier}`).join(" · ")||player.tier)}</td><td>${player.wins}승 ${player.losses}패</td></tr>`).join("") : '<tr><td colspan="5">아직 등록된 참가자가 없습니다.</td></tr>';
   $("#matchList").innerHTML = matches.length ? matches.map((match) => `<article class="match-card"><div class="teams"><div class="team blue"><strong>파랑 팀</strong><ul>${match.blue.map((p) => `<li>${escapeHtml(p.assignedRole || "")} · ${escapeHtml(p.name)} · ${escapeHtml(p.tier)}</li>`).join("")}</ul></div><div class="team red"><strong>빨강 팀</strong><ul>${match.red.map((p) => `<li>${escapeHtml(p.assignedRole || "")} · ${escapeHtml(p.name)} · ${escapeHtml(p.tier)}</li>`).join("")}</ul></div></div>${matchRatingChanges(match)}${workspace.canManage && match.status === "pending" ? `<div class="match-decision"><strong>이 팀으로 경기를 진행할까요?</strong><div><button data-match-action="${match.id}:start">경기 진행</button><button class="quiet" data-match-action="${match.id}:cancel">편성 취소</button></div></div>` : workspace.canManage && match.status === "in_progress" ? `<div class="result-actions"><strong>경기 결과를 기록하세요.</strong><button data-result="${match.id}:blue">파랑 승리</button><button data-result="${match.id}:red">빨강 승리</button></div>` : `<p class="match-status ${match.status}">${match.status === "completed" ? `${match.winner === "blue" ? "파랑" : "빨강"} 승리 · 기록 완료` : match.status === "in_progress" ? "경기 진행 중" : "편성 확인 중"}</p>`}</article>`).join("") : '<p class="empty">경기 없음</p>';
 }
 
