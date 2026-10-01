@@ -29,7 +29,7 @@ function options(values, selected) { return values.map((value) => `<option${valu
 function accountName(fallback="내 계정") { const raw=String(user?.displayName||"").trim();return user?.discordDisplayName||user?.discord_display_name||(!/^oauth\s*user$/i.test(raw)?raw:"")||fallback; }
 function workspaceName(workspace) { return workspace?.canManage && /^oauth\s*user 방송$/i.test(workspace.name||"") ? `${accountName("내")} 방송` : workspace?.name||"방송"; }
 function managedWorkspace() { return [...ownedWorkspaces,...adminWorkspaces].find((item) => item.slug === currentSlug) || ownedWorkspaces[0] || adminWorkspaces[0]; }
-function updateContentNav() { $("#contentNav").hidden = !managedWorkspace(); }
+function updateContentNav() { $("#contentNav").hidden = !userIsAdmin(user) || !managedWorkspace(); }
 
 function showView(name) {
   document.querySelectorAll(".content-view").forEach((view) => view.classList.toggle("active", view.id === `${name}View`));

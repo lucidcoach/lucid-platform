@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const publicPage = read("../docs/s/index.html");
 const script = read("../docs/s/streamer.js");
+const manageCss = read("../docs/s/manage.css");
 const streaming = read("../docs/streaming/index.html");
 const streamingScript = read("../docs/streaming/streaming.js");
 const publicHome = read("../docs/index.html");
@@ -13,6 +14,11 @@ assert.match(streamingScript, /\.\.\/s\/\?slug=\$\{encodeURIComponent\(workspace
 assert.match(streaming, /id="registeredPlayersPanel"[\s\S]*등록 참가자[\s\S]*id="registeredPlayerRows"/);
 assert.match(streamingScript, /state\.workspace\.canManage \? \(await request\(`\/api\/streaming\/workspaces\/\$\{encodeURIComponent\(slug\)\}\/players`\)\)\.players : \[\]/);
 assert.match(streamingScript, /총 \$\{players\.length\}명 · 현재 참가 \$\{state\.queue\.length\}명/);
+assert.match(streamingScript, /contentNav"\)\.hidden = !userIsAdmin\(user\)/);
+assert.match(script, /if\(!userIsAdmin\(user\)\).*관리자 전용 메뉴입니다/);
+assert.match(script, /hidden=!userIsAdmin\(user\)/);
+assert.match(manageCss, /\.manage-content\{[^}]*align-content:start/);
+assert.match(manageCss, /\.manage-sidebar textarea\{/);
 
 for (const label of ["홈", "콘텐츠", "내전", "랭킹", "관리"]) assert.match(publicPage, new RegExp(`>${label}<`));
 assert.match(script, /public\/workspaces\/\$\{encodeURIComponent\(slug\)\}/);
