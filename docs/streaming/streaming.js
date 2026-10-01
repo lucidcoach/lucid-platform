@@ -200,7 +200,7 @@ $("#discordLogin").href=`${apiBase}/api/auth/oauth/discord/start?returnTo=${enco
 $("#roleChecks").addEventListener("change",(event)=>{if(document.querySelectorAll('#roleChecks input:checked').length>3){event.target.checked=false;notice("선호 라인은 세 개까지 선택할 수 있습니다.");}});
 
 const pageParams=new URLSearchParams(location.search),initialView=pageParams.get("view");
-if(!pageParams.get("player")&&!currentSlug&&["mine","quick","records","auction"].includes(initialView))showView(initialView);
+if(!pageParams.get("player")&&!currentSlug&&["mine","quick","records","auction","admin"].includes(initialView))showView(initialView);
 if(initialView==="quick"&&pageParams.get("mode")==="roles")document.querySelector('[data-quick-mode="roles"]').click();
 await loadAccount();
 if(initialView==="auction"&&!currentSlug)await loadAuction();
