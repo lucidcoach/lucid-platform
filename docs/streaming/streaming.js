@@ -28,6 +28,8 @@ function errorText(error) { const message=String(error.message||"");if(message.s
 function options(values, selected) { return values.map((value) => `<option${value === selected ? " selected" : ""}>${value}</option>`).join(""); }
 function accountName(fallback="내 계정") { const raw=String(user?.displayName||"").trim();return user?.preferredDisplayName||user?.riotAccounts?.[0]||user?.discordDisplayName||(!/^oauth\s*user$/i.test(raw)?raw:"")||fallback; }
 function workspaceName(workspace) { return workspace?.canManage && /^oauth\s*user 방송$/i.test(workspace.name||"") ? `${accountName("내")} 방송` : workspace?.name||"방송"; }
+function managedWorkspace() { return [...ownedWorkspaces,...adminWorkspaces].find((item) => item.slug === currentSlug) || ownedWorkspaces[0] || adminWorkspaces[0]; }
+function updateContentNav() { $("#contentNav").hidden = !managedWorkspace(); }
 
 function showView(name) {
   document.querySelectorAll(".content-view").forEach((view) => view.classList.toggle("active", view.id === `${name}View`));
@@ -91,6 +93,7 @@ async function loadAccount() {
   $("#mineTitle").textContent = user ? `${accountName("스트리머")}님의 방송을 관리하세요` : "방송 내전을 한곳에서 관리하세요";
   $("#mineDescription").textContent = user ? "방송별 참가자를 불러와 팀을 편성하고 경기 결과를 기록할 수 있습니다." : "참가자 선택부터 팀 편성, 경기 기록까지 한곳에서 관리할 수 있습니다.";
   $("#adminNav").hidden = !userIsAdmin(user);
+  $("#contentNav").hidden = true;
   if (!user) { ownedWorkspaces = []; await setupQuickWorkspaces(); return; }
   const displayName = accountName();
   $("#profileMenuName").textContent = displayName; $("#profileMenuFullName").textContent = displayName;
@@ -98,6 +101,7 @@ async function loadAccount() {
   $("#profileBroadcastState").textContent = "치지직 연결 확인 중"; $("#profileBroadcastState").classList.remove("connected");
   const { workspaces } = await request("/api/streaming/workspaces");
   ownedWorkspaces = workspaces;
+  updateContentNav();
   const connected = workspaces.filter((item) => item.channelId);
   $("#profileBroadcastState").textContent = connected.length ? `치지직 · ${connected[0].channelName || workspaceName(connected[0])}${connected.length > 1 ? ` 외 ${connected.length - 1}개` : ""} 연결됨` : "치지직 연결 필요";
   $("#profileBroadcastState").classList.toggle("connected", Boolean(connected.length));
@@ -132,7 +136,7 @@ function renderWorkspace() {
 
 async function reload() { if (currentSlug) await openWorkspace(currentSlug, {historyMode:"none"}); }
 function adminRows(workspaces) { return workspaces.map((w) => `<tr data-workspace-id="${w.id}"><td><a href="../s/?slug=${encodeURIComponent(w.slug)}" target="_blank">${escapeHtml(w.name)}</a><small>${escapeHtml(w.ownerName)}</small></td><td>${escapeHtml(w.ownerDiscordUserId||"-")}</td><td>${escapeHtml(w.slug)}</td><td>${escapeHtml(w.discordGuildId||"미연결")}</td><td><span class="workspace-status ${w.status==='active'?'connected':''}">${escapeHtml(w.status)}</span></td><td>${escapeHtml(w.activatedAt?new Date(w.activatedAt).toLocaleDateString("ko-KR"):"-")}</td><td>${escapeHtml(w.expiresAt?new Date(w.expiresAt).toLocaleDateString("ko-KR"):"-")}</td><td>${w.playerCount}명 · ${w.matchCount}경기</td><td class="admin-actions"><button class="quiet" data-admin-status="active">활성화</button><button class="quiet" data-admin-status="inactive">비활성</button><button class="quiet danger" data-admin-status="suspended">정지</button><button class="quiet" data-admin-edit>연결 변경</button><a class="quiet link-button" href="../s/?slug=${encodeURIComponent(w.slug)}&view=manage" target="_blank">관리 열기</a></td></tr>`).join(""); }
-async function loadAdmin() { const {workspaces} = await request("/api/streaming/workspaces?scope=all"); adminWorkspaces=workspaces; $("#adminRows").innerHTML = workspaces.length ? adminRows(workspaces) : '<tr><td colspan="9">등록된 Workspace 없음</td></tr>'; }
+async function loadAdmin() { const {workspaces} = await request("/api/streaming/workspaces?scope=all"); adminWorkspaces=workspaces; updateContentNav(); $("#adminRows").innerHTML = workspaces.length ? adminRows(workspaces) : '<tr><td colspan="9">등록된 Workspace 없음</td></tr>'; }
 
 function quickTeam(name, players, side, avgTier) {
   return `<article class="quick-team ${side}"><header><span>${name}</span><strong>평균 ${escapeHtml(avgTier)}</strong></header><ol>${players.map((player) => `<li><b>${escapeHtml(player.name)}</b><span><em>${player.role}</em>${escapeHtml(player.tier)}</span></li>`).join("")}</ol></article>`;
@@ -248,6 +252,7 @@ document.addEventListener("click",(event)=>{const menu=$("#profileMenu");if(menu
 document.addEventListener("keydown",(event)=>{if(event.key==="Escape")$("#profileMenu").removeAttribute("open");});
 $("#loginForm").addEventListener("submit",async(event)=>{event.preventDefault();try{user=await loginUser(Object.fromEntries(new FormData(event.currentTarget)));$("#loginDialog").close();await loadAccount();await navigateView("mine");}catch{notice("이메일 또는 비밀번호를 확인해주세요.");}});
 $("#adminRefresh").addEventListener("click",loadAdmin);
+$("#contentNav").addEventListener("click",()=>{const workspace=managedWorkspace();if(workspace)location.href=`../s/?slug=${encodeURIComponent(workspace.slug)}&view=manage`;});
 $("#adminCreate").addEventListener("click",()=>$("#workspaceDialog").showModal());
 $("#workspaceDialogClose").addEventListener("click",()=>$("#workspaceDialog").close());
 $("#workspaceForm").addEventListener("submit",async(event)=>{event.preventDefault();const payload=Object.fromEntries(new FormData(event.currentTarget));payload.expiresAt=payload.expiresAt||null;try{await request("/api/streaming/admin/workspaces",{method:"POST",body:JSON.stringify(payload)});$("#workspaceDialog").close();event.currentTarget.reset();await loadAdmin();notice("Workspace를 생성했습니다.");}catch(error){notice(errorText(error));}});

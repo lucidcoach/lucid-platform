@@ -5,7 +5,11 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 const publicPage = read("../docs/s/index.html");
 const script = read("../docs/s/streamer.js");
 const streaming = read("../docs/streaming/index.html");
+const streamingScript = read("../docs/streaming/streaming.js");
 const publicHome = read("../docs/index.html");
+
+assert.match(streaming, /id="adminNav"[^>]*>스트리머 서버 관리<\/button>\s*<button id="contentNav"[^>]*>콘텐츠 관리<\/button>/);
+assert.match(streamingScript, /\.\.\/s\/\?slug=\$\{encodeURIComponent\(workspace\.slug\)\}&view=manage/);
 
 for (const label of ["홈", "콘텐츠", "내전", "랭킹", "관리"]) assert.match(publicPage, new RegExp(`>${label}<`));
 assert.match(script, /public\/workspaces\/\$\{encodeURIComponent\(slug\)\}/);
