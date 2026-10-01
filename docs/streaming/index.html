@@ -7,7 +7,7 @@
   <title>Lucid 스트리밍</title>
   <meta name="description" content="Lucid 방송 내전 관리">
   <link rel="icon" href="../favicon.ico">
-  <link rel="stylesheet" href="streaming.css?v=20260930n">
+  <link rel="stylesheet" href="streaming.css?v=20261001a">
 </head>
 <body>
   <header class="topbar">
@@ -23,6 +23,19 @@
       <button id="adminNav" data-view="admin" type="button" hidden>사용 현황</button>
     </nav>
     <button id="loginOpen" class="quiet" type="button">로그인</button>
+    <details id="profileMenu" class="profile-menu" hidden>
+      <summary id="profileMenuName">내 정보</summary>
+      <div class="profile-menu-popover">
+        <div class="profile-menu-identity">
+          <strong id="profileMenuFullName">내 정보</strong>
+          <small id="profileDiscordState"></small>
+          <small id="profileBroadcastState" class="broadcast-state"></small>
+        </div>
+        <button id="profileAccount" type="button">내 정보</button>
+        <button id="profileBroadcast" type="button">방송 관리</button>
+        <button id="profileLogout" class="danger" type="button">로그아웃</button>
+      </div>
+    </details>
   </header>
 
   <main>
@@ -104,6 +117,6 @@
   </main>
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
-  <script type="module" src="streaming.js?v=20260930n"></script>
+  <script type="module" src="streaming.js?v=20261001a"></script>
 </body>
 </html>

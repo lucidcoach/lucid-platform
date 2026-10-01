@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "../js/config.js";
-import { fetchCurrentUser, loginUser, updateRiotAccounts, userIsAdmin } from "../js/auth.js";
+import { fetchCurrentUser, loginUser, logoutAuthSessions, updateRiotAccounts, userIsAdmin } from "../js/auth.js";
 import { DDRAGON_VERSION } from "../community/js/config.js?v=20260904d";
 import { QUICK_ROLES, QUICK_TIERS } from "./quick-balance.js?v=20260930e";
 
@@ -51,16 +51,24 @@ function matchRatingChanges(match) {
 
 async function loadAccount() {
   user = await fetchCurrentUser().catch(() => null);
-  $("#loginOpen").textContent = user ? user.displayName || "내 계정" : "로그인";
+  $("#loginOpen").hidden = Boolean(user); $("#profileMenu").hidden = !user;
   $("#mineLogin").hidden = Boolean(user); $("#accountSection").hidden = !user;
   $("#quickStart").textContent = user ? "빠른 팀 나누기" : "비로그인으로 계속하기";
   $("#mineEyebrow").textContent = user ? "방송 대시보드" : "치지직 방송 도구";
   $("#mineTitle").textContent = user ? `${user.displayName || "스트리머"}님의 방송을 관리하세요` : "방송 내전을 한곳에서 관리하세요";
   $("#mineDescription").textContent = user ? "연결된 방송을 열어 대기열과 팀 편성, 경기 기록을 바로 관리할 수 있습니다." : "참가 신청부터 팀 편성, 경기 기록까지 반복 작업을 줄이고 방송에 집중할 수 있습니다.";
   $("#adminNav").hidden = !userIsAdmin(user);
-  if (!user) return;
+  if (!user) { ownedWorkspaces = []; return; }
+  const displayName = user.displayName || "내 계정";
+  $("#profileMenuName").textContent = displayName; $("#profileMenuFullName").textContent = displayName;
+  $("#profileDiscordState").textContent = user.discordConnected || user.discord_connected ? "Discord 연결됨" : "Discord 연결 필요";
+  $("#profileBroadcastState").textContent = "치지직 연결 확인 중"; $("#profileBroadcastState").classList.remove("connected");
   const { workspaces } = await request("/api/streaming/workspaces");
   ownedWorkspaces = workspaces;
+  const connected = workspaces.filter((item) => item.channelId);
+  $("#profileBroadcastState").textContent = connected.length ? `치지직 · ${connected[0].channelName || connected[0].name}${connected.length > 1 ? ` 외 ${connected.length - 1}개` : ""} 연결됨` : "치지직 연결 필요";
+  $("#profileBroadcastState").classList.toggle("connected", Boolean(connected.length));
+  $("#profileBroadcast").textContent = connected.length ? "방송 관리" : "치지직 방송 연결";
   const visibleWorkspaces = workspaces.filter((item) => item.channelId), pending = workspaces.find((item) => !item.channelId);
   if (!visibleWorkspaces.length && pending) visibleWorkspaces.push(pending);
   $("#workspaceList").innerHTML = visibleWorkspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><span class="workspace-status${item.channelId ? " connected" : ""}">${item.channelId ? "연결됨" : "연결 필요"}</span><strong>${escapeHtml(item.channelName || item.name)}</strong><small>${item.channelId ? `대기 ${item.queueCount}명 · 누적 ${item.matchCount}경기` : "눌러서 치지직 채널 연결하기"}</small><span class="workspace-open">관리 화면 열기 →</span></button>`).join("") || '<div class="mine-empty"><strong>연결된 방송이 없습니다.</strong><span>치지직 채널을 연결하면 참가자 대기열을 바로 열 수 있어요.</span></div>';
@@ -175,6 +183,11 @@ $("#balanceBtn").addEventListener("click",async()=>{try{await request(`/api/stre
 $("#copyLink").addEventListener("click",async()=>{await navigator.clipboard.writeText(location.href);notice("복사했습니다.");});
 $("#playerSearchForm").addEventListener("submit",async(event)=>{event.preventDefault();try{const{players}=await request(`/api/streaming/players?q=${encodeURIComponent($("#playerSearch").value)}`);$("#playerResults").innerHTML=players.length?players.map(profileCard).join(""):'<p class="empty">검색 결과 없음</p>';$("#recordExample").hidden=true;}catch(error){notice(errorText(error));}});
 $("#loginOpen").addEventListener("click",()=>user?showView("mine"):$("#loginDialog").showModal());$("#mineLogin").addEventListener("click",()=>$("#loginDialog").showModal());
+$("#profileAccount").addEventListener("click",()=>{location.href="../?view=account";});
+$("#profileBroadcast").addEventListener("click",()=>{$("#profileMenu").removeAttribute("open");ownedWorkspaces.some((item)=>item.channelId)?showView("mine"):connectBroadcast();});
+$("#profileLogout").addEventListener("click",async()=>{await logoutAuthSessions();location.reload();});
+document.addEventListener("click",(event)=>{const menu=$("#profileMenu");if(menu.open&&!menu.contains(event.target))menu.removeAttribute("open");});
+document.addEventListener("keydown",(event)=>{if(event.key==="Escape")$("#profileMenu").removeAttribute("open");});
 $("#loginForm").addEventListener("submit",async(event)=>{event.preventDefault();try{user=await loginUser(Object.fromEntries(new FormData(event.currentTarget)));$("#loginDialog").close();await loadAccount();showView("mine");}catch{notice("이메일 또는 비밀번호를 확인해주세요.");}});
 $("#adminRefresh").addEventListener("click",loadAdmin);$("#discordLogin").href=`${apiBase}/api/auth/oauth/discord/start?returnTo=${encodeURIComponent(location.href)}`;
 $("#roleChecks").addEventListener("change",(event)=>{if(document.querySelectorAll('#roleChecks input:checked').length>3){event.target.checked=false;notice("선호 라인은 세 개까지 선택할 수 있습니다.");}});

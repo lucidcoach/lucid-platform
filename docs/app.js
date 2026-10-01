@@ -159,6 +159,7 @@ function normalizeCoachProfiles(coaches) {
 
 function boot() {
   applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+  if (new URLSearchParams(location.search).get("view") === "account") state.activeView = "account";
   Object.entries(text).forEach(([id, value]) => {
     const el = $(id);
     if (!el) return;
