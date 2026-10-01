@@ -18,9 +18,12 @@ assert.match(streamingScript, /contentNav"\)\.hidden = !userIsAdmin\(user\)/);
 assert.match(script, /if\(!userIsAdmin\(user\)\).*관리자 전용 메뉴입니다/);
 assert.match(script, /hidden=!userIsAdmin\(user\)/);
 assert.match(manageCss, /\.manage-content\{[^}]*align-content:start/);
-assert.match(manageCss, /\.manage-sidebar textarea\{/);
+assert.match(manageCss, /\.manage-tabs button\.active\{/);
+assert.match(script, /data-manage-type="versus">방대방/);
+assert.match(script, /data-manage-type="solo_rank_challenge">솔랭내기/);
+assert.doesNotMatch(script, /settingsForm|페이지 설정/);
 
-for (const label of ["홈", "콘텐츠", "내전", "랭킹", "관리"]) assert.match(publicPage, new RegExp(`>${label}<`));
+for (const label of ["홈", "방대방", "솔랭내기", "관리"]) assert.match(publicPage, new RegExp(`>${label}<`));
 assert.match(script, /public\/workspaces\/\$\{encodeURIComponent\(slug\)\}/);
 assert.match(script, /workspaces\/\$\{encodeURIComponent\(slug\)\}\/contents/);
 assert.match(script, /data-winner="A"/);
