@@ -2,6 +2,7 @@ import { API_BASE_URL } from "../js/config.js";
 import { fetchCurrentUser, loginUser, logoutAuthSessions, updateRiotAccounts, userIsAdmin } from "../js/auth.js";
 import { DDRAGON_VERSION } from "../community/js/config.js?v=20260904d";
 import { QUICK_ROLES, QUICK_TIERS } from "./quick-balance.js?v=20260930e";
+import { viewFromSearch, viewUrlFor } from "./history-state.js?v=20261001a";
 
 const apiBase = API_BASE_URL.replace(/\/$/, "");
 const roles = ["탑", "정글", "미드", "원딜", "서폿"];
@@ -12,6 +13,7 @@ let currentSlug = new URLSearchParams(location.search).get("channel") || "";
 let state = null;
 let ownedWorkspaces = [];
 let adminWorkspaces = [];
+let locationVersion = 0;
 
 async function request(path, options = {}) {
   const response = await fetch(`${apiBase}${path}`, { credentials:"include", ...options, headers:{ ...(typeof options.body === "string" ? {"Content-Type":"application/json"} : {}), ...(options.headers || {}) } });
@@ -31,6 +33,42 @@ function showView(name) {
   document.querySelectorAll(".content-view").forEach((view) => view.classList.toggle("active", view.id === `${name}View`));
   document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
   scrollTo({top:0,behavior:"smooth"});
+}
+
+const viewFromLocation = () => viewFromSearch(location.search);
+const viewUrl = (name, slug = "") => viewUrlFor(location.href, name, slug);
+async function navigateView(name) {
+  if (name === "workspace") {
+    if (currentSlug) await openWorkspace(currentSlug);
+    return;
+  }
+  const url = viewUrl(name, name === "auction" ? currentSlug : "");
+  if (`${location.pathname}${location.search}${location.hash}` !== url) history.pushState({streamingView:name}, "", url);
+  showView(name);
+  if (name === "auction") await loadAuction();
+}
+async function applyLocation() {
+  const version = ++locationVersion;
+  const params = new URLSearchParams(location.search), name = viewFromLocation(), slug = params.get("channel") || "";
+  if (!slug) { currentSlug = ""; state = null; $("#workspaceNav").hidden = true; }
+  if (params.get("player")) {
+    try {
+      const {player} = await request(`/api/streaming/players/${encodeURIComponent(params.get("player"))}`);
+      if (version !== locationVersion) return;
+      $("#playerResults").innerHTML = profileCard(player); $("#recordExample").hidden = true; showView("records");
+    } catch (error) { notice(errorText(error)); }
+    return;
+  }
+  if (slug) {
+    await openWorkspace(slug, {historyMode:"none", display:false});
+    if (version !== locationVersion) return;
+    showView(name);
+    if (name === "auction") await loadAuction();
+  } else {
+    showView(name);
+    if (name === "auction") await loadAuction();
+  }
+  if (name === "quick" && params.get("mode") === "roles") document.querySelector('[data-quick-mode="roles"]').click();
 }
 
 function profileCard(player) {
@@ -77,11 +115,12 @@ async function loadAccount() {
   if (userIsAdmin(user)) await loadAdmin();
 }
 
-async function openWorkspace(slug) {
+async function openWorkspace(slug, {historyMode="push", display=true} = {}) {
   try {
     state = (await request(`/api/streaming/workspaces/${encodeURIComponent(slug)}`)).data;
-    currentSlug = slug; history.replaceState(null,"",`?channel=${encodeURIComponent(slug)}`);
-    $("#workspaceNav").hidden = false; renderWorkspace(); showView("workspace"); notice();
+    currentSlug = slug;
+    if (historyMode !== "none") history.pushState({streamingView:"workspace"}, "", viewUrl("workspace", slug));
+    $("#workspaceNav").hidden = false; renderWorkspace(); if (display) showView("workspace"); notice();
   } catch (error) { notice(errorText(error)); }
 }
 
@@ -104,7 +143,7 @@ function renderWorkspace() {
   else { $("#profileForm").reset(); $("#publicProfileLink").hidden = true; }
 }
 
-async function reload() { if (currentSlug) await openWorkspace(currentSlug); }
+async function reload() { if (currentSlug) await openWorkspace(currentSlug, {historyMode:"none"}); }
 function adminRows(workspaces) { return workspaces.map((w) => `<tr data-workspace-id="${w.id}"><td><a href="../s/?slug=${encodeURIComponent(w.slug)}" target="_blank">${escapeHtml(w.name)}</a><small>${escapeHtml(w.ownerName)}</small></td><td>${escapeHtml(w.ownerDiscordUserId||"-")}</td><td>${escapeHtml(w.slug)}</td><td>${escapeHtml(w.discordGuildId||"미연결")}</td><td><span class="workspace-status ${w.status==='active'?'connected':''}">${escapeHtml(w.status)}</span></td><td>${escapeHtml(w.activatedAt?new Date(w.activatedAt).toLocaleDateString("ko-KR"):"-")}</td><td>${escapeHtml(w.expiresAt?new Date(w.expiresAt).toLocaleDateString("ko-KR"):"-")}</td><td>${w.playerCount}명 · ${w.matchCount}경기</td><td class="admin-actions"><button class="quiet" data-admin-status="active">활성화</button><button class="quiet" data-admin-status="inactive">비활성</button><button class="quiet danger" data-admin-status="suspended">정지</button><button class="quiet" data-admin-edit>연결 변경</button><a class="quiet link-button" href="../s/?slug=${encodeURIComponent(w.slug)}&view=manage" target="_blank">관리 열기</a></td></tr>`).join(""); }
 async function loadAdmin() { const {workspaces} = await request("/api/streaming/workspaces?scope=all"); adminWorkspaces=workspaces; $("#adminRows").innerHTML = workspaces.length ? adminRows(workspaces) : '<tr><td colspan="9">등록된 Workspace 없음</td></tr>'; }
 
@@ -120,7 +159,7 @@ $("#quickRolePlayers").innerHTML = Array.from({length:10},(_,index)=>{const prim
 let auctionState = null, auctionPanel = "setup";
 function imageUrl(value){return value?.startsWith("/api/")?`${apiBase}${value}`:value||"../assets/logo.png";}
 async function loadAuction(){const join=$("#auctionJoinForm");if(!currentSlug){join.hidden=false;$("#auctionMode").hidden=true;$("#auctionBroadcast").textContent="";const linked=ownedWorkspaces.filter((item)=>item.slug&&item.channelId),rooms=linked.length?linked:ownedWorkspaces.filter((item)=>item.slug).slice(0,1);$("#auctionRoot").innerHTML=user?`<section class="panel"><div class="section-head"><h2>경매 관리자</h2></div><div class="auction-workspace-list">${rooms.map((item)=>`<article class="workspace-card auction-workspace"><div><strong>${escapeHtml(item.channelName||item.name)}</strong><small>${item.channelId?"연결된 방송":"치지직 연결 전"}</small></div><button data-auction-open="${escapeHtml(item.slug)}">관리자 화면</button><button data-auction-create="${escapeHtml(item.slug)}">경매 만들기</button></article>`).join("")||'<p class="empty">방송 관리에서 방송을 먼저 추가해주세요.</p>'}</div></section>`:'<p class="empty">경매를 만들려면 로그인해주세요.</p>';return;}join.hidden=true;try{const params=new URLSearchParams(location.search),token=params.get("team")||"",preview=params.get("preview")==="team",result=await request(`/api/streaming/workspaces/${encodeURIComponent(currentSlug)}/auction${token?`?team=${encodeURIComponent(token)}${preview?"&preview=team":""}`:""}`);auctionState=result.auction;renderAuction();}catch(error){notice(errorText(error));}}
-async function openAuctionWorkspace(slug,create=false){currentSlug=slug;$("#auctionJoinForm").hidden=true;history.replaceState(null,"",`?channel=${encodeURIComponent(slug)}&view=auction`);const result=await request(`/api/streaming/workspaces/${encodeURIComponent(slug)}/auction`);auctionState=result.auction;if(create&&!auctionState.active)await auctionAction("create");else renderAuction();}
+async function openAuctionWorkspace(slug,create=false){currentSlug=slug;$("#auctionJoinForm").hidden=true;history.pushState({streamingView:"auction"},"",viewUrl("auction",slug));const result=await request(`/api/streaming/workspaces/${encodeURIComponent(slug)}/auction`);auctionState=result.auction;if(create&&!auctionState.active)await auctionAction("create");else renderAuction();}
 async function auctionAction(action,payload={}){try{const params=new URLSearchParams(location.search),teamToken=params.get("team")||"",previewTeam=params.get("preview")==="team",result=await request(`/api/streaming/workspaces/${encodeURIComponent(currentSlug)}/auction`,{method:"POST",body:JSON.stringify({action,teamToken,previewTeam,...payload})});auctionState=result.auction;renderAuction();notice();}catch(error){if(error.message==="auction_bid_changed")await loadAuction();notice(errorText(error));}}
 function renderAuction(){
   const a=auctionState,s=a.settings,current=a.current,player=a.players.find((item)=>item.id===current?.playerId),leader=a.teams.find((item)=>item.id===current?.teamId),myTeam=a.teams.find((item)=>item.id===a.myTeamId),nextBid=current?.teamId?current.amount+s.increment:s.minBid,seconds=current?Math.max(0,10-Math.floor(Date.now()/1000-current.startedAt)):0;
@@ -160,8 +199,8 @@ function examplePersonalMatch(match,index){const player=(match.players||[])[0]||
 async function loadRecordExamples(){try{const {matches=[]}=await request("/api/community/matches?limit=3&offset=0&category=all");$("#communityMatchExamples").innerHTML=matches.length?`<section class="record-showcase"><div class="record-showcase-title"><span>경기 기록</span><b>최근 경기부터 계속 표시됩니다.</b></div><div class="record-match-feed">${matches.map(exampleMatch).join("")}</div>${exampleProfile()}<section class="record-history-example"><h3>최근 전적</h3>${matches.map(examplePersonalMatch).join("")}</section></section>`:'<p class="empty">공개된 내전 기록이 없습니다.</p>';}catch{$("#communityMatchExamples").innerHTML='<p class="empty">예시 기록을 불러오지 못했습니다.</p>';}}
 
 $("#roleChecks").innerHTML = roles.map((role) => `<label><input type="checkbox" name="roles" value="${role}"> ${role}</label>`).join("");
-document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",async()=>{showView(button.dataset.view);if(button.dataset.view==="auction")await loadAuction();}));
-$("#quickStart").addEventListener("click",()=>showView("quick"));
+document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.addEventListener("click",()=>navigateView(button.dataset.view)));
+$("#quickStart").addEventListener("click",()=>navigateView("quick"));
 $("#streamerApply").addEventListener("click",()=>notice("스트리머 전용 서버 신청은 준비 중입니다."));
 document.querySelectorAll("[data-quick-mode]").forEach((button)=>button.addEventListener("click",()=>{document.querySelectorAll("[data-quick-mode]").forEach((item)=>item.classList.toggle("active",item===button));document.querySelectorAll("[data-quick-panel]").forEach((panel)=>panel.hidden=panel.dataset.quickPanel!==button.dataset.quickMode);}));
 $("#quickForm").addEventListener("submit",async(event)=>{event.preventDefault();const players=Array.from(document.querySelectorAll(".quick-player"),(row,index)=>{const input=row.querySelector("input"),[roleSelect,tierSelect]=row.querySelectorAll("select");return{name:input.value.trim()||`플레이어 ${index+1}`,role:roleSelect.value,tier:tierSelect.selectedOptions[0].textContent};});try{const{result}=await request("/api/streaming/quick-balance",{method:"POST",body:JSON.stringify({players})});$("#quickError").hidden=true;$("#quickResult").innerHTML=`<header><div><span class="badge">봇 편성 완료</span><h2>평균 티어 ${escapeHtml(result.blueAvgTier)} vs ${escapeHtml(result.redAvgTier)}</h2></div></header><div>${quickTeam("BLUE TEAM",result.blue,"blue",result.blueAvgTier)}${quickTeam("RED TEAM",result.red,"red",result.redAvgTier)}</div>`;$("#quickResult").hidden=false;$("#quickResult").scrollIntoView({behavior:"smooth",block:"start"});}catch(error){$("#quickError").textContent=errorText(error);$("#quickError").hidden=false;$("#quickResult").hidden=true;}});
@@ -184,13 +223,13 @@ $("#auctionJoinForm").addEventListener("submit",async(event)=>{event.preventDefa
 $("#balanceBtn").addEventListener("click",async()=>{try{await request(`/api/streaming/workspaces/${currentSlug}/balance`,{method:"POST",body:"{}"});await reload();}catch(error){notice(errorText(error));}});
 $("#copyLink").addEventListener("click",async()=>{await navigator.clipboard.writeText(location.href);notice("복사했습니다.");});
 $("#playerSearchForm").addEventListener("submit",async(event)=>{event.preventDefault();try{const{players}=await request(`/api/streaming/players?q=${encodeURIComponent($("#playerSearch").value)}`);$("#playerResults").innerHTML=players.length?players.map(profileCard).join(""):'<p class="empty">검색 결과 없음</p>';$("#recordExample").hidden=true;}catch(error){notice(errorText(error));}});
-$("#loginOpen").addEventListener("click",()=>user?showView("mine"):$("#loginDialog").showModal());$("#mineLogin").addEventListener("click",()=>$("#loginDialog").showModal());
+$("#loginOpen").addEventListener("click",()=>user?navigateView("mine"):$("#loginDialog").showModal());$("#mineLogin").addEventListener("click",()=>$("#loginDialog").showModal());
 $("#profileAccount").addEventListener("click",()=>{location.href="../?view=account";});
-$("#profileBroadcast").addEventListener("click",()=>{$("#profileMenu").removeAttribute("open");ownedWorkspaces.some((item)=>item.channelId)?showView("mine"):connectBroadcast();});
+$("#profileBroadcast").addEventListener("click",()=>{$("#profileMenu").removeAttribute("open");ownedWorkspaces.some((item)=>item.channelId)?navigateView("mine"):connectBroadcast();});
 $("#profileLogout").addEventListener("click",async()=>{await logoutAuthSessions();location.reload();});
 document.addEventListener("click",(event)=>{const menu=$("#profileMenu");if(menu.open&&!menu.contains(event.target))menu.removeAttribute("open");});
 document.addEventListener("keydown",(event)=>{if(event.key==="Escape")$("#profileMenu").removeAttribute("open");});
-$("#loginForm").addEventListener("submit",async(event)=>{event.preventDefault();try{user=await loginUser(Object.fromEntries(new FormData(event.currentTarget)));$("#loginDialog").close();await loadAccount();showView("mine");}catch{notice("이메일 또는 비밀번호를 확인해주세요.");}});
+$("#loginForm").addEventListener("submit",async(event)=>{event.preventDefault();try{user=await loginUser(Object.fromEntries(new FormData(event.currentTarget)));$("#loginDialog").close();await loadAccount();await navigateView("mine");}catch{notice("이메일 또는 비밀번호를 확인해주세요.");}});
 $("#adminRefresh").addEventListener("click",loadAdmin);
 $("#adminCreate").addEventListener("click",()=>$("#workspaceDialog").showModal());
 $("#workspaceDialogClose").addEventListener("click",()=>$("#workspaceDialog").close());
@@ -199,14 +238,9 @@ $("#adminRows").addEventListener("click",async(event)=>{const row=event.target.c
 $("#discordLogin").href=`${apiBase}/api/auth/oauth/discord/start?returnTo=${encodeURIComponent(location.href)}`;
 $("#roleChecks").addEventListener("change",(event)=>{if(document.querySelectorAll('#roleChecks input:checked').length>3){event.target.checked=false;notice("선호 라인은 세 개까지 선택할 수 있습니다.");}});
 
-const pageParams=new URLSearchParams(location.search),initialView=pageParams.get("view");
-if(!pageParams.get("player")&&!currentSlug&&["mine","quick","records","auction","admin"].includes(initialView))showView(initialView);
-if(initialView==="quick"&&pageParams.get("mode")==="roles")document.querySelector('[data-quick-mode="roles"]').click();
 await loadAccount();
-if(initialView==="auction"&&!currentSlug)await loadAuction();
 loadRecordExamples();
+await applyLocation();
+window.addEventListener("popstate",()=>applyLocation());
 window.addEventListener("focus",()=>{if(user)loadAccount().catch(()=>{});});
 setInterval(()=>{if(currentSlug&&$("#auctionView").classList.contains("active")&&!(auctionState?.canManage&&auctionPanel==="setup"))loadAuction();},2000);
-const publicSlug=pageParams.get("player");
-if(publicSlug){try{const{player}=await request(`/api/streaming/players/${encodeURIComponent(publicSlug)}`);$("#playerResults").innerHTML=profileCard(player);$("#recordExample").hidden=true;showView("records");}catch(error){notice(errorText(error));}}
-else if(currentSlug){await openWorkspace(currentSlug);if(initialView==="auction"){showView("auction");await loadAuction();}}
