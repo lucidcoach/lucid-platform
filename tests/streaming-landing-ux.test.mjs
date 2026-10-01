@@ -10,8 +10,10 @@ const app = read("../docs/app.js");
 for (const id of ["mineEyebrow", "mineTitle", "mineDescription", "mineLogin", "accountSection", "workspaceList"]) {
   assert.match(page, new RegExp(`id="${id}"`));
 }
-assert.match(page, /방송 연결[\s\S]+참가자 모집[\s\S]+팀 편성 · 기록/);
-assert.match(script, /user \? `\$\{user\.displayName \|\| "스트리머"\}님의 방송을 관리하세요`/);
+assert.match(page, /방송 연결[\s\S]+참가자 선택[\s\S]+팀 편성 · 기록/);
+assert.match(script, /accountName\("스트리머"\)/);
+assert.match(script, /preferredDisplayName/);
+assert.doesNotMatch(page, /!참가|참가 대기열|채팅 명령어/);
 assert.match(script, /workspace-status\$\{item\.channelId \? " connected"/);
 assert.match(script, /연결된 방송이 없습니다/);
 assert.match(css, /\.mine-hero\{[^}]+grid-template-columns/);
