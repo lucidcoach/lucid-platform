@@ -11,8 +11,8 @@ for (const id of ["mineEyebrow", "mineTitle", "mineDescription", "mineLogin", "a
   assert.match(page, new RegExp(`id="${id}"`));
 }
 assert.match(page, /방송 연결[\s\S]+참가자 선택[\s\S]+팀 편성 · 기록/);
-assert.match(script, /accountName\("스트리머"\)/);
-assert.match(script, /preferredDisplayName/);
+assert.match(script, /user \? "내 방송을 관리하세요"/);
+assert.doesNotMatch(script.match(/function accountName[^\n]+/)[0], /preferredDisplayName|riotAccounts/);
 assert.doesNotMatch(page, /!참가|참가 대기열|채팅 명령어/);
 assert.match(script, /workspace-status\$\{item\.channelId \? " connected"/);
 assert.match(script, /연결된 방송이 없습니다/);

@@ -26,7 +26,7 @@ function escapeHtml(value) { const div = document.createElement("div"); div.text
 function notice(message = "") { $("#notice").hidden = !message; $("#notice").textContent = message; }
 function errorText(error) { const message=String(error.message||"");if(message.startsWith("role_bottleneck|")){const[,roles,players,slots]=message.split("|");return `${roles}만 가능한 참가자가 ${players}명이라 배정 가능한 ${slots}자리를 초과했습니다. 다른 선호 포지션을 추가해주세요.`;}return ({"Failed to fetch":"서버 연결에 실패했습니다. 다시 시도해주세요.",login_required:"로그인이 필요합니다.",workspace_not_found:"방송을 찾지 못했습니다.",workspace_inactive:"비활성 상태인 Workspace입니다.",owner_not_found:"Discord로 로그인한 Owner 계정을 찾지 못했습니다.",invalid_workspace:"방송 정보를 확인해주세요.",workspace_already_exists:"slug 또는 Discord Guild가 이미 사용 중입니다.",invalid_placement:"라인과 세부 티어를 모두 선택해주세요.",invalid_players:"10명의 포지션과 티어를 빠짐없이 확인해주세요.",duplicate_players:"같은 Riot ID를 두 번 입력할 수 없습니다.",not_enough_players:"참가자가 10명 이상 필요합니다.",unrated_players:"모든 참가자의 라인별 티어를 먼저 배치해주세요.",lineup_not_found:"현재 선호 포지션 조합으로 양 팀 5개 포지션을 구성할 수 없습니다.",match_not_pending:"이미 진행했거나 종료된 경기입니다.",result_already_recorded:"진행 중인 경기만 결과를 기록할 수 있습니다.",invalid_riot_accounts:"Riot ID를 게임이름#태그 형식으로 입력해주세요.",manager_required:"방송 운영자만 사용할 수 있습니다.",invalid_auction_team:"팀 이름과 팀장을 입력해주세요.",invalid_auction_player:"참가자 정보를 확인해주세요.",invalid_auction_image:"PNG, JPG, WebP 이미지를 512KB 이하로 올려주세요.",auction_already_created:"이미 진행 중인 경매가 있습니다.",auction_code_not_found:"입장 코드를 확인해주세요.",auction_in_progress:"현재 선수를 먼저 낙찰 또는 유찰 처리해주세요.",auction_no_players:"대기 중인 참가자가 없습니다.",auction_no_current_player:"진행 중인 참가자가 없습니다.",auction_no_bid:"입찰한 팀이 없습니다.",auction_bid_unavailable:"현재 입찰할 수 없습니다.",auction_bid_changed:"다른 팀이 먼저 입찰했습니다. 최신 호가로 다시 눌러주세요.",auction_not_enough_points:"남은 포인트가 부족합니다."})[message] || message; }
 function options(values, selected) { return values.map((value) => `<option${value === selected ? " selected" : ""}>${value}</option>`).join(""); }
-function accountName(fallback="내 계정") { const raw=String(user?.displayName||"").trim();return user?.preferredDisplayName||user?.riotAccounts?.[0]||user?.discordDisplayName||(!/^oauth\s*user$/i.test(raw)?raw:"")||fallback; }
+function accountName(fallback="내 계정") { const raw=String(user?.displayName||"").trim();return user?.discordDisplayName||user?.discord_display_name||(!/^oauth\s*user$/i.test(raw)?raw:"")||fallback; }
 function workspaceName(workspace) { return workspace?.canManage && /^oauth\s*user 방송$/i.test(workspace.name||"") ? `${accountName("내")} 방송` : workspace?.name||"방송"; }
 function managedWorkspace() { return [...ownedWorkspaces,...adminWorkspaces].find((item) => item.slug === currentSlug) || ownedWorkspaces[0] || adminWorkspaces[0]; }
 function updateContentNav() { $("#contentNav").hidden = !managedWorkspace(); }
@@ -90,7 +90,7 @@ async function loadAccount() {
   $("#mineLogin").hidden = Boolean(user); $("#accountSection").hidden = !user;
   $("#quickStart").textContent = user ? "빠른 팀 나누기" : "비로그인으로 계속하기";
   $("#mineEyebrow").textContent = user ? "방송 대시보드" : "치지직 방송 도구";
-  $("#mineTitle").textContent = user ? `${accountName("스트리머")}님의 방송을 관리하세요` : "방송 내전을 한곳에서 관리하세요";
+  $("#mineTitle").textContent = user ? "내 방송을 관리하세요" : "방송 내전을 한곳에서 관리하세요";
   $("#mineDescription").textContent = user ? "방송별 참가자를 불러와 팀을 편성하고 경기 결과를 기록할 수 있습니다." : "참가자 선택부터 팀 편성, 경기 기록까지 한곳에서 관리할 수 있습니다.";
   $("#adminNav").hidden = !userIsAdmin(user);
   $("#contentNav").hidden = true;
