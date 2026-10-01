@@ -117,7 +117,11 @@
     </section>
 
     <section id="recordsView" class="content-view">
-      <header class="page-head"><h1>전적</h1></header>
+      <header class="page-head"><div><h1>전적</h1><p class="muted">스트리머별 전적사이트를 공유하거나 참가자 전적을 검색하세요.</p></div><button id="recordSiteApply" type="button">스트리머 전적사이트 신청</button></header>
+      <section id="recordSiteSection" hidden>
+        <div class="mine-section-head"><div><span>MY RECORD SITES</span><h2>내 스트리머 전적사이트</h2></div></div>
+        <div id="recordSiteList" class="profile-results"></div>
+      </section>
       <form id="playerSearchForm" class="large-search"><input id="playerSearch" type="search" minlength="2" placeholder="닉네임 또는 Riot ID"><button>검색</button></form>
       <div id="playerResults" class="profile-results"></div>
       <section id="recordExample" class="record-page">
@@ -134,6 +138,6 @@
 
   <dialog id="loginDialog"><form id="loginForm" method="dialog"><div class="dialog-head"><h2>로그인</h2><button value="cancel" class="quiet" aria-label="닫기">닫기</button></div><label>이메일<input name="email" type="email" required></label><label>비밀번호<input name="password" type="password" required></label><button value="default">로그인</button><a id="discordLogin" class="link-button" href="#">디스코드로 로그인</a></form></dialog>
   <dialog id="workspaceDialog"><form id="workspaceForm"><div class="dialog-head"><h2>새 Streamer Workspace</h2><button id="workspaceDialogClose" type="button" class="quiet">닫기</button></div><label>표시명<input name="name" maxlength="80" placeholder="스트리머 A" required></label><label>slug<input name="slug" pattern="[a-z0-9][a-z0-9-]{2,39}" placeholder="streamer-a" required></label><label>Owner Discord User ID<input name="ownerDiscordUserId" inputmode="numeric" required></label><label>Discord Guild ID<input name="discordGuildId" inputmode="numeric"></label><label>초기 상태<select name="status"><option value="inactive">비활성</option><option value="active">활성</option></select></label><label>만료일<input name="expiresAt" type="datetime-local"></label><button>생성</button></form></dialog>
-  <script type="module" src="streaming.js?v=20261001j"></script>
+  <script type="module" src="streaming.js?v=20261002k"></script>
 </body>
 </html>

@@ -94,7 +94,7 @@ async function loadAccount() {
   $("#mineDescription").textContent = user ? "방송별 참가자를 불러와 팀을 편성하고 경기 결과를 기록할 수 있습니다." : "참가자 선택부터 팀 편성, 경기 기록까지 한곳에서 관리할 수 있습니다.";
   $("#adminNav").hidden = !userIsAdmin(user);
   $("#contentNav").hidden = true;
-  if (!user) { ownedWorkspaces = []; await setupQuickWorkspaces(); return; }
+  if (!user) { ownedWorkspaces = []; $("#recordSiteSection").hidden = true; await setupQuickWorkspaces(); return; }
   const displayName = accountName();
   $("#profileMenuName").textContent = displayName; $("#profileMenuFullName").textContent = displayName;
   $("#profileDiscordState").textContent = user.discordConnected || user.discord_connected ? "Discord 연결됨" : "Discord 연결 필요";
@@ -110,6 +110,9 @@ async function loadAccount() {
   if (!visibleWorkspaces.length && pending) visibleWorkspaces.push(pending);
   $("#workspaceList").innerHTML = visibleWorkspaces.map((item) => `<button class="workspace-card" data-open="${item.slug}"><span class="workspace-status${item.channelId ? " connected" : ""}">${item.channelId ? "연결됨" : "연결 필요"}</span><strong>${escapeHtml(item.channelName || workspaceName(item))}</strong><small>${item.channelId ? `참가자 ${item.playerCount}명 · 누적 ${item.matchCount}경기` : "눌러서 치지직 채널 연결하기"}</small><span class="workspace-open">관리 화면 열기 →</span></button>`).join("") || '<div class="mine-empty"><strong>연결된 방송이 없습니다.</strong><span>치지직 채널을 연결하면 방송별 경기 기록을 저장할 수 있어요.</span></div>';
   $("#connectBroadcast").textContent = workspaces.some((item) => item.channelId) ? "방송 추가" : "치지직 방송 연결";
+  const recordSites = workspaces.filter((item) => item.status === "active" && item.channelId);
+  $("#recordSiteSection").hidden = !recordSites.length;
+  $("#recordSiteList").innerHTML = recordSites.map((item) => `<article class="profile-card"><strong>${escapeHtml(item.channelName || workspaceName(item))}</strong><span>누적 ${item.matchCount}경기 · 참가자 ${item.playerCount}명</span><a href="../s/?slug=${encodeURIComponent(item.slug)}&view=records" target="_blank" rel="noopener">전적사이트 열기 →</a></article>`).join("");
   await setupQuickWorkspaces();
   if (userIsAdmin(user)) await loadAdmin();
 }
@@ -230,6 +233,7 @@ document.querySelectorAll(".stream-nav [data-view]").forEach((button) => button.
 $("#quickStart").addEventListener("click",()=>navigateView("quick"));
 $("#workspaceQuick").addEventListener("click",async()=>{$("#quickWorkspace").value=currentSlug;await loadQuickProfiles();await navigateView("quick");});
 $("#streamerApply").addEventListener("click",()=>notice("스트리머 전용 서버 신청은 준비 중입니다."));
+$("#recordSiteApply").addEventListener("click",()=>{if(!user){$("#loginDialog").showModal();return;}if(ownedWorkspaces.some((item)=>item.channelId)){$("#recordSiteSection").scrollIntoView({behavior:"smooth"});return;}connectBroadcast();});
 document.querySelectorAll("[data-quick-mode]").forEach((button)=>button.addEventListener("click",()=>{document.querySelectorAll("[data-quick-mode]").forEach((item)=>item.classList.toggle("active",item===button));document.querySelectorAll("[data-quick-panel]").forEach((panel)=>panel.hidden=panel.dataset.quickPanel!==button.dataset.quickMode);}));
 $("#quickWorkspace").addEventListener("change",async()=>{$("#quickForm").reset();$("#quickRoleForm").reset();await loadQuickProfiles();});
 document.querySelectorAll("#quickPlayers input,#quickRolePlayers input").forEach((input)=>{input.addEventListener("input",()=>applyQuickProfile(input));input.addEventListener("change",()=>applyQuickProfile(input));});
