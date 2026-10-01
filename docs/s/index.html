@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0f16">
+  <title>Lucid Streamer</title>
+  <link rel="icon" href="../favicon.ico">
+  <link rel="stylesheet" href="../streaming/streaming.css?v=20261001b">
+  <link rel="stylesheet" href="streamer.css?v=20261001b">
+</head>
+<body>
+  <header class="topbar streamer-topbar">
+    <a class="brand" href="../">Lucid</a>
+    <nav id="workspaceNav" class="stream-nav" aria-label="스트리머 페이지 메뉴">
+      <a data-view="home">홈</a><a data-view="content">콘텐츠</a><a data-view="matches">내전</a><a data-view="ranking">랭킹</a><a data-view="manage" hidden>관리</a>
+    </nav>
+    <a class="quiet back-link" href="../streaming/">Lucid 스트리밍</a>
+  </header>
+  <main id="app"><p class="empty">스트리머 페이지를 불러오는 중입니다.</p></main>
+
+  <dialog id="contentDialog">
+    <form id="contentForm">
+      <div class="dialog-head"><h2>콘텐츠 만들기</h2><button class="quiet" type="button" data-close>닫기</button></div>
+      <label>종류<select name="type"><option value="versus">방대방</option><option value="solo_rank_challenge">솔랭내기</option></select></label>
+      <label>제목<input name="title" maxlength="100" required></label>
+      <div class="content-type-fields" data-type="versus">
+        <label>팀 A<input name="teamA" maxlength="40" value="팀 A"></label><label>팀 A 대표<input name="representativeA" maxlength="40"></label>
+        <label>팀 B<input name="teamB" maxlength="40" value="팀 B"></label><label>팀 B 대표<input name="representativeB" maxlength="40"></label>
+        <label>진행 방식<select name="bestOf"><option value="1">BO1</option><option value="3">BO3</option><option value="5">BO5</option></select></label>
+        <label class="wide-field">참가자 <small>팀별로 한 줄, 쉼표로 구분</small><textarea name="versusPlayers" rows="2" placeholder="참가자 A, 참가자 B&#10;참가자 C, 참가자 D"></textarea></label>
+      </div>
+      <div class="content-type-fields" data-type="solo_rank_challenge" hidden>
+        <label>승리 기준<select name="winCondition"><option value="lp_gain">LP 상승량</option><option value="wins">승수</option><option value="win_rate">승률</option><option value="target_tier">목표 티어</option><option value="custom_score">사용자 정의 점수</option></select></label>
+        <label class="wide-field">참가자 <small>한 줄에 한 명</small><textarea name="soloPlayers" rows="5" placeholder="참가자 A&#10;참가자 B"></textarea></label>
+      </div>
+      <label>시작<input name="startAt" type="datetime-local"></label><label>종료<input name="endAt" type="datetime-local"></label>
+      <button type="submit">콘텐츠 만들기</button>
+    </form>
+  </dialog>
+  <script type="module" src="streamer.js?v=20261001b"></script>
+</body>
+</html>
