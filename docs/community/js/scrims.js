@@ -31,6 +31,8 @@ function matchTime(value) {
 
 async function loadWeeklyRanking() {
   const target = document.getElementById("weeklyRanking");
+  target?.closest(".weekly-ranking-panel")?.setAttribute("hidden", "");
+  return;
   try {
     const data = await apiGet("/api/community/matches?limit=200&offset=0&category=all");
     const cutoff = Date.now() - 7 * 86400000;

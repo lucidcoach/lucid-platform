@@ -241,7 +241,7 @@ function renderCommunityAccount() {
         ? `<div class="riot-account-form"><p class="riot-account-help"><strong>Discord 확인 계정</strong> · 봇의 /소환사등록 기준</p>${accounts.length
             ? accounts.map((value,i)=>`<div class="riot-account-row"><span>${i===0 ? "본계정" : `부계정 ${i}`}</span><strong>${esc(value)}</strong></div>`).join("")
             : `<p class="riot-account-help">Discord 봇에서 /소환사등록을 완료하면 본계정과 부계정이 자동으로 표시됩니다.</p>`}
-          ${legacy.length ? `<p class="riot-account-help"><strong>기존 수동 등록 기록</strong></p>${legacy.map(value=>`<div class="riot-account-row"><span>${verifiedKeys.has(String(value).trim().toLowerCase())?"Discord에서도 확인됨":"미확인"}</span><strong>${esc(value)}</strong></div>`).join("")}` : ""}
+          ${legacy.length ? `<p class="riot-account-help"><strong>기존 수동 등록 기록</strong></p>${legacy.map(value=>`<div class="riot-account-row"><span>${verifiedKeys.has(String(value).trim().toLowerCase())?"등록된 Riot ID":"기존 수동 기록"}</span><strong>${esc(value)}</strong></div>`).join("")}` : ""}
           ${unverified.length ? `<p class="riot-account-help">미확인 계정은 보존만 하며 개인분석 권한에는 사용되지 않습니다.</p>` : ""}</div>`
         : `<p class="riot-account-help">Discord 연동 후 본인이 봇에 등록한 계정만 자동으로 가져옵니다.</p>`}
     </section>

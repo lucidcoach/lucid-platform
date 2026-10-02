@@ -35,12 +35,12 @@
         <span class="nav-hierarchy-divider" aria-hidden="true"></span>
         <button class="nav-tab" type="button" data-view="recent">내전</button>
         <button class="nav-tab" type="button" data-view="analysis">게임 분석 <span class="nav-beta">BETA</span></button>
-        <button class="nav-tab" type="button" data-view="ranking">랭킹</button>
+        <button class="nav-tab" type="button" data-view="ranking" hidden>랭킹</button>
         <button id="mileageNav" class="nav-tab" type="button" data-view="mileage">포인트 상점</button>
         <details class="nav-more">
           <summary>더보기</summary>
           <div class="nav-more-menu">
-            <button class="nav-tab mobile-more-item" type="button" data-view="ranking">랭킹</button>
+            <button class="nav-tab mobile-more-item" type="button" data-view="ranking" hidden>랭킹</button>
             <button class="nav-tab mobile-more-item" type="button" data-view="mileage">포인트 상점</button>
             <button class="nav-tab" type="button" data-view="patchnotes">패치노트</button>
             <button id="communitySupportNav" class="nav-tab" type="button" data-view="support">문의</button>
@@ -170,7 +170,7 @@
       </div>
       <div id="analysisResults" class="analysis-results server-analysis-results"><div class="server-analysis-loading">분석 정보를 불러오는 중...</div></div>
     </section>
-    <section id="rankingView" class="content-view">
+    <section id="rankingView" class="content-view" hidden>
       <div class="section-heading ranking-heading">
         <div><p class="section-kicker">LEADERBOARD</p><h1>내전 랭킹</h1></div>
         <div class="ranking-heading-actions">
@@ -227,6 +227,7 @@
 
   </main>
 
+  <footer class="site-legal-footer"><small>Lucid isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</small></footer>
   <div id="communityAuthModal" class="community-auth-modal" hidden>
     <div class="community-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="communityAuthTitle">
       <button id="communityAuthClose" class="community-auth-close" type="button" aria-label="닫기">×</button>

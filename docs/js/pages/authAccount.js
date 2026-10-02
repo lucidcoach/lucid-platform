@@ -11,6 +11,7 @@ import {
   acceptRequiredConsents,
   deleteCurrentUser as deleteCurrentUserApi,
   fetchAccountOverview,
+  fetchRiotDataConsents,
   fetchCurrentUser,
   loginUser,
   logoutAuthSessions,
@@ -20,6 +21,7 @@ import {
   signupUser,
   updateAccountPassword,
   updatePayoutProfile,
+  updateRiotDataConsent,
   updateCurrentUser,
   verifyEmail,
   userIsAdmin,
@@ -667,6 +669,8 @@ function renderAccountPanelMarkup() {
   const payout = overview.payout || {};
   const income = overview.income || {};
   const incomeEntries = Array.isArray(income.entries) ? income.entries.slice(0, 10) : [];
+  const riotConsent = state.riotDataConsents || {};
+  const consentAccounts = Array.isArray(riotConsent.accounts) ? riotConsent.accounts : [];
   return `
     <section class="account-overview">
       <div class="account-avatar">${escapeHtml((nickname || "L").slice(0, 1).toUpperCase())}</div>
@@ -690,6 +694,24 @@ function renderAccountPanelMarkup() {
     ` : ""}
 
     ${renderAccountDashboardMarkup()}
+
+    <section class="student-panel account-panel">
+      <div class="account-section-head settings">
+        <div><span>Riot 데이터 공개 설정</span><strong>내전 기록 공개</strong></div>
+      </div>
+      <p>동의하면 내전 경기 목록, 참가 정보, KDA·CS·딜량, 경기 후 분석과 MVP·ACE가 Lucid 커뮤니티에 표시됩니다. 기본값은 비공개입니다.</p>
+      ${state.riotDataConsentsLoadState === "error"
+        ? `<p class="account-required">공개 설정을 불러오지 못했습니다.</p>`
+        : consentAccounts.length
+          ? `<div class="account-settings-grid">${consentAccounts.map((account) => `
+              <label class="account-setting-card">
+                <div><span>${escapeHtml(account.riotId || "등록된 Riot ID")}</span><small>범위: 커뮤니티</small></div>
+                <span><input type="checkbox" data-riot-consent data-guild-id="${escapeHtml(account.guildId)}" ${account.communityEnabled ? "checked" : ""}> Lucid 내전 기록 공개에 동의합니다</span>
+                <small>동의 버전 ${escapeHtml(riotConsent.version || "-")} · ${account.consentAt ? `동의 ${escapeHtml(formatDateTime(account.consentAt))}` : "동의하지 않음"} · 언제든 철회 가능</small>
+              </label>`).join("")}</div>`
+          : `<p>Discord에서 등록한 Riot ID가 없습니다. Riot ID 등록 후 공개 여부를 설정할 수 있습니다.</p>`}
+      <span class="save-status" id="riotDataConsentStatus" aria-live="polite"></span>
+    </section>
 
     ${isCoachUser() ? `
       <section class="student-panel account-panel">
@@ -733,7 +755,7 @@ function renderAccountPanelMarkup() {
           ${discordConnected
             ? `<div class="account-linked-list">${riotAccounts.map((riotId) => `<strong>${escapeHtml(riotId)}</strong>`).join("") || "Discord에서 /소환사등록을 완료해주세요."}</div>`
             : `<span class="save-status">Discord 연동 후 본인이 봇에 등록한 계정만 가져옵니다.</span>`}
-          ${unverifiedRiotAccounts.length ? `<small>기존 수동 등록 계정은 소유권 미확인 상태로 보존됩니다: ${unverifiedRiotAccounts.map(escapeHtml).join(", ")}</small>` : ""}
+          ${unverifiedRiotAccounts.length ? `<small>기존 수동 등록 기록은 그대로 보존됩니다: ${unverifiedRiotAccounts.map(escapeHtml).join(", ")}</small>` : ""}
         </div>
         <form class="account-setting-card" id="accountPasswordForm">
           <div><span>비밀번호</span><small>8자 이상</small></div>
@@ -784,7 +806,36 @@ function mountAccountPanel(container) {
   $("accountStudentCenterBtn")?.addEventListener("click", openStudentCenter);
   $("accountStudentQuickBtn")?.addEventListener("click", openStudentCenter);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
+  document.querySelectorAll("[data-riot-consent]").forEach((input) => input.addEventListener("change", saveRiotDataConsent));
   if (state.accountOverviewLoadState === "idle") loadAccountOverview();
+  if (!state.riotDataConsentsLoadState) loadRiotDataConsents();
+}
+
+async function loadRiotDataConsents() {
+  state.riotDataConsentsLoadState = "loading";
+  try {
+    state.riotDataConsents = await fetchRiotDataConsents();
+    state.riotDataConsentsLoadState = "loaded";
+  } catch {
+    state.riotDataConsentsLoadState = "error";
+  }
+  if (state.activeView === "account") renderApp();
+}
+
+async function saveRiotDataConsent(event) {
+  const input = event.currentTarget;
+  const status = $("riotDataConsentStatus");
+  input.disabled = true;
+  try {
+    state.riotDataConsents = await updateRiotDataConsent(input.dataset.guildId, input.checked);
+    state.riotDataConsentsLoadState = "loaded";
+    if (status) status.textContent = input.checked ? "공개 동의를 저장했습니다." : "동의를 철회했습니다. 기존 기록도 즉시 비공개됩니다.";
+  } catch (error) {
+    input.checked = !input.checked;
+    if (status) status.textContent = `저장 실패: ${error.message}`;
+  } finally {
+    input.disabled = false;
+  }
 }
 
 async function resendAccountVerification() {

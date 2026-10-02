@@ -109,6 +109,18 @@ export async function fetchAccountOverview() {
   return result;
 }
 
+export async function fetchRiotDataConsents() {
+  const response = await apiFetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/riot-data-consents`, {
+    method: "GET", credentials: "include",
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  return result;
+}
+
+export const updateRiotDataConsent = (guildId, enabled, privacyScope = "community") =>
+  requestAccountAction("/api/account/riot-data-consents", { guildId, enabled, privacyScope }, "PUT");
+
 export async function updatePayoutProfile(payload) {
   const result = await requestAccountAction("/api/account/payout", payload, "PATCH");
   return result.payout;
