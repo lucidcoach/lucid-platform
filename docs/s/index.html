@@ -7,23 +7,22 @@
   <title>Lucid Streamer</title>
   <link rel="icon" href="../favicon.ico">
   <link rel="stylesheet" href="../streaming/streaming.css?v=20261001b">
-  <link rel="stylesheet" href="streamer.css?v=20261001b">
+  <link rel="stylesheet" href="streamer.css?v=20261002d">
   <link rel="stylesheet" href="manage.css?v=20261002a">
 </head>
 <body>
   <header class="topbar streamer-topbar">
     <a class="brand" href="../">Lucid</a>
     <nav id="workspaceNav" class="stream-nav" aria-label="스트리머 페이지 메뉴">
-      <a data-view="home">홈</a><a data-view="records">전적</a><a data-view="rankings">랭킹</a><a data-view="matches">방대방</a><a data-view="ranking">솔랭내기</a><a data-view="manage" hidden>관리</a>
+      <a data-view="home">홈</a><a data-view="records">전적</a><a data-view="rankings">참가자 랭킹</a><a data-view="matches">팀 대항전</a><a data-view="ranking">솔랭 이벤트</a><a data-view="manage" hidden>관리</a>
     </nav>
-    <a class="quiet back-link" href="../streaming/">Lucid 스트리밍</a>
   </header>
   <main id="app"><p class="empty">스트리머 페이지를 불러오는 중입니다.</p></main>
 
   <dialog id="contentDialog">
     <form id="contentForm">
       <div class="dialog-head"><h2>콘텐츠 만들기</h2><button class="quiet" type="button" data-close>닫기</button></div>
-      <label>종류<select name="type"><option value="versus">방대방</option><option value="solo_rank_challenge">솔랭내기</option></select></label>
+      <label>종류<select name="type"><option value="versus">팀 대항전</option><option value="solo_rank_challenge">솔랭 이벤트</option></select></label>
       <label>제목<input name="title" maxlength="100" required></label>
       <div class="content-type-fields" data-type="versus">
         <label>팀 A<input name="teamA" maxlength="40" value="팀 A"></label><label>팀 A 대표<input name="representativeA" maxlength="40"></label>
@@ -39,6 +38,6 @@
       <button type="submit">콘텐츠 만들기</button>
     </form>
   </dialog>
-  <script type="module" src="streamer.js?v=20261002c"></script>
+  <script type="module" src="streamer.js?v=20261002d"></script>
 </body>
 </html>
