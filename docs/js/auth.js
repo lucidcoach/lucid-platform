@@ -121,6 +121,23 @@ export async function fetchRiotDataConsents() {
 export const updateRiotDataConsent = (guildId, enabled, privacyScope = "community") =>
   requestAccountAction("/api/account/riot-data-consents", { guildId, enabled, privacyScope }, "PUT");
 
+export const unlinkRiotAccount = (guildId, riotId) =>
+  requestAccountAction("/api/account/riot-account", { guildId, riotId }, "DELETE");
+
+export async function fetchRoflRetentionStatus() {
+  const response = await apiFetch(`${API_BASE_URL.replace(/\/$/, "")}/api/account/rofl-retention`, {
+    method: "GET", credentials: "include",
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  return result;
+}
+
+export const requestPrivacyDeletion = () => requestAccountAction("/api/community/inquiries", {
+  subject: "개인정보 삭제 요청",
+  message: "Lucid 계정에 연결된 개인정보의 삭제 가능 범위와 법정 보관 대상 확인 및 삭제 처리를 요청합니다.",
+});
+
 export async function updatePayoutProfile(payload) {
   const result = await requestAccountAction("/api/account/payout", payload, "PATCH");
   return result.payout;

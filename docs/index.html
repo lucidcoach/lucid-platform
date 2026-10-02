@@ -90,6 +90,16 @@
       </section>
 
       <section class="view active" id="marketView">
+        <section class="riot-reviewer-summary" aria-labelledby="riotReviewerTitle">
+          <div><span>ABOUT LUCID</span><h2 id="riotReviewerTitle">내전 운영과 경기 후 분석을 제공하는 LoL 커뮤니티 서비스</h2><p>Lucid는 Discord 내전 운영, 공식 Riot API·ROFL 기반 경기 기록, 경기 후 분석, 스트리머 전적 페이지와 코칭 연결을 제공합니다.</p></div>
+          <div class="riot-reviewer-grid">
+            <article><strong>Riot API 사용 목적</strong><p>등록된 Riot ID 확인과 경기 데이터 조회, KDA·CS·피해량 등 경기 후 통계 생성에 사용합니다.</p></article>
+            <article><strong>커스텀 경기 공개</strong><p>기본 비공개이며 참가자 전원이 명시적으로 동의한 경기만 공개합니다. Discord 로그인은 공개 동의가 아닙니다.</p></article>
+            <article><strong>무료 기능</strong><p>내전 운영, 공개 동의 관리, 공개된 경기 기록 열람은 무료입니다.</p></article>
+            <article><strong>코칭·유료 기능</strong><p>코치의 시간과 피드백을 상품으로 연결합니다. 현재 홈페이지 결제는 테스트 모드이며 실제 청구되지 않습니다.</p></article>
+          </div>
+          <p class="riot-reviewer-disclaimer">Lucid는 Riot Games의 공식 서비스가 아닙니다. <a href="/riot-data/">Riot 데이터 이용 안내</a> · <a href="/terms.html">이용약관</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/support/">문의</a></p>
+        </section>
         <section class="catalog-shell" aria-label="코칭 상품 탐색">
           <div class="catalog-heading market-compact-head">
             <div><span>COACHING</span><h2>코칭 찾기</h2></div>
@@ -474,15 +484,8 @@
     </div>
   </div>
 
-  <footer class="site-legal-footer">
-    <a href="terms.html">이용약관</a>
-    <a href="privacy.html">개인정보처리방침</a>
-    <a href="business.html">사업자정보·취소/환불 정책</a>
-    <span>현재 결제는 테스트 환경이며 실제 금액이 청구되지 않습니다.</span>
-    <small>Lucid isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</small>
-  </footer>
-
+  <script src="/js/legalFooter.js?v=20261002a" defer></script>
   <script src="https://js.tosspayments.com/v2/standard"></script>
-  <script type="module" src="app.js?v=20260924catalog1"></script>
+  <script type="module" src="app.js?v=20261002policy1"></script>
 </body>
 </html>

@@ -25,7 +25,7 @@ import {
   saveCoachToApi,
   updateUserRole,
 } from "./js/admin.js?v=20260923ops1";
-import { deleteCurrentUser as deleteCurrentUserApi, fetchCurrentUser, loginUser, logoutAuthSessions, signupUser, updateCurrentUser, userIsAdmin, userIsCoach, userRoles } from "./js/auth.js";
+import { deleteCurrentUser as deleteCurrentUserApi, fetchCurrentUser, loginUser, logoutAuthSessions, signupUser, updateCurrentUser, userIsAdmin, userIsCoach, userRoles } from "./js/auth.js?v=20261002policy1";
 import {
   getCoachBadges,
   getCoachPurposes,
@@ -93,7 +93,7 @@ import {
 import { createMarketPage } from "./js/pages/market.js?v=20260923ops3";
 import { createStudentDashboardPage } from "./js/pages/studentDashboard.js";
 import { createReservationPage } from "./js/pages/reservationPage.js?v=20260923ops3";
-import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20260923ops1";
+import { createAuthAccountPage } from "./js/pages/authAccount.js?v=20261002policy1";
 import { createAdminDashboardPage } from "./js/pages/adminDashboard.js?v=20260923ops3";
 import { createCoachSelfPage } from "./js/pages/coachSelf.js?v=20260923ops3";
 import { createLegacyImportPage } from "./js/pages/legacyImport.js?v=20260921legacyreview1";

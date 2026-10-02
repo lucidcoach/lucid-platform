@@ -11,23 +11,26 @@ import {
   acceptRequiredConsents,
   deleteCurrentUser as deleteCurrentUserApi,
   fetchAccountOverview,
+  fetchRoflRetentionStatus,
   fetchRiotDataConsents,
   fetchCurrentUser,
   loginUser,
   logoutAuthSessions,
   requestPasswordReset,
+  requestPrivacyDeletion,
   resendEmailVerification,
   resetPassword,
   signupUser,
   updateAccountPassword,
   updatePayoutProfile,
   updateRiotDataConsent,
+  unlinkRiotAccount,
   updateCurrentUser,
   verifyEmail,
   userIsAdmin,
   userIsCoach,
   userRoles,
-} from "../auth.js";
+} from "../auth.js?v=20261002policy1";
 import { loginAdmin } from "../admin.js";
 import { paymentStatus, submitGuestConsultation } from "../reservations.js";
 import { byId as $, escapeHtml, formatDateTime, formatWon, parseReservationPrice } from "../utils.js";
@@ -671,6 +674,9 @@ function renderAccountPanelMarkup() {
   const incomeEntries = Array.isArray(income.entries) ? income.entries.slice(0, 10) : [];
   const riotConsent = state.riotDataConsents || {};
   const consentAccounts = Array.isArray(riotConsent.accounts) ? riotConsent.accounts : [];
+  const roflStatus = state.roflRetentionStatus || {};
+  const roflPolicy = roflStatus.policy || {};
+  const roflCleanup = roflStatus.retention || {};
   return `
     <section class="account-overview">
       <div class="account-avatar">${escapeHtml((nickname || "L").slice(0, 1).toUpperCase())}</div>
@@ -699,16 +705,18 @@ function renderAccountPanelMarkup() {
       <div class="account-section-head settings">
         <div><span>Riot 데이터 공개 설정</span><strong>내전 기록 공개</strong></div>
       </div>
-      <p>동의하면 내전 경기 목록, 참가 정보, KDA·CS·딜량, 경기 후 분석과 MVP·ACE가 Lucid 커뮤니티에 표시됩니다. 기본값은 비공개입니다.</p>
+      <p>공개 항목: Riot ID, 경기 참가 여부, 승패, 챔피언, KDA, CS, 피해량, 아이템, 경기 통계, AI Score, MVP·ACE, 경기 후 분석.</p>
+      <p><strong>기본값은 OFF입니다.</strong> Discord 로그인이나 서버 가입만으로 공개에 동의한 것이 아닙니다. 언제든 철회할 수 있고, 철회 즉시 기존 공개 페이지에서도 제거됩니다. 내부 운영 기록 보관과 공개 여부는 별개입니다. <a href="/riot-data/#custom-match">자세히 보기</a></p>
       ${state.riotDataConsentsLoadState === "error"
         ? `<p class="account-required">공개 설정을 불러오지 못했습니다.</p>`
         : consentAccounts.length
           ? `<div class="account-settings-grid">${consentAccounts.map((account) => `
-              <label class="account-setting-card">
+              <article class="account-setting-card">
                 <div><span>${escapeHtml(account.riotId || "등록된 Riot ID")}</span><small>범위: 커뮤니티</small></div>
-                <span><input type="checkbox" data-riot-consent data-guild-id="${escapeHtml(account.guildId)}" ${account.communityEnabled ? "checked" : ""}> Lucid 내전 기록 공개에 동의합니다</span>
-                <small>동의 버전 ${escapeHtml(riotConsent.version || "-")} · ${account.consentAt ? `동의 ${escapeHtml(formatDateTime(account.consentAt))}` : "동의하지 않음"} · 언제든 철회 가능</small>
-              </label>`).join("")}</div>`
+                <label><input type="checkbox" data-riot-consent data-guild-id="${escapeHtml(account.guildId)}" ${account.communityEnabled ? "checked" : ""} ${account.registrationReady ? "" : "disabled"}> Lucid 내전 기록 공개에 동의합니다</label>
+                <small>${account.registrationReady ? `동의 버전 ${escapeHtml(riotConsent.version || "-")} · ${account.consentAt ? `동의 ${escapeHtml(formatDateTime(account.consentAt))}` : "동의하지 않음"}` : "Riot 조회가 완료되지 않아 공개 동의를 받을 수 없습니다."}</small>
+                <button class="secondary mini" type="button" data-riot-unlink data-guild-id="${escapeHtml(account.guildId)}" data-riot-id="${escapeHtml(account.riotId)}">이 서버에서 등록 해제</button>
+              </article>`).join("")}</div>`
           : `<p>Discord에서 등록한 Riot ID가 없습니다. Riot ID 등록 후 공개 여부를 설정할 수 있습니다.</p>`}
       <span class="save-status" id="riotDataConsentStatus" aria-live="polite"></span>
     </section>
@@ -751,11 +759,12 @@ function renderAccountPanelMarkup() {
           <span class="save-status" id="accountNicknameStatus" aria-live="polite"></span>
         </form>
         <div class="account-setting-card">
-          <div><span>Riot ID</span><small>Discord 봇 자동 연동</small></div>
+          <div><span>등록된 Riot ID</span><small>Discord 봇 자동 연동</small></div>
           ${discordConnected
             ? `<div class="account-linked-list">${riotAccounts.map((riotId) => `<strong>${escapeHtml(riotId)}</strong>`).join("") || "Discord에서 /소환사등록을 완료해주세요."}</div>`
             : `<span class="save-status">Discord 연동 후 본인이 봇에 등록한 계정만 가져옵니다.</span>`}
           ${unverifiedRiotAccounts.length ? `<small>기존 수동 등록 기록은 그대로 보존됩니다: ${unverifiedRiotAccounts.map(escapeHtml).join(", ")}</small>` : ""}
+          <small>현재 표시된 Riot ID는 Lucid에 등록된 정보입니다. Riot Sign On을 통한 계정 소유권 인증은 아직 제공하지 않습니다.</small>
         </div>
         <form class="account-setting-card" id="accountPasswordForm">
           <div><span>비밀번호</span><small>8자 이상</small></div>
@@ -772,7 +781,10 @@ function renderAccountPanelMarkup() {
       </div>
       <details class="account-danger-compact">
         <summary>계정 관리</summary>
-        <div><span>회원탈퇴</span><button class="danger mini" type="button" id="accountDeleteBtn">탈퇴</button></div>
+        <div><span>ROFL 원본: 업로드 후 ${Number(roflPolicy.rawRetentionDays || 14)}일 보관 후 자동 삭제<br><small>추출 통계는 자동 만료 없음 · ${state.roflRetentionLoadState === "error" ? "정리 상태 확인 실패" : roflCleanup.ranAt ? `최근 정리 ${escapeHtml(formatDateTime(roflCleanup.ranAt))} (${escapeHtml(roflCleanup.status || "-")})` : "정리 상태 확인 중"} · 파일별 업로더 상태는 기록하지 않음</small></span></div>
+        <div><span>개인정보 삭제 요청<br><small>삭제 가능 범위와 법정 보관 대상을 확인해 처리합니다.</small></span><button class="secondary mini" type="button" id="privacyDeleteRequestBtn">요청</button></div>
+        <div><span>Lucid 계정 삭제<br><small>로그인 정보와 공개 동의를 삭제·철회하며 결제 등 법정 보관 기록은 분리 보관합니다.</small></span><button class="danger mini" type="button" id="accountDeleteBtn">탈퇴</button></div>
+        <span class="save-status" id="privacyDeleteRequestStatus" aria-live="polite"></span>
       </details>
     </section>
   `;
@@ -806,9 +818,23 @@ function mountAccountPanel(container) {
   $("accountStudentCenterBtn")?.addEventListener("click", openStudentCenter);
   $("accountStudentQuickBtn")?.addEventListener("click", openStudentCenter);
   $("accountDeleteBtn")?.addEventListener("click", deleteCurrentAccount);
+  $("privacyDeleteRequestBtn")?.addEventListener("click", requestPersonalDataDeletion);
   document.querySelectorAll("[data-riot-consent]").forEach((input) => input.addEventListener("change", saveRiotDataConsent));
+  document.querySelectorAll("[data-riot-unlink]").forEach((button) => button.addEventListener("click", unlinkRegisteredRiotId));
   if (state.accountOverviewLoadState === "idle") loadAccountOverview();
-  if (!state.riotDataConsentsLoadState) loadRiotDataConsents();
+  if (!state.riotDataConsentsLoadState || state.riotDataConsentsLoadState === "idle") loadRiotDataConsents();
+  if (!state.roflRetentionLoadState || state.roflRetentionLoadState === "idle") loadRoflRetentionStatus();
+}
+
+async function loadRoflRetentionStatus() {
+  state.roflRetentionLoadState = "loading";
+  try {
+    state.roflRetentionStatus = await fetchRoflRetentionStatus();
+    state.roflRetentionLoadState = "loaded";
+  } catch {
+    state.roflRetentionLoadState = "error";
+  }
+  if (state.activeView === "account") renderApp();
 }
 
 async function loadRiotDataConsents() {
@@ -835,6 +861,34 @@ async function saveRiotDataConsent(event) {
     if (status) status.textContent = `저장 실패: ${error.message}`;
   } finally {
     input.disabled = false;
+  }
+}
+
+async function unlinkRegisteredRiotId(event) {
+  const button = event.currentTarget;
+  const riotId = button.dataset.riotId;
+  const status = $("riotDataConsentStatus");
+  if (!window.confirm(`${riotId} 등록을 이 서버에서 해제할까요? 공개 동의도 즉시 철회됩니다.`)) return;
+  button.disabled = true;
+  try {
+    await unlinkRiotAccount(button.dataset.guildId, riotId);
+    state.riotDataConsents = await fetchRiotDataConsents();
+    if (status) status.textContent = "등록 해제를 요청했고 공개 동의를 철회했습니다. Discord 봇 반영에는 잠시 걸릴 수 있습니다.";
+    renderApp();
+  } catch (error) {
+    if (status) status.textContent = `등록 해제 실패: ${error.message}`;
+    button.disabled = false;
+  }
+}
+
+async function requestPersonalDataDeletion() {
+  if (!window.confirm("개인정보 삭제 요청을 접수할까요? 운영자가 법정 보관 대상과 삭제 가능 범위를 확인해 연락합니다.")) return;
+  const status = $("privacyDeleteRequestStatus");
+  try {
+    const result = await requestPrivacyDeletion();
+    if (status) status.textContent = `삭제 요청을 접수했습니다. 접수번호: ${result.inquiryId}`;
+  } catch (error) {
+    if (status) status.textContent = `요청 실패: ${error.message}`;
   }
 }
 
@@ -961,6 +1015,10 @@ async function deleteCurrentAccount() {
     state.currentUser = null;
     state.accountOverview = null;
     state.accountOverviewLoadState = "idle";
+    state.riotDataConsents = null;
+    state.riotDataConsentsLoadState = "idle";
+    state.roflRetentionStatus = null;
+    state.roflRetentionLoadState = "idle";
     state.activeView = "market";
     state.bookings = [];
     alert("회원탈퇴가 완료되었습니다.");
@@ -980,6 +1038,10 @@ async function loadCurrentUser() {
     state.currentUser = user;
     state.accountOverview = null;
     state.accountOverviewLoadState = "idle";
+    state.riotDataConsents = null;
+    state.riotDataConsentsLoadState = "idle";
+    state.roflRetentionStatus = null;
+    state.roflRetentionLoadState = "idle";
     state.coachSelfLessons = null;
     if (state.currentUser?.coachKey) state.coachSelfKey = state.currentUser.coachKey;
     state.coachSchedule = { weekly: [], overrides: [], slots: [] };
@@ -1003,6 +1065,10 @@ async function loadCurrentUser() {
     state.currentUser = null;
     state.accountOverview = null;
     state.accountOverviewLoadState = "idle";
+    state.riotDataConsents = null;
+    state.riotDataConsentsLoadState = "idle";
+    state.roflRetentionStatus = null;
+    state.roflRetentionLoadState = "idle";
     state.coachSelfLessons = null;
     state.authLoadState = "error";
     renderApp();
@@ -1018,6 +1084,10 @@ async function logoutUser() {
     state.currentUser = null;
     state.accountOverview = null;
     state.accountOverviewLoadState = "idle";
+    state.riotDataConsents = null;
+    state.riotDataConsentsLoadState = "idle";
+    state.roflRetentionStatus = null;
+    state.roflRetentionLoadState = "idle";
     state.coachDashboardLoadState = "idle";
     state.coachDashboardLoadError = "";
     state.studentReservationLoadState = "idle";
